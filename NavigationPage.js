@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import HomeScreen from './app/HomeScreen/HomeScreen';
 import ServiceRequestScreen from './app/ServiceRequestScreen/ServiceRequestPage';
-import VisitorsScreen from './app/HomeScreen/HomeScreen'; // Check if you want to change Visitors screen import
+import VisitorsScreen from './app/VisitorsScreen/VisitorScreen'; // Check if you want to change Visitors screen import
 import ProfileScreen from './app/HomeScreen/HomeScreen';
 import Header from './app/Header/Header';
 import LoginScreen from './app/Login/Login';
@@ -22,6 +22,13 @@ import MoreScreen from './app/MoreScreen/MorePage';
 import { PermissionsProvider, usePermissions } from './Utils/ConetextApi';
 import { ismServices } from './services/ismServices';
 import ServiceRequestTabs from './app/ServiceRequestScreen/ServiceHeader';
+import CategorySelectionScreen from './app/ServiceRequestScreen/complaintCatModel';
+import SubCategorySelectionScreen from './app/ServiceRequestScreen/subCateScreen';
+import ComplaintInputScreen from './app/ServiceRequestScreen/complaintInput';
+import NoticesScreen from './app/notices/MyNotices';
+import AccountsScreen from './app/AccountsScreen/AccountsPage';
+import StaffScreen from './app/StaffScreen/StaffPage';
+import StaffDetailsScreen from './app/StaffScreen/StaffDetailsPage';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -32,6 +39,12 @@ const HomeStack = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="HomeMain" component={HomeScreen} />
+      <Stack.Screen name="Notices" component={NoticesScreen} />
+      <Stack.Screen name="Accounts" component={AccountsScreen} />
+     <Stack.Screen name="StaffScreen" component={StaffScreen} />
+     <Stack.Screen name="StaffDetailsScreen" component={StaffDetailsScreen} />
+
+
       {/* Add other child screens for Home tab here */}
       {/* <Stack.Screen name="HomeDetail" component={HomeDetailScreen} /> */}
     </Stack.Navigator>
@@ -43,6 +56,31 @@ const ServiceRequestsStack = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="ServiceRequestsMain" component={ServiceRequestTabs} />
+<Stack.Screen 
+  name="CategorySelection" 
+  component={CategorySelectionScreen}
+  options={{ 
+    headerShown: false,
+    presentation: 'card' // or 'modal' for iOS-style modal presentation
+  }}
+/>
+<Stack.Screen 
+  name="subCategorySelection" 
+  component={SubCategorySelectionScreen}
+  options={{ 
+    headerShown: false,
+    presentation: 'card' // or 'modal' for iOS-style modal presentation
+  }}
+/>
+<Stack.Screen 
+  name="complaintInput" 
+  component={ComplaintInputScreen}
+  options={{ 
+    headerShown: false,
+    presentation: 'card' // or 'modal' for iOS-style modal presentation
+  }}
+/>
+
       {/* Add other child screens for Service Requests tab here */}
       {/* <Stack.Screen name="RequestDetail" component={RequestDetailScreen} /> */}
     </Stack.Navigator>

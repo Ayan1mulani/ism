@@ -35,6 +35,22 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
    return response
   },
 
+
+      getMyNotices: async () => {
+    const user = await Common.getLoggedInUser()
+    const params = {
+      "api-token": user.apiToken,
+      "user-id": user.id,
+      "cache":0,
+      "bill_type":835
+    };
+    const url =  ismServices.appendParamsInUrl(`${API_URL2}/myNotices`);
+    console.log(url,'this is url')
+    const headers = await Util.getCommonAuth()
+   const response =   await ApiCommon.getReq(url,headers, params);
+   return response
+  },
+
 appendParamsInUrl: (url, params) => {
     if (params && typeof params === "object") {
       const queryParams = Object.keys(params)

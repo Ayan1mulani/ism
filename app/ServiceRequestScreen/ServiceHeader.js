@@ -1,11 +1,15 @@
 // ServiceRequestTabs.js
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, Dimensions, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import ComplaintListScreen from './ServiceRequestPage';
 import { usePermissions } from '../../Utils/ConetextApi';
+import ComplaintCategoryModal from './complaintCatModel';
+import { useNavigation } from '@react-navigation/native';
+import { complaintService } from '../../services/complaintService';
 
 // Define the statuses for the tabs
-const TABS = ['Pending', 'In Progress', 'Completed'];
+const TABS = ['Open', 'Closed', 'All'];
 const { width } = Dimensions.get('window');
 const TAB_WIDTH = (width - 40) / TABS.length; // Subtracting horizontal padding
 
@@ -27,10 +31,17 @@ const THEME_COLORS = {
 
 const ServiceRequestTabs = () => {
   const [activeTab, setActiveTab] = useState(TABS[0]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [openComplaints, setOpenComplaints] = useState([]);
+  const [closedComplaints, setClosedComplaints] = useState([]);
+  const [allComplaints, setAllComplaints] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef(null);
   const isScrolling = useRef(false); // Flag to prevent circular updates
-  const {nightMode} = usePermissions();
+  const { nightMode } = usePermissions();
+
+  const navigation = useNavigation();
 
   // Dynamic theme based on night mode
   const currentTheme = {
@@ -40,6 +51,51 @@ const ServiceRequestTabs = () => {
     textColor: nightMode ? THEME_COLORS.darkText : THEME_COLORS.darkText,
     inactiveTextColor: nightMode ? THEME_COLORS.darkInactiveText : THEME_COLORS.inactiveText,
     tabsBackground: nightMode ? '#2a2a2a' : '#f0f0f0',
+  };
+
+  // Fetch complaints data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Fetch open complaints
+        const openResponse = await complaintService.getMyComplaints('Open');
+        setOpenComplaints(openResponse.data || []);
+
+        // Fetch closed complaints
+        const closedResponse = await complaintService.getMyComplaints('Closed');
+        setClosedComplaints(closedResponse.data || []);
+
+        // Combine both for "All" tab
+        const combinedComplaints = [
+          ...(openResponse.data || []),
+          ...(closedResponse.data || [])
+        ];
+        setAllComplaints(combinedComplaints);
+
+      } catch (error) {
+        console.error("Failed to fetch complaints:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Get current complaints based on active tab
+  const getCurrentComplaints = () => {
+    switch (activeTab) {
+      case 'Open':
+        console.log(openComplaints,'this are open on active')
+        return openComplaints;
+      case 'Closed':
+        return closedComplaints;
+      case 'All':
+        return allComplaints;
+      default:
+        return [];
+    }
   };
 
   useEffect(() => {
@@ -89,9 +145,22 @@ const ServiceRequestTabs = () => {
     isScrolling.current = true;
   };
 
-  const renderContentPane = (title, content) => (
+  // Handle FAB press
+  const handleFABPress = () => {
+    // Navigate to category selection page instead of opening modal
+    navigation.navigate('CategorySelection');
+  };
+
+
+
+  const renderContentPane = (tabName) => (
     <View style={[styles.contentPane, { backgroundColor: currentTheme.backgroundColor }]}>
-      <ComplaintListScreen nightMode={nightMode} />
+      <ComplaintListScreen 
+        nightMode={nightMode} 
+        status={tabName}
+        complaints={getCurrentComplaints()}
+        isLoading={isLoading}
+      />
     </View>
   );
 
@@ -141,15 +210,30 @@ const ServiceRequestTabs = () => {
         scrollEventThrottle={16}
         style={styles.contentContainer}
       >
-        {renderContentPane('Pending Requests', 'Loading pending requests...')}
-        {renderContentPane('In Progress Requests', 'Loading in-progress requests...')}
-        {renderContentPane('Completed Requests', 'Loading completed requests...')}
+        {renderContentPane('Open')}
+        {renderContentPane('Closed')}
+        {renderContentPane('All')}
       </ScrollView>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={[
+          styles.fab,
+          {
+            backgroundColor: THEME_COLORS.primaryAccent,
+            shadowColor: nightMode ? '#000' : THEME_COLORS.primaryAccent,
+          }
+        ]}
+        onPress={handleFABPress}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="add" size={24} color="#ffffff" />
+      </TouchableOpacity>
     </View>
   );
 };
 
-// --- STYLES (Updated with dynamic theming) ---
+// --- STYLES (Updated with FAB) ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -207,6 +291,23 @@ const styles = StyleSheet.create({
   },
   contentText: {
     fontSize: 16,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 110, // Above your bottom navigation
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
 });
 

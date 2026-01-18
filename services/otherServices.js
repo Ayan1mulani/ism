@@ -3,39 +3,54 @@ import { ApiCommon } from "./ApiCommon"
 import { Common } from "./Common";
 import { Util } from "./Util";
 
- const complaintService = {
+ const otherServices = {
 
-  getMyComplaints: async (status) => {
-    console.log("fetching complaints with status:", status);
-    const user = await Common.getLoggedInUser()
-    const params = {
-      "api-token": user.apiToken,
-      "user-id": user.id,
-      "status": status,
-      "per_page":10,
-      "page_no":1
-    };
-
-    const url =  complaintService.appendParamsInUrl(`${API_URL2}/my/complaints`,params);
-    console.log(url,'this is url')
-    const headers = await Util.getCommonAuth()
-     const response =   await ApiCommon.getReq(url,headers);
-     return response
-  },
-
-    getCategories: async () => {
+  getOutStandings: async () => {
     const user = await Common.getLoggedInUser()
     const params = {
       "api-token": user.apiToken,
       "user-id": user.id,
     };
-
-    const url =  complaintService.appendParamsInUrl(`${API_URL2}/getcomplaintcategory`,params);
+  
+    const url =  otherServices.appendParamsInUrl(`${API_URL2}/my/outstandingbalances`,params);
     const headers = await Util.getCommonAuth()
      const response =   await ApiCommon.getReq(url,headers);
+     console.log(response.data,'this is response for outstnading')
      return response
   },
 
+
+    getMyAccounts: async () => {
+    const user = await Common.getLoggedInUser()
+    const params = {
+      "api-token": user.apiToken,
+      "user-id": user.id,
+    };
+  
+    const url =  otherServices.appendParamsInUrl(`${API_URL2}/billing/houseStatement/439139/1/100`,params);
+    const headers = await Util.getCommonAuth()
+     const response =   await ApiCommon.getReq(url,headers);
+     console.log(response.data,'this is response for accounts')
+     return response
+  },
+
+
+  
+    getStaffCategories: async () => {
+    const user = await Common.getLoggedInUser()
+    const params = {
+      "api-token": user.apiToken,
+      "user-id": user.id,
+    };
+  
+    const url =  otherServices.appendParamsInUrl(`${API_URL2}/billing/houseStatement/439139/1/100`,params);
+    const headers = await Util.getCommonAuth()
+     const response =   await ApiCommon.getReq(url,headers);
+     console.log(response.data,'this is response for accounts')
+     return response
+  },
+
+ 
 appendParamsInUrl: (url, params) => {
     if (params && typeof params === "object") {
       const queryParams = Object.keys(params)
@@ -54,4 +69,4 @@ appendParamsInUrl: (url, params) => {
 
 }
 
-export {complaintService}
+export {otherServices}
