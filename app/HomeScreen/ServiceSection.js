@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePermissions } from '../../Utils/ConetextApi';
+import { useNavigation } from '@react-navigation/native';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -17,10 +18,10 @@ const ServicesSection = () => {
   const fadeAnims = useRef([]).current;
   const [selectedService, setSelectedService] = useState(null);
   const {nightMode} = usePermissions()
-
+ const navigation = useNavigation()
   const services = [
-    { id: '1', title: 'Cleaning', icon: 'sparkles-outline' },
-    { id: '2', title: 'Approval', icon: 'checkmark-circle-outline' },
+    { id: '1', title: 'Accounts', icon: 'card' ,route:"Accounts" },
+    { id: '2', title: 'Staff', icon: 'checkmark-circle-outline',  route:"StaffScreen" },
     { id: '3', title: 'Help Desk', icon: 'help-circle-outline' },
     { id: '4', title: 'Amenities', icon: 'fitness-outline' },
     { id: '5', title: 'Maintenance', icon: 'construct-outline' },
@@ -120,6 +121,10 @@ const ServicesSection = () => {
       ? currentTheme.textColor.selected
       : currentTheme.textColor.unselected;
 
+      const serviceClick = (service) =>{
+     navigation.navigate(service.route)
+      }
+
     return (
       <Animated.View
         key={service.id}
@@ -127,7 +132,7 @@ const ServicesSection = () => {
       >
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={() => setSelectedService(isSelected ? null : service.id)}
+          onPress={() => setSelectedService(serviceClick(service))}
         >
           <LinearGradient
             colors={cardGradient}

@@ -1,40 +1,34 @@
-import {API_URL4}   from "@env"
+import {API_URL2}   from "@env"
 import { ApiCommon } from "./ApiCommon"
 import { Common } from "./Common";
 import { Util } from "./Util";
 
- const visitorServices = {
+ const otherServices = {
 
-  getMyVisitors: async () => {
+  getOutStandings: async () => {
     const user = await Common.getLoggedInUser()
     const params = {
       "api-token": user.api_token,
       "user-id": user.id,
     };
-    const paylod ={
-        input: "",
-        residentId: user.id
-    }
-    const url =  visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/290/getVisitsForResident?api-token=${user.api_token}&user-id=${367102}`);
+  
+    const url =  otherServices.appendParamsInUrl(`${API_URL2}/my/outstandingbalances`,params);
     const headers = await Util.getCommonAuth()
-     const response =   await ApiCommon.postReq(url,paylod,headers);
+     const response =   await ApiCommon.getReq(url,headers);
      return response
   },
 
 
-  getMyPasses: async () => {
+    getMyAccounts: async () => {
     const user = await Common.getLoggedInUser()
     const params = {
       "api-token": user.api_token,
       "user-id": user.id,
     };
-    const paylod ={
-        input: "",
-        residentId: user.id
-    }
-    const url =  visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/290/searchPass?api-token=${user.api_token}&user-id=${367102}`);
+  
+    const url =  otherServices.appendParamsInUrl(`${API_URL2}/billing/houseStatement/439139/1/100`,params);
     const headers = await Util.getCommonAuth()
-     const response =   await ApiCommon.postReq(url,paylod,headers);
+     const response =   await ApiCommon.getReq(url,headers);
      return response
   },
 
@@ -47,27 +41,13 @@ import { Util } from "./Util";
       "user-id": user.id,
     };
   
-    const url =  visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/290/allstaffcategory`,params);
+    const url =  otherServices.appendParamsInUrl(`${API_URL2}/billing/houseStatement/439139/1/100`,params);
     const headers = await Util.getCommonAuth()
      const response =   await ApiCommon.getReq(url,headers);
      return response
   },
 
-    getMyStaffs: async (category) => {
-    const user = await Common.getLoggedInUser()
-    const params = {
-      "api-token": user.api_token,
-      "user-id": user.id,
-      "category": category || null,
-    };
-  
-    const url =  visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/290/staffbycategory`,params);
-    const headers = await Util.getCommonAuth()
-     const response =   await ApiCommon.getReq(url,headers);
-     return response
-  },
-
-
+ 
 appendParamsInUrl: (url, params) => {
     if (params && typeof params === "object") {
       const queryParams = Object.keys(params)
@@ -86,4 +66,4 @@ appendParamsInUrl: (url, params) => {
 
 }
 
-export {visitorServices}
+export {otherServices}

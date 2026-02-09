@@ -1,5 +1,5 @@
 // NewLoginScreen.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import {
   SafeAreaView,
   View,
@@ -48,27 +48,34 @@ const NewLoginScreen = () => {
   const [errorTitle, setErrorTitle] = useState('Login Failed');
   const [isLoading, setIsLoading] = useState(false);
 
-const getUserDetails = async()  =>{
- await  ismServices.getUserDetails()
- const userInfo = await AsyncStorage.getItem('userInfo')
-if(userInfo){
-  navigation.dispatch(
-  CommonActions.reset({
-    index: 0,
-    routes: [{ name: 'MainApp' }],
-  })
-); 
+const getUserDetails = async () => {
+  try {
+    // Fetch & store user details
+    // await ismServices.getUserDetails()
+
+    // ⚠️ Use the SAME key that was saved
+    const userInfo = await AsyncStorage.getItem("userInfo")
+
+
+    // if (userInfo) {
+    //   navigation.dispatch(
+    //     CommonActions.reset({
+    //       index: 0,
+    //       routes: [{ name: "MainApp" }],
+    //     })
+    //   )
+    // } 
+  } catch (error) {
+    console.error("Error getting user details:", error)
+  }
 }
-}
 
-useEffect(()=>{
-getUserDetails()
+useEffect(() => {
+  getUserDetails()
+}, [])
 
-},[])
 
- 
   const handleLogin = async (userid) => {
-    console.log(userid, "this to pass");
     setIsLoading(true);
     
     const payload = {
@@ -91,12 +98,12 @@ getUserDetails()
       } else if (response.status === 'success') {
         // Handle successful login
         await AsyncStorage.setItem('userInfo',JSON.stringify(response.data))
-navigation.dispatch(
-  CommonActions.reset({
-    index: 0,
-    routes: [{ name: 'MainApp' }],
-  })
-);      }
+             navigation.dispatch(
+               CommonActions.reset({
+                 index: 0,
+                 routes: [{ name: 'MainApp' }],
+               })
+             );      }
     } catch (error) {
       console.error('Login failed:', error);
       // Show generic error message
@@ -111,7 +118,6 @@ navigation.dispatch(
   const handleAccountSelect = (selectedUserId) => {
     setModalVisible(false);
     handleLogin(selectedUserId);
-    console.log('Selected User ID:', selectedUserId);
   };
 
   const validateInputs = () => {

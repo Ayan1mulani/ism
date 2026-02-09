@@ -10,8 +10,8 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { usePermissions } from '../../Utils/ConetextApi';
-import { Common } from '../../services/Common';
+import { usePermissions } from '../../../Utils/ConetextApi';
+import { Common } from '../../../services/Common';
 
 const { width } = Dimensions.get('window');
 
@@ -105,7 +105,7 @@ getUserInfo()
               styles.greetingText,
               { color: currentTheme.greetingTextColor }
             ]}>
-              Hello {userDetails?.name.split(' ')[0]}
+              Hello {userDetails?.name.split(' ')[0] || "Resident"}
             </Text>
             <View style={styles.locationContainer}>
               <View style={[

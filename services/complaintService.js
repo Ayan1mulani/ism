@@ -5,10 +5,10 @@ import { Util } from "./Util";
 
  const complaintService = {
 
-  getMyComplaints: async (status = "Open") => {
+  getMyComplaints: async (status) => {
     const user = await Common.getLoggedInUser()
     const params = {
-      "api-token": user.apiToken,
+      "api-token": user.api_token,
       "user-id": user.id,
       "status": status,
       "per_page":10,
@@ -16,7 +16,19 @@ import { Util } from "./Util";
     };
 
     const url =  complaintService.appendParamsInUrl(`${API_URL2}/my/complaints`,params);
-    console.log(url,'this is url')
+    const headers = await Util.getCommonAuth()
+     const response =   await ApiCommon.getReq(url,headers);
+     return response
+  },
+
+    getCategories: async () => {
+    const user = await Common.getLoggedInUser()
+    const params = {
+      "api-token": user.api_token,
+      "user-id": user.id,
+    };
+
+    const url =  complaintService.appendParamsInUrl(`${API_URL2}/getcomplaintcategory`,params);
     const headers = await Util.getCommonAuth()
      const response =   await ApiCommon.getReq(url,headers);
      return response

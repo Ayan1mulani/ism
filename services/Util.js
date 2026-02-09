@@ -35,17 +35,15 @@ const Util = {
         }
       }
     }catch(e){
-      console.log(e)
+      console.error(e)
     }
     return moment(dateTime).format(format);
   },
   getCommonAuth :async()=>{
-    console.log('bbb')
     let user = await Common.getLoggedInUser()
     if(user){
       return {
       "Content-Type": "application/json",
-      "Ism-Auth":`{"api-token":"${user.api_token}","user-id":${user.id},"site-id":${user.societyId}}`
 
       }
     }

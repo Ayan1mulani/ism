@@ -16,37 +16,27 @@ const THEME_COLORS = {
   darkInactiveText: '#aaaaaa',
 };
 
-const ComplaintListScreen = () => {
-  const [complaints, setComplaints] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const {nightMode} = usePermissions();
+const ComplaintListScreen = ({ nightMode, status, complaints = [], isLoading = false }) => {
+  const { nightMode: contextNightMode } = usePermissions();
+  
+  // Use nightMode from props or fallback to context
+  const currentNightMode = nightMode !== undefined ? nightMode : contextNightMode;
+
 
   // Dynamic theme based on night mode
   const currentTheme = {
-    backgroundColor: nightMode ? THEME_COLORS.darkBackground : THEME_COLORS.lightBackground,
-    textColor: nightMode ? THEME_COLORS.darkTextColor : THEME_COLORS.darkText,
-    inactiveTextColor: nightMode ? THEME_COLORS.darkInactiveText : THEME_COLORS.inactiveText,
+    backgroundColor: currentNightMode ? THEME_COLORS.darkBackground : THEME_COLORS.lightBackground,
+    textColor: currentNightMode ? THEME_COLORS.darkTextColor : THEME_COLORS.darkText,
+    inactiveTextColor: currentNightMode ? THEME_COLORS.darkInactiveText : THEME_COLORS.inactiveText,
   };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await complaintService.getMyComplaints();
-        console.log(response,'this are complaints')
-        setComplaints(response.data);
-      } catch (error) {
-        console.error("Failed to fetch complaints:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
 
   if (isLoading) {
     return (
       <View style={[styles.centered, { backgroundColor: currentTheme.backgroundColor }]}>
         <ActivityIndicator size="large" color={THEME_COLORS.primaryAccent} />
+        <Text style={[styles.loadingText, { color: currentTheme.textColor }]}>
+          Loading {status} complaints...
+        </Text>
       </View>
     );
   }
@@ -54,21 +44,28 @@ const ComplaintListScreen = () => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: currentTheme.backgroundColor }]}>
       <StatusBar 
-        barStyle={nightMode ? "light-content" : "dark-content"} 
+        barStyle={currentNightMode ? "light-content" : "dark-content"} 
         backgroundColor={currentTheme.backgroundColor}
       />
       <FlatList
         data={complaints}
-        renderItem={({ item }) => <ComplaintCard complaint={item} />}
-        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <ComplaintCard 
+            complaint={item} 
+            nightMode={currentNightMode}
+          />
+        )}
+        keyExtractor={(item, index) => item.id ? item.id.toString() : index.toString()}
         ListEmptyComponent={() => (
           <View style={[styles.centered, { backgroundColor: currentTheme.backgroundColor }]}>
             <Text style={[styles.emptyText, { color: currentTheme.inactiveTextColor }]}>
-              No complaints found.
+              No {status.toLowerCase()} complaints found.
             </Text>
           </View>
         )}
-        contentContainerStyle={complaints.length === 0 ? { flex: 1 } : null}
+        contentContainerStyle={complaints.length === 0 ? { flex: 1 } : styles.listContent}
+        showsVerticalScrollIndicator={false}
+        refreshing={isLoading}
       />
     </SafeAreaView>
   );
@@ -92,6 +89,15 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
+    textAlign: 'center',
+  },
+  loadingText: {
+    fontSize: 14,
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  listContent: {
+    paddingVertical: 10,
   },
 });
 

@@ -17,7 +17,7 @@ const Common = {
             return parsedUserInfo;
 
         } catch (e) {
-            console.log("Error in getLoggedInUser", e)
+            console.error("Error in getLoggedInUser", e)
         }
 
     },
@@ -37,7 +37,7 @@ const Common = {
             return parsedUserInfo;
 
         } catch (e) {
-            console.log("Error in getLoggedInUser", e)
+            console.error("Error in getLoggedInUser", e)
         }
 
     },

@@ -15,7 +15,6 @@ const LoginSrv = {
     //     return false;
     // },
     // logout: ()=>{
-    //     console.log('logout...')
     //     Common.removeLoggedInUser()
     //     Common.removeHistory()
     //     window.location.reload(true);
@@ -52,7 +51,6 @@ const LoginSrv = {
         fd.append('name', (Math.ceil(Math.random()*10000)+ '-' + file.name).replace(/\s/g, '_').replace(/\.[^/.]+$/, ""))
         fd.append('type', 'PUBLIC')
         fd.append('file', file)
-        console.log(fd, file.size)
         return ApiCommon.postReq(process.env.REACT_APP_DRS_API_URL +'publicupload', fd,config);
     },
 
