@@ -1,4 +1,4 @@
-import { API_URL2 } from "@env"
+import { API_URL2 ,API_URL4} from "@env"
 import { ApiCommon } from "./ApiCommon"
 import { Common } from "./Common"
 import { Util } from "./Util"
@@ -49,6 +49,40 @@ const u = encodeURIComponent(JSON.stringify(uObj));
     const headers = await Util.getCommonAuth()
     return ApiCommon.getReq(url, headers)
   },
+
+  loginUser: async (data) => {
+    try {
+      const url = `${API_URL2}/login`;
+      return await ApiCommon.postReq(url, data);
+    } catch (error) {
+      console.error("Login API Error:", error);
+      throw error;
+    }
+  },
+
+  
+  // addMyVisitor: async (data) => {
+  //   const url = await ismServices.appendParamsInUrl(`${API_URL4}/v1/society/${user.society_id}/addVisitor`)
+  //   const headers = await Util.getCommonAuth()
+  //   return ApiCommon.getReq(url,data,headers)
+  // },
+
+  addMyVisitor: async (data) => {
+
+  
+  const url = await ismServices.appendParamsInUrl(
+    `${API_URL4}/v2/society/society/${user.society_id}/createallpass`
+  )
+  
+  const headers = await Util.getCommonAuth()
+  
+  console.log("🔗 API URL:", url)
+  console.log("📦 Payload:", data)
+  
+  return ApiCommon.postReq(url, data, headers) // ✅ Use POST, not GET
+},
+
+
 
   getMyNotices: async () => {
     const url = await ismServices.appendParamsInUrl(

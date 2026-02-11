@@ -1,197 +1,253 @@
+// ServiceRequestDetailCard.js
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { MaterialIcons, Ionicons, FontAwesome5, AntDesign, Feather } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { usePermissions } from '../../Utils/ConetextApi';
 
-// --- YOUR THEME COLORS ---
-const THEME_COLORS = {
-  primaryAccent: '#1996D3',
-  darkText: '#074B7C',
-  inactiveText: '#6c757d',
-  cardBackground: '#ffffff',
-  borderColor: '#e9ecef',
-  successColor: '#28a745',
-  lightGray: '#f8f9fa',
-  // Night mode colors
-  darkBackground: '#121212',
-  darkCardBackground: '#1e1e1e',
-  darkBorderColor: '#333333',
-  darkTextColor: '#ffffff',
-  darkInactiveText: '#aaaaaa',
-  darkLightGray: '#2a2a2a',
+// Theme configuration
+const COLORS = {
+  primary: '#1996D3',
+  success: '#28A745',
+  warning: '#FFC107',
+  info: '#0052CC',
+  
+  // Light theme
+  light: {
+    background: '#FFFFFF',
+    surface: '#F8F9FA',
+    text: '#212529',
+    textSecondary: '#6C757D',
+    border: '#DEE2E6',
+    description: '#495057',
+  },
+  
+  // Dark theme
+  dark: {
+    background: '#1E1E1E',
+    surface: '#2A2A2A',
+    text: '#FFFFFF',
+    textSecondary: '#9E9E9E',
+    border: '#2C2C2C',
+    description: '#CCCCCC',
+  },
+};
+
+// Request status configuration
+const REQUEST_STATUS = {
+  RESOLVED: {
+    light: { bg: '#D4EDDA', color: COLORS.success },
+    dark: { bg: '#1A3D2E', color: COLORS.success },
+    label: 'Resolved',
+    icon: 'checkmark-circle',
+  },
+  PENDING: {
+    light: { bg: '#FFF3CD', color: COLORS.warning },
+    dark: { bg: '#3D3A1A', color: COLORS.warning },
+    label: 'Pending',
+    icon: 'time-outline',
+  },
+  IN_PROGRESS: {
+    light: { bg: '#CCE7FF', color: COLORS.primary },
+    dark: { bg: '#1A2D3D', color: COLORS.primary },
+    label: 'In Progress',
+    icon: 'sync',
+  },
+  UNKNOWN: {
+    light: { bg: '#E9ECEF', color: COLORS.light.textSecondary },
+    dark: { bg: '#2A2A2A', color: COLORS.dark.textSecondary },
+    label: 'Unknown',
+    icon: 'help-circle-outline',
+  },
+};
+
+// Category icon configuration
+const CATEGORY_ICONS = {
+  AC: { name: 'snowflake', library: 'FontAwesome5', color: COLORS.primary },
+  ELECTRICAL: { name: 'flash', library: 'Ionicons', color: '#FF8B00' },
+  PLUMBING: { name: 'water', library: 'Ionicons', color: COLORS.info },
+  LIGHTING: { name: 'lightbulb-outline', library: 'Ionicons', color: COLORS.warning },
+  MAINTENANCE: { name: 'construct', library: 'Ionicons', color: COLORS.success },
+  DEFAULT: { name: 'build', library: 'Ionicons', color: COLORS.light.textSecondary },
 };
 
 const ServiceRequestDetailCard = ({ complaint }) => {
-  const {nightMode} = usePermissions();
+  const { nightMode } = usePermissions();
+  const theme = nightMode ? COLORS.dark : COLORS.light;
 
-  // Dynamic theme based on night mode
-  const currentTheme = {
-    cardBackground: nightMode ? THEME_COLORS.darkCardBackground : THEME_COLORS.cardBackground,
-    borderColor: nightMode ? THEME_COLORS.darkBorderColor : THEME_COLORS.borderColor,
-    textColor: nightMode ? THEME_COLORS.darkTextColor : THEME_COLORS.darkText,
-    inactiveTextColor: nightMode ? THEME_COLORS.darkInactiveText : THEME_COLORS.inactiveText,
-    lightGrayBackground: nightMode ? THEME_COLORS.darkLightGray : THEME_COLORS.lightGray,
-    descriptionTextColor: nightMode ? '#cccccc' : '#495057',
+  // Get status configuration
+  const getStatusConfig = (status) => {
+    const statusLower = status?.toLowerCase() || '';
+    
+    if (['resolved', 'closed', 'completed'].includes(statusLower)) {
+      const config = REQUEST_STATUS.RESOLVED;
+      const themeConfig = nightMode ? config.dark : config.light;
+      return { ...config, ...themeConfig };
+    }
+    
+    if (['open', 'pending'].includes(statusLower)) {
+      const config = REQUEST_STATUS.PENDING;
+      const themeConfig = nightMode ? config.dark : config.light;
+      return { ...config, ...themeConfig };
+    }
+    
+    if (statusLower === 'in progress') {
+      const config = REQUEST_STATUS.IN_PROGRESS;
+      const themeConfig = nightMode ? config.dark : config.light;
+      return { ...config, ...themeConfig };
+    }
+    
+    const config = REQUEST_STATUS.UNKNOWN;
+    const themeConfig = nightMode ? config.dark : config.light;
+    return { ...config, ...themeConfig, label: status || 'Unknown' };
   };
 
-  // Status configuration with icons
-  const getStatusConfig = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'resolved':
-      case 'closed':
-      case 'completed':
-        return {
-          color: THEME_COLORS.successColor,
-          text: 'Resolved',
-          bgColor: nightMode ? '#1a3d2e' : '#d4edda',
-          icon: 'checkmark-circle'
-        };
-      case 'open':
-      case 'pending':
-        return {
-          color: '#ffc107',
-          text: 'Pending',
-          bgColor: nightMode ? '#3d3a1a' : '#fff3cd',
-          icon: 'time-outline'
-        };
-      case 'in progress':
-        return {
-          color: THEME_COLORS.primaryAccent,
-          text: 'In Progress',
-          bgColor: nightMode ? '#1a2d3d' : '#cce7ff',
-          icon: 'sync'
-        };
-      default:
-        return {
-          color: currentTheme.inactiveTextColor,
-          text: status || 'Unknown',
-          bgColor: nightMode ? '#2a2a2a' : '#e9ecef',
-          icon: 'help-circle-outline'
-        };
+  // Get category icon
+  const getCategoryIcon = (category) => {
+    const categoryLower = category?.toLowerCase() || '';
+    
+    if (categoryLower.includes('ac') || categoryLower.includes('air')) {
+      return CATEGORY_ICONS.AC;
+    }
+    if (categoryLower.includes('electrical') || categoryLower.includes('wiring')) {
+      return CATEGORY_ICONS.ELECTRICAL;
+    }
+    if (categoryLower.includes('plumbing') || categoryLower.includes('water')) {
+      return CATEGORY_ICONS.PLUMBING;
+    }
+    if (categoryLower.includes('light')) {
+      return CATEGORY_ICONS.LIGHTING;
+    }
+    if (categoryLower.includes('maintenance')) {
+      return CATEGORY_ICONS.MAINTENANCE;
+    }
+    
+    return { ...CATEGORY_ICONS.DEFAULT, color: theme.textSecondary };
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch (error) {
+      return dateString;
     }
   };
 
-  // Get category icon based on complaint type
-  const getCategoryIcon = (category) => {
-    const categoryLower = category?.toLowerCase() || '';
-    if (categoryLower.includes('ac') || categoryLower.includes('air')) {
-      return { name: 'snowflake', library: 'FontAwesome5', color: THEME_COLORS.primaryAccent };
-    } else if (categoryLower.includes('electrical') || categoryLower.includes('wiring')) {
-      return { name: 'flash', library: 'Ionicons', color: '#FF8B00' };
-    } else if (categoryLower.includes('plumbing') || categoryLower.includes('water')) {
-      return { name: 'water', library: 'Ionicons', color: '#0052CC' };
-    } else if (categoryLower.includes('light')) {
-      return { name: 'lightbulb-outline', library: 'Ionicons', color: '#FFC107' };
-    } else if (categoryLower.includes('maintenance')) {
-      return { name: 'construct', library: 'Ionicons', color: '#28a745' };
-    } else {
-      return { name: 'build', library: 'Ionicons', color: currentTheme.inactiveTextColor };
+  // Calculate time ago with smart formatting
+  const getTimeAgo = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffTime = Math.abs(now - date);
+      const diffMinutes = Math.floor(diffTime / (1000 * 60));
+      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const diffMonths = Math.floor(diffDays / 30);
+      const diffYears = Math.floor(diffDays / 365);
+
+      if (diffMinutes < 60) {
+        return diffMinutes === 0 ? 'Just now' : `${diffMinutes}m`;
+      }
+      if (diffHours < 24) {
+        return `${diffHours}h`;
+      }
+      if (diffDays < 30) {
+        return `${diffDays}d`;
+      }
+      if (diffMonths < 12) {
+        return `${diffMonths}mo`;
+      }
+      return `${diffYears}y`;
+    } catch (error) {
+      return '';
+    }
+  };
+
+  // Render icon
+  const renderIcon = (iconConfig, size = 16) => {
+    const { name, library, color } = iconConfig;
+    
+    switch (library) {
+      case 'FontAwesome5':
+        return <FontAwesome5 name={name} size={size} color={color} />;
+      case 'MaterialIcons':
+        return <MaterialIcons name={name} size={size} color={color} />;
+      case 'Ionicons':
+      default:
+        return <Ionicons name={name} size={size} color={color} />;
     }
   };
 
   const statusConfig = getStatusConfig(complaint.status);
   const categoryIcon = getCategoryIcon(complaint.sub_category);
+  const requestId = complaint.com_no || complaint.id;
+  const requestNumber = `#${requestId}`;
 
-  // Format dates
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const options = { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric'
-    };
-    return date.toLocaleDateString('en-US', options);
-  };
-
-  const formatDateWithTime = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    return `${diffDays} Days`;
-  };
-
-  // Render icon based on library
-  const renderIcon = (iconConfig, size = 16) => {
-    const { name, library, color } = iconConfig;
-    switch (library) {
-      case 'FontAwesome5':
-        return <FontAwesome5 name={name} size={size} color={color} />;
-      case 'Ionicons':
-        return <Ionicons name={name} size={size} color={color} />;
-      case 'MaterialIcons':
-        return <MaterialIcons name={name} size={size} color={color} />;
-      case 'AntDesign':
-        return <AntDesign name={name} size={size} color={color} />;
-      case 'Feather':
-        return <Feather name={name} size={size} color={color} />;
-      default:
-        return <Ionicons name={name} size={size} color={color} />;
-    }
-  };
+  const styles = createStyles(theme, nightMode);
 
   return (
-    <View style={[styles.container, { 
-      backgroundColor: currentTheme.cardBackground,
-      borderColor: currentTheme.borderColor 
-    }]}>
-      {/* Top Row: ID and Status */}
-      <View style={styles.topRow}>
+    <View style={[styles.card, { backgroundColor: theme.background, borderColor: theme.border }]}>
+      {/* Header: ID and Status */}
+      <View style={styles.header}>
         <View style={styles.idSection}>
-          <MaterialIcons name="receipt-long" size={16} color={currentTheme.inactiveTextColor} />
-          <Text style={[styles.idValue, { color: currentTheme.textColor }]}>
-            #{complaint.com_no || complaint.id}
-          </Text>
+          <MaterialIcons name="receipt-long" size={16} color={theme.textSecondary} />
+          <Text style={[styles.requestId, { color: theme.text }]}>{requestNumber}</Text>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: statusConfig.bgColor }]}>
+        
+        <View style={[styles.statusBadge, { backgroundColor: statusConfig.bg }]}>
           <Ionicons name={statusConfig.icon} size={12} color={statusConfig.color} />
-          <Text style={[styles.statusText, { color: statusConfig.color }]}>
-            {statusConfig.text}
+          <Text style={[styles.statusLabel, { color: statusConfig.color }]}>
+            {statusConfig.label}
           </Text>
         </View>
       </View>
 
-      {/* Category Title Section */}
-      <View style={styles.titleSection}>
-        <View style={[styles.categoryIconContainer, { 
-          backgroundColor: nightMode ? `${THEME_COLORS.primaryAccent}25` : `${THEME_COLORS.primaryAccent}15`
+      {/* Category Section */}
+      <View style={styles.categorySection}>
+        <View style={[styles.categoryIcon, {
+          backgroundColor: nightMode ? `${COLORS.primary}25` : `${COLORS.primary}15`,
         }]}>
           {renderIcon(categoryIcon, 18)}
         </View>
-        <Text style={[styles.serviceTitle, { color: currentTheme.textColor }]}>
-          {complaint.sub_category || 'AC Repairing Services'}
+        <Text style={[styles.categoryTitle, { color: theme.text }]} numberOfLines={1}>
+          {complaint.sub_category || 'Service Request'}
         </Text>
       </View>
 
-      {/* Description with Icon */}
+      {/* Description */}
       <View style={styles.descriptionSection}>
-        <Text style={[styles.description, { color: currentTheme.descriptionTextColor }]}>
-          {complaint.description || 'In publishing and graphic design, Lorem Ipsum is a placeholder text commonly used to demonstrate the visual form of a'}
+        <Text style={[styles.description, { color: theme.description }]} numberOfLines={3}>
+          {complaint.description || 'No description provided'}
         </Text>
       </View>
 
-      {/* Date Info with Icons */}
-      <View style={[styles.dateInfo, { backgroundColor: currentTheme.lightGrayBackground }]}>
-        <View style={styles.dateItem}>
-          <View style={styles.dateIconLabel}>
-            <MaterialIcons name="schedule" size={12} color={currentTheme.inactiveTextColor} />
-            <Text style={[styles.dateLabel, { color: currentTheme.inactiveTextColor }]}>
+      {/* Date Information */}
+      <View style={[styles.dateSection, { backgroundColor: theme.surface }]}>
+        <View style={styles.dateRow}>
+          <View style={styles.dateLabel}>
+            <MaterialIcons name="schedule" size={12} color={theme.textSecondary} />
+            <Text style={[styles.dateLabelText, { color: theme.textSecondary }]}>
               Created:
             </Text>
           </View>
-          <Text style={[styles.dateValue, { color: currentTheme.textColor }]}>
-            {formatDate(complaint.created_at)} ({formatDateWithTime(complaint.created_at)})
+          <Text style={[styles.dateValue, { color: theme.text }]}>
+            {formatDate(complaint.created_at)} ({getTimeAgo(complaint.created_at)})
           </Text>
         </View>
-        <View style={styles.dateItem}>
-          <View style={styles.dateIconLabel}>
-            <MaterialIcons name="update" size={12} color={currentTheme.inactiveTextColor} />
-            <Text style={[styles.dateLabel, { color: currentTheme.inactiveTextColor }]}>
-              Last Update:
+        
+        <View style={styles.dateRow}>
+          <View style={styles.dateLabel}>
+            <MaterialIcons name="update" size={12} color={theme.textSecondary} />
+            <Text style={[styles.dateLabelText, { color: theme.textSecondary }]}>
+              Updated:
             </Text>
           </View>
-          <Text style={[styles.dateValue, { color: currentTheme.textColor }]}>
+          <Text style={[styles.dateValue, { color: theme.text }]}>
             {formatDate(complaint.updated_at)}
           </Text>
         </View>
@@ -200,99 +256,98 @@ const ServiceRequestDetailCard = ({ complaint }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    borderRadius: 8,
-    padding: 10,
-    marginVertical: 4,
-    width: 350,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
+const createStyles = (theme, nightMode) =>
+  StyleSheet.create({
+    card: {
+      borderRadius: 12,
+      padding: 16,
+      marginVertical: 6,
+      width: '90%',
+      alignSelf:'center',
+      maxWidth: 400,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: nightMode ? 0.3 : 0.08,
+      shadowRadius: 4,
+      elevation: 2,
+      borderWidth: 1,
     },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-    borderWidth: 1,
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  idSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  idValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 6,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  titleSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  categoryIconContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-  },
-  serviceTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    flex: 1,
-  },
-  descriptionSection: {
-    marginBottom: 12,
-  },
-  description: {
-    fontSize: 12,
-    lineHeight: 16,
-    marginLeft: 18,
-  },
-  dateInfo: {
-    borderRadius: 6,
-    padding: 8,
-    marginBottom: 8,
-  },
-  dateItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  dateIconLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  dateLabel: {
-    fontSize: 10,
-    fontWeight: '500',
-    marginLeft: 4,
-  },
-  dateValue: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-});
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    idSection: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    requestId: {
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    statusBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 10,
+      gap: 4,
+    },
+    statusLabel: {
+      fontSize: 11,
+      fontWeight: '700',
+      letterSpacing: 0.3,
+    },
+    categorySection: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+      gap: 8,
+    },
+    categoryIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    categoryTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      flex: 1,
+    },
+    descriptionSection: {
+      marginBottom: 12,
+    },
+    description: {
+      fontSize: 13,
+      lineHeight: 20,
+    },
+    dateSection: {
+      borderRadius: 8,
+      padding: 10,
+      gap: 4,
+    },
+    dateRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    dateLabel: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    dateLabelText: {
+      fontSize: 11,
+      fontWeight: '600',
+    },
+    dateValue: {
+      fontSize: 11,
+      fontWeight: '600',
+    },
+  });
 
 export default ServiceRequestDetailCard;

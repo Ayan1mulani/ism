@@ -14,10 +14,12 @@ import { Util } from "./Util";
       "per_page":10,
       "page_no":1
     };
+  
 
     const url =  complaintService.appendParamsInUrl(`${API_URL2}/my/complaints`,params);
     const headers = await Util.getCommonAuth()
      const response =   await ApiCommon.getReq(url,headers);
+     console.log("complaint response", headers, response)
      return response
   },
 
@@ -31,7 +33,10 @@ import { Util } from "./Util";
     const url =  complaintService.appendParamsInUrl(`${API_URL2}/getcomplaintcategory`,params);
     const headers = await Util.getCommonAuth()
      const response =   await ApiCommon.getReq(url,headers);
-     return response
+console.log(
+  "complaint category response:\n",
+  JSON.stringify(response, null, 2)
+);     return response
   },
 
 appendParamsInUrl: (url, params) => {

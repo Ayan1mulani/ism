@@ -1,6 +1,7 @@
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaView, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import NavigationPage from './NavigationPage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function App() {
 
@@ -8,7 +9,6 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.safeArea}>
           <NavigationPage />
-    
       </SafeAreaView>
     </GestureHandlerRootView>
   );

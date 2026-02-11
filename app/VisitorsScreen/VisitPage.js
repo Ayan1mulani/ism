@@ -14,41 +14,56 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-// Updated theme colors
-const THEME_COLORS = {
-  primaryAccent: '#1996D3',
-  darkText: '#074B7C',
-  inactiveText: '#6c757d',
-  lightBackground: '#f4f7f9',
-  componentBackground: '#ffffff',
-  borderColor: '#e0e0e0',
-  darkBackground: '#121212',
-  darkComponentBackground: '#1e1e1e',
-  darkBorderColor: '#333333',
-  darkTextColor: '#ffffff',
-  darkInactiveText: '#aaaaaa',
+// Theme configuration
+const COLORS = {
+  primary: '#1996D3',
+  success: '#34C759',
+  warning: '#FF9500',
+  error: '#FF3B30',
+  
+  // Light theme
+  light: {
+    background: '#FFFFFF',
+    surface: '#F8F9FA',
+    text: '#212529',
+    textSecondary: '#6C757D',
+    border: '#DEE2E6',
+    imagePlaceholder: '#E9ECEF',
+  },
+  
+  // Dark theme
+  dark: {
+    background: '#121212',
+    surface: '#1E1E1E',
+    text: '#FFFFFF',
+    textSecondary: '#9E9E9E',
+    border: '#2C2C2C',
+    imagePlaceholder: '#2C2C2C',
+  },
+};
+
+// Visit status constants
+const VISIT_STATUS = {
+  VERIFIED: 'VERIFIED',
+  EXPIRED: 'EXPIRED',
+  PENDING: 'PENDING',
 };
 
 const VisitsPage = ({ nightMode, visitorData, loading, onRefresh }) => {
   const [filteredVisits, setFilteredVisits] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const currentTheme = {
-    backgroundColor: nightMode ? THEME_COLORS.darkBackground : THEME_COLORS.lightBackground,
-    componentBackground: nightMode ? THEME_COLORS.darkComponentBackground : THEME_COLORS.componentBackground,
-    borderColor: nightMode ? THEME_COLORS.darkBorderColor : THEME_COLORS.borderColor,
-    textColor: nightMode ? THEME_COLORS.darkTextColor : THEME_COLORS.darkText,
-    inactiveTextColor: nightMode ? THEME_COLORS.darkInactiveText : THEME_COLORS.inactiveText,
-  };
+  const theme = nightMode ? COLORS.dark : COLORS.light;
 
+  // Filter visits based on search query
   useEffect(() => {
     if (visitorData?.visits) {
-      filterVisits();
+      applySearchFilter();
     }
   }, [visitorData, searchQuery]);
 
-  const filterVisits = () => {
+  const applySearchFilter = () => {
     if (!visitorData?.visits) {
       setFilteredVisits([]);
       return;
@@ -57,44 +72,47 @@ const VisitsPage = ({ nightMode, visitorData, loading, onRefresh }) => {
     let filtered = visitorData.visits;
     
     if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(visit =>
-        visit.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        visit.name.toLowerCase().includes(query) ||
         visit.mobile.includes(searchQuery) ||
-        visit.purpose.toLowerCase().includes(searchQuery.toLowerCase())
+        visit.purpose.toLowerCase().includes(query)
       );
     }
+    
     setFilteredVisits(filtered);
   };
 
   const handleRefresh = async () => {
-    setRefreshing(true);
+    setIsRefreshing(true);
     await onRefresh();
-    setRefreshing(false);
+    setIsRefreshing(false);
   };
 
-  const getStatusColor = (visit) => {
-    const now = new Date();
+  const clearSearch = () => {
+    setSearchQuery('');
+  };
+
+  // Get visit status
+  const getVisitStatus = (visit) => {
+    const currentTime = new Date();
     const endTime = new Date(visit.end_time);
     
     if (visit.otp_verified === 1) {
-      return '#34C759'; // Verified - Green
-    } else if (endTime < now) {
-      return '#FF3B30'; // Expired - Red
+      return {
+        label: VISIT_STATUS.VERIFIED,
+        color: COLORS.success,
+      };
+    } else if (endTime < currentTime) {
+      return {
+        label: VISIT_STATUS.EXPIRED,
+        color: COLORS.error,
+      };
     } else {
-      return '#FF9500'; // Pending - Orange
-    }
-  };
-
-  const getStatusText = (visit) => {
-    const now = new Date();
-    const endTime = new Date(visit.end_time);
-    
-    if (visit.otp_verified === 1) {
-      return 'VERIFIED';
-    } else if (endTime < now) {
-      return 'EXPIRED';
-    } else {
-      return 'PENDING';
+      return {
+        label: VISIT_STATUS.PENDING,
+        color: COLORS.warning,
+      };
     }
   };
 
@@ -102,111 +120,130 @@ const VisitsPage = ({ nightMode, visitorData, loading, onRefresh }) => {
     try {
       return new Date(timeString).toLocaleTimeString('en-US', {
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
       });
     } catch (error) {
       return timeString;
     }
   };
 
-  const getWhomToMeet = (whomToMeetString) => {
+  const parseResidentInfo = (whomToMeetString) => {
     try {
-      const whomToMeetData = JSON.parse(whomToMeetString);
-      if (whomToMeetData && whomToMeetData.length > 0) {
-        const resident = whomToMeetData[0];
+      const data = JSON.parse(whomToMeetString);
+      if (data && data.length > 0) {
+        const resident = data[0];
         return {
           name: resident.name,
           unit: resident.display_unit_no || resident.flat_no,
-          phone: resident.phone_no
+          phone: resident.phone_no,
         };
       }
     } catch (error) {
-      console.error('Error parsing whom_to_meet:', error);
+      console.error('Error parsing resident info:', error);
     }
     return null;
   };
 
-  const handleVisitPress = (visit) => {
-    const resident = getWhomToMeet(visit.whom_to_meet);
+  const showVisitDetails = (visit) => {
+    const resident = parseResidentInfo(visit.whom_to_meet);
+    
+    const details = [
+      `Visitor: ${visit.name}`,
+      `Phone: ${visit.mobile}`,
+      `Purpose: ${visit.purpose}`,
+      `OTP: ${visit.otp}`,
+      `Duration: ${visit.duration}`,
+    ];
+    
+    if (resident) {
+      details.push(`Meeting: ${resident.name}`);
+      details.push(`Unit: ${resident.unit}`);
+    }
     
     Alert.alert(
       'Visit Details',
-      `Visitor: ${visit.name}\nPhone: ${visit.mobile}\nPurpose: ${visit.purpose}\nOTP: ${visit.otp}\nDuration: ${visit.duration}\n${resident ? `Meeting: ${resident.name}\nUnit: ${resident.unit}` : ''}`,
+      details.join('\n'),
       [
         {
           text: 'Call Visitor',
-          onPress: () => console.log('Call:', visit.mobile),
+          onPress: () => console.log('Calling:', visit.mobile),
         },
         {
-          text: 'OK',
-          style: 'cancel'
-        }
+          text: 'Close',
+          style: 'cancel',
+        },
       ]
     );
   };
 
-  const renderVisitItem = ({ item }) => {
-    const resident = getWhomToMeet(item.whom_to_meet);
+  const renderVisitCard = ({ item: visit }) => {
+    const resident = parseResidentInfo(visit.whom_to_meet);
+    const status = getVisitStatus(visit);
     
     return (
-      <TouchableOpacity 
-        style={[styles.visitCard, { 
-          backgroundColor: currentTheme.componentBackground,
-          borderColor: currentTheme.borderColor,
+      <TouchableOpacity
+        style={[styles.card, {
+          backgroundColor: theme.surface,
+          borderColor: theme.border,
         }]}
-        onPress={() => handleVisitPress(item)}
+        onPress={() => showVisitDetails(visit)}
+        activeOpacity={0.7}
       >
-        <View style={styles.visitHeader}>
-          <Image 
-            source={{ uri: item.image || 'https://via.placeholder.com/60' }} 
-            style={styles.visitImage} 
+        {/* Card Header */}
+        <View style={styles.cardHeader}>
+          <Image
+            source={{ uri: visit.image || 'https://via.placeholder.com/60' }}
+            style={[styles.avatar, { backgroundColor: theme.imagePlaceholder }]}
           />
-          <View style={styles.visitInfo}>
-            <Text style={[styles.visitName, { color: currentTheme.textColor }]}>
-              {item.name}
+          
+          <View style={styles.visitorInfo}>
+            <Text style={[styles.visitorName, { color: theme.text }]} numberOfLines={1}>
+              {visit.name}
             </Text>
-            <Text style={[styles.visitMobile, { color: currentTheme.inactiveTextColor }]}>
-              {item.mobile}
+            <Text style={[styles.visitorPhone, { color: theme.textSecondary }]}>
+              {visit.mobile}
             </Text>
-            <Text style={[styles.visitPurpose, { color: THEME_COLORS.primaryAccent }]}>
-              {item.purpose}
+            <Text style={[styles.purpose, { color: COLORS.primary }]} numberOfLines={1}>
+              {visit.purpose}
             </Text>
             {resident && (
-              <Text style={[styles.visitUnit, { color: currentTheme.inactiveTextColor }]}>
-                Meeting: {resident.name} - {resident.unit}
+              <Text style={[styles.residentInfo, { color: theme.textSecondary }]} numberOfLines={1}>
+                Meeting: {resident.name} • {resident.unit}
               </Text>
             )}
           </View>
-          <View style={styles.visitStatus}>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item) }]}>
-              <Text style={styles.statusText}>
-                {getStatusText(item)}
-              </Text>
+          
+          <View style={styles.statusContainer}>
+            <View style={[styles.statusBadge, { backgroundColor: status.color }]}>
+              <Text style={styles.statusLabel}>{status.label}</Text>
             </View>
-            <Text style={[styles.duration, { color: currentTheme.inactiveTextColor }]}>
-              {item.duration}
+            <Text style={[styles.duration, { color: theme.textSecondary }]}>
+              {visit.duration}
             </Text>
           </View>
         </View>
         
-        <View style={[styles.visitFooter, { borderTopColor: currentTheme.borderColor }]}>
-          <View style={styles.timeContainer}>
-            <Ionicons name="time-outline" size={16} color={currentTheme.inactiveTextColor} />
-            <Text style={[styles.timeText, { color: currentTheme.inactiveTextColor }]}>
-              {formatTime(item.start_time)}
+        {/* Card Footer */}
+        <View style={[styles.cardFooter, { borderTopColor: theme.border }]}>
+          <View style={styles.footerItem}>
+            <Ionicons name="time-outline" size={16} color={theme.textSecondary} />
+            <Text style={[styles.footerText, { color: theme.textSecondary }]}>
+              {formatTime(visit.start_time)}
             </Text>
           </View>
-          <View style={styles.otpContainer}>
-            <Text style={[styles.otpLabel, { color: currentTheme.inactiveTextColor }]}>OTP:</Text>
-            <Text style={[styles.otpValue, { color: THEME_COLORS.primaryAccent }]}>
-              {item.otp}
+          
+          <View style={styles.footerItem}>
+            <Text style={[styles.otpLabel, { color: theme.textSecondary }]}>OTP:</Text>
+            <Text style={[styles.otpValue, { color: COLORS.primary }]}>
+              {visit.otp}
             </Text>
           </View>
-          {item.extra_visitors > 0 && (
-            <View style={styles.extraVisitors}>
-              <Ionicons name="people-outline" size={16} color={THEME_COLORS.primaryAccent} />
-              <Text style={[styles.extraVisitorsText, { color: THEME_COLORS.primaryAccent }]}>
-                +{item.extra_visitors}
+          
+          {visit.extra_visitors > 0 && (
+            <View style={styles.footerItem}>
+              <Ionicons name="people-outline" size={16} color={COLORS.primary} />
+              <Text style={[styles.extraVisitorsCount, { color: COLORS.primary }]}>
+                +{visit.extra_visitors}
               </Text>
             </View>
           )}
@@ -217,48 +254,50 @@ const VisitsPage = ({ nightMode, visitorData, loading, onRefresh }) => {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Ionicons name="people-outline" size={64} color={currentTheme.inactiveTextColor} />
-      <Text style={[styles.emptyStateTitle, { color: currentTheme.textColor }]}>
+      <Ionicons name="people-outline" size={64} color={theme.textSecondary} />
+      <Text style={[styles.emptyTitle, { color: theme.text }]}>
         No Visits Found
       </Text>
-      <Text style={[styles.emptyStateSubtitle, { color: currentTheme.inactiveTextColor }]}>
-        {searchQuery ? 'Try adjusting your search' : 'No visits available'}
+      <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
+        {searchQuery ? 'Try adjusting your search' : 'You have no visits at the moment'}
       </Text>
     </View>
   );
 
-  const styles = getVisitsStyles(currentTheme, nightMode);
+  const renderLoadingState = () => (
+    <View style={[styles.loadingState, { backgroundColor: theme.background }]}>
+      <ActivityIndicator size="large" color={COLORS.primary} />
+      <Text style={[styles.loadingText, { color: theme.text }]}>
+        Loading visits...
+      </Text>
+    </View>
+  );
+
+  const styles = createStyles(theme, nightMode);
 
   if (loading) {
-    return (
-      <View style={[styles.loadingContainer, { backgroundColor: currentTheme.backgroundColor }]}>
-        <ActivityIndicator size="large" color={THEME_COLORS.primaryAccent} />
-        <Text style={[styles.loadingText, { color: currentTheme.textColor }]}>
-          Loading visits...
-        </Text>
-      </View>
-    );
+    return renderLoadingState();
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: currentTheme.backgroundColor }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={[styles.searchBar, { 
-          backgroundColor: currentTheme.componentBackground,
-          borderColor: currentTheme.borderColor,
+      <View style={styles.searchSection}>
+        <View style={[styles.searchBar, {
+          backgroundColor: theme.surface,
+          borderColor: theme.border,
         }]}>
-          <Ionicons name="search" size={20} color={currentTheme.inactiveTextColor} />
+          <Ionicons name="search" size={20} color={theme.textSecondary} />
           <TextInput
-            style={[styles.searchInput, { color: currentTheme.textColor }]}
-            placeholder="Search visits..."
+            style={[styles.searchInput, { color: theme.text }]}
+            placeholder="Search"
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor={currentTheme.inactiveTextColor}
+            placeholderTextColor={theme.textSecondary}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color={currentTheme.inactiveTextColor} />
+            <TouchableOpacity onPress={clearSearch} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -267,17 +306,17 @@ const VisitsPage = ({ nightMode, visitorData, loading, onRefresh }) => {
       {/* Visits List */}
       <FlatList
         data={filteredVisits}
-        renderItem={renderVisitItem}
+        renderItem={renderVisitCard}
         keyExtractor={(item) => item.id.toString()}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={styles.listContent}
         ListEmptyComponent={renderEmptyState}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            colors={[THEME_COLORS.primaryAccent]}
-            tintColor={THEME_COLORS.primaryAccent}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
           />
         }
       />
@@ -285,154 +324,149 @@ const VisitsPage = ({ nightMode, visitorData, loading, onRefresh }) => {
   );
 };
 
-const getVisitsStyles = (currentTheme, nightMode) => StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-  },
-  searchContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
-  },
-  listContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
-  visitCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: nightMode ? 0.3 : 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  visitHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  visitImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#F2F2F7',
-  },
-  visitInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  visitName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  visitMobile: {
-    fontSize: 14,
-    marginBottom: 2,
-  },
-  visitPurpose: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  visitUnit: {
-    fontSize: 12,
-  },
-  visitStatus: {
-    alignItems: 'flex-end',
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 4,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  duration: {
-    fontSize: 12,
-    textAlign: 'right',
-  },
-  visitFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    flexWrap: 'wrap',
-  },
-  timeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  timeText: {
-    fontSize: 14,
-    marginLeft: 6,
-  },
-  otpContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  otpLabel: {
-    fontSize: 14,
-    marginRight: 6,
-  },
-  otpValue: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  extraVisitors: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  extraVisitorsText: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 100,
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyStateSubtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-  },
-});
+const createStyles = (theme, nightMode) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    loadingState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      marginTop: 16,
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    searchSection: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    searchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderWidth: 1,
+    },
+    searchInput: {
+      flex: 1,
+      marginLeft: 8,
+      fontSize: 15,
+    },
+    listContent: {
+      paddingHorizontal: 16,
+      paddingBottom: 20,
+    },
+    card: {
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: nightMode ? 0.3 : 0.08,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: 12,
+    },
+    avatar: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+    },
+    visitorInfo: {
+      flex: 1,
+      marginLeft: 12,
+    },
+    visitorName: {
+      fontSize: 16,
+      fontWeight: '600',
+      marginBottom: 2,
+    },
+    visitorPhone: {
+      fontSize: 14,
+      marginBottom: 2,
+    },
+    purpose: {
+      fontSize: 14,
+      fontWeight: '500',
+      marginBottom: 2,
+    },
+    residentInfo: {
+      fontSize: 12,
+      marginTop: 2,
+    },
+    statusContainer: {
+      alignItems: 'flex-end',
+    },
+    statusBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 8,
+      marginBottom: 4,
+    },
+    statusLabel: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: '#FFFFFF',
+      letterSpacing: 0.5,
+    },
+    duration: {
+      fontSize: 12,
+    },
+    cardFooter: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingTop: 12,
+      borderTopWidth: 1,
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    footerItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    footerText: {
+      fontSize: 14,
+    },
+    otpLabel: {
+      fontSize: 14,
+    },
+    otpValue: {
+      fontSize: 16,
+      fontWeight: '700',
+    },
+    extraVisitorsCount: {
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    emptyState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingTop: 80,
+      paddingHorizontal: 32,
+    },
+    emptyTitle: {
+      fontSize: 20,
+      fontWeight: '600',
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    emptySubtitle: {
+      fontSize: 15,
+      textAlign: 'center',
+      lineHeight: 22,
+    },
+  });
 
 export default VisitsPage;

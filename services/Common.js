@@ -41,6 +41,5 @@ const Common = {
         }
 
     },
-
 }
 export { Common };

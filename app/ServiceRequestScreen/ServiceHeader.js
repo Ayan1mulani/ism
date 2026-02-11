@@ -1,313 +1,328 @@
 // ServiceRequestTabs.js
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Dimensions, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+  Dimensions,
+  ScrollView,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import ComplaintListScreen from './ServiceRequestPage';
-import { usePermissions } from '../../Utils/ConetextApi';
-import ComplaintCategoryModal from './complaintCatModel';
 import { useNavigation } from '@react-navigation/native';
+import { usePermissions } from '../../Utils/ConetextApi';
+import ComplaintListScreen from './ServiceRequestPage';
 import { complaintService } from '../../services/complaintService';
 
-// Define the statuses for the tabs
-const TABS = ['Open', 'Closed', 'All'];
-const { width } = Dimensions.get('window');
-const TAB_WIDTH = (width - 40) / TABS.length; // Subtracting horizontal padding
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// --- YOUR THEME COLORS ---
-const THEME_COLORS = {
-  primaryAccent: '#1996D3',
-  darkText: '#074B7C',
-  inactiveText: '#6c757d',
-  lightBackground: '#f4f7f9',
-  componentBackground: '#ffffff',
-  borderColor: '#e0e0e0',
-  // Night mode colors
-  darkBackground: '#121212',
-  darkComponentBackground: '#1e1e1e',
-  darkBorderColor: '#333333',
-  darkText: '#ffffff',
-  darkInactiveText: '#aaaaaa',
+// Tab configuration
+const TABS = ['Open', 'Closed', 'All'];
+const calculateTabWidth = () => (SCREEN_WIDTH - 32) / TABS.length;
+
+// Theme configuration
+const COLORS = {
+  primary: '#1996D3',
+  
+  // Light theme
+  light: {
+    background: '#FFFFFF',
+    surface: '#F8F9FA',
+    text: '#212529',
+    textSecondary: '#6C757D',
+    border: '#DEE2E6',
+  },
+  
+  // Dark theme
+  dark: {
+    background: '#121212',
+    surface: '#1E1E1E',
+    text: '#FFFFFF',
+    textSecondary: '#9E9E9E',
+    border: '#2C2C2C',
+  },
+};
+
+// Request status constants
+const REQUEST_STATUS = {
+  OPEN: 'Open',
+  CLOSED: 'Closed',
+  ALL: 'All',
 };
 
 const ServiceRequestTabs = () => {
-  const [activeTab, setActiveTab] = useState(TABS[0]);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [openComplaints, setOpenComplaints] = useState([]);
-  const [closedComplaints, setClosedComplaints] = useState([]);
-  const [allComplaints, setAllComplaints] = useState([]);
+  // State management
+  const [activeTabIndex, setActiveTabIndex] = useState(0);
+  const [requests, setRequests] = useState({
+    open: [],
+    closed: [],
+    all: [],
+  });
   const [isLoading, setIsLoading] = useState(true);
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  
+  // Refs
+  const tabIndicatorPosition = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef(null);
-  const isScrolling = useRef(false); // Flag to prevent circular updates
+  const isUserScrolling = useRef(false);
+  
+  // Theme and navigation
   const { nightMode } = usePermissions();
-
   const navigation = useNavigation();
+  const theme = nightMode ? COLORS.dark : COLORS.light;
 
-  // Dynamic theme based on night mode
-  const currentTheme = {
-    backgroundColor: nightMode ? THEME_COLORS.darkBackground : THEME_COLORS.lightBackground,
-    componentBackground: nightMode ? THEME_COLORS.darkComponentBackground : THEME_COLORS.componentBackground,
-    borderColor: nightMode ? THEME_COLORS.darkBorderColor : THEME_COLORS.borderColor,
-    textColor: nightMode ? THEME_COLORS.darkText : THEME_COLORS.darkText,
-    inactiveTextColor: nightMode ? THEME_COLORS.darkInactiveText : THEME_COLORS.inactiveText,
-    tabsBackground: nightMode ? '#2a2a2a' : '#f0f0f0',
-  };
-
-  // Fetch complaints data
+  // Fetch service requests data
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Fetch open complaints
-        const openResponse = await complaintService.getMyComplaints('Open');
-        setOpenComplaints(openResponse.data || []);
-
-        // Fetch closed complaints
-        const closedResponse = await complaintService.getMyComplaints('Closed');
-        setClosedComplaints(closedResponse.data || []);
-
-        // Combine both for "All" tab
-        const combinedComplaints = [
-          ...(openResponse.data || []),
-          ...(closedResponse.data || [])
-        ];
-        setAllComplaints(combinedComplaints);
-
-      } catch (error) {
-        console.error("Failed to fetch complaints:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
+    fetchServiceRequests();
   }, []);
 
-  // Get current complaints based on active tab
-  const getCurrentComplaints = () => {
+  const fetchServiceRequests = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Fetch open requests
+      const openResponse = await complaintService.getMyComplaints(REQUEST_STATUS.OPEN);
+      const openData = openResponse.data || [];
+
+      // Fetch closed requests
+      const closedResponse = await complaintService.getMyComplaints(REQUEST_STATUS.CLOSED);
+      const closedData = closedResponse.data || [];
+
+      // Combine for "All" tab
+      const allData = [...openData, ...closedData];
+
+      setRequests({
+        open: openData,
+        closed: closedData,
+        all: allData,
+      });
+      
+    } catch (error) {
+      console.error('Failed to fetch service requests:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Get current requests based on active tab
+  const getCurrentRequests = () => {
+    const activeTab = TABS[activeTabIndex];
+    
     switch (activeTab) {
-      case 'Open':
-        return openComplaints;
-      case 'Closed':
-        return closedComplaints;
-      case 'All':
-        return allComplaints;
+      case REQUEST_STATUS.OPEN:
+        return requests.open;
+      case REQUEST_STATUS.CLOSED:
+        return requests.closed;
+      case REQUEST_STATUS.ALL:
+        return requests.all;
       default:
         return [];
     }
   };
 
+  // Animate tab indicator when active tab changes
   useEffect(() => {
-    const newIndex = TABS.indexOf(activeTab);
+    const tabWidth = calculateTabWidth();
     
-    // Animate the tab slider
-    Animated.spring(slideAnim, {
-      toValue: newIndex * TAB_WIDTH,
+    Animated.spring(tabIndicatorPosition, {
+      toValue: activeTabIndex * tabWidth,
       useNativeDriver: true,
-      tension: 100,
-      friction: 8,
+      tension: 120,
+      friction: 10,
     }).start();
 
-    // Scroll the content view only if not currently scrolling
-    if (scrollViewRef.current && !isScrolling.current) {
+    // Scroll to active tab content
+    if (scrollViewRef.current && !isUserScrolling.current) {
       scrollViewRef.current.scrollTo({
-        x: newIndex * width,
+        x: activeTabIndex * SCREEN_WIDTH,
         animated: true,
       });
     }
-  }, [activeTab]);
+  }, [activeTabIndex]);
 
-  // Handle scroll events in real-time for smooth synchronization
-  const onScroll = (event) => {
-    const scrollX = event.nativeEvent.contentOffset.x;
-    
-    // Update slider position in real-time based on scroll
-    const progress = scrollX / width;
-    const sliderPosition = progress * TAB_WIDTH;
-    slideAnim.setValue(sliderPosition);
+  // Handle tab press
+  const handleTabPress = (index) => {
+    setActiveTabIndex(index);
   };
 
-  // Handle when scrolling momentum ends to update active tab
-  const onMomentumScrollEnd = (event) => {
+  // Handle scroll events
+  const handleScroll = (event) => {
     const scrollX = event.nativeEvent.contentOffset.x;
-    const pageIndex = Math.round(scrollX / width);
+    const progress = scrollX / SCREEN_WIDTH;
+    const indicatorPosition = progress * calculateTabWidth();
+    tabIndicatorPosition.setValue(indicatorPosition);
+  };
+
+  const handleScrollBegin = () => {
+    isUserScrolling.current = true;
+  };
+
+  const handleScrollEnd = (event) => {
+    const scrollX = event.nativeEvent.contentOffset.x;
+    const newIndex = Math.round(scrollX / SCREEN_WIDTH);
     
-    isScrolling.current = false;
+    isUserScrolling.current = false;
     
-    if (TABS[pageIndex] && TABS[pageIndex] !== activeTab) {
-      setActiveTab(TABS[pageIndex]);
+    if (newIndex >= 0 && newIndex < TABS.length && newIndex !== activeTabIndex) {
+      setActiveTabIndex(newIndex);
     }
   };
 
-  // Handle when scrolling begins
-  const onScrollBeginDrag = () => {
-    isScrolling.current = true;
-  };
-
-  // Handle FAB press
-  const handleFABPress = () => {
-    // Navigate to category selection page instead of opening modal
+  // Handle add button press
+  const handleAddRequest = () => {
     navigation.navigate('CategorySelection');
   };
 
+  // Render tab button
+  const renderTab = (label, index) => {
+    const isActive = activeTabIndex === index;
+    
+    return (
+      <TouchableOpacity
+        key={label}
+        style={styles.tab}
+        onPress={() => handleTabPress(index)}
+        activeOpacity={0.7}
+      >
+        <Text
+          style={[
+            styles.tabLabel,
+            { color: isActive ? COLORS.primary : theme.textSecondary },
+            isActive && styles.tabLabelActive,
+          ]}
+        >
+          {label}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
-
-  const renderContentPane = (tabName) => (
-    <View style={[styles.contentPane, { backgroundColor: currentTheme.backgroundColor }]}>
-      <ComplaintListScreen 
-        nightMode={nightMode} 
+  // Render page content
+  const renderPage = (tabName) => (
+    <View style={[styles.page, { backgroundColor: theme.background }]}>
+      <ComplaintListScreen
+        nightMode={nightMode}
         status={tabName}
-        complaints={getCurrentComplaints()}
+        complaints={getCurrentRequests()}
         isLoading={isLoading}
+        onRefresh={fetchServiceRequests}
       />
     </View>
   );
 
+  const styles = createStyles(theme, nightMode);
+
   return (
-    <View style={[styles.container, { backgroundColor: currentTheme.backgroundColor }]}>
-      <View style={[styles.header, { 
-        backgroundColor: currentTheme.componentBackground,
-        borderBottomColor: currentTheme.borderColor
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Tab Bar */}
+      <View style={[styles.tabBar, {
+        backgroundColor: theme.surface,
+        borderBottomColor: theme.border,
       }]}>
-        <View style={[styles.tabsContainer, { backgroundColor: currentTheme.tabsBackground }]}>
-          {TABS.map((tab) => (
-            <TouchableOpacity
-              key={tab}
-              style={styles.tabItem}
-              onPress={() => setActiveTab(tab)}
-            >
-              <Text style={[
-                styles.tabText, 
-                { color: currentTheme.inactiveTextColor },
-                activeTab === tab && [styles.activeTabText, { color: THEME_COLORS.primaryAccent }]
-              ]}>
-                {tab}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View style={styles.tabContainer}>
+          {TABS.map((label, index) => renderTab(label, index))}
+          
+          {/* Tab Indicator */}
           <Animated.View
             style={[
-              styles.activeTabSlider,
+              styles.tabIndicator,
               {
-                width: TAB_WIDTH,
-                transform: [{ translateX: slideAnim }],
-                backgroundColor: THEME_COLORS.primaryAccent,
+                width: calculateTabWidth(),
+                backgroundColor: COLORS.primary,
+                transform: [{ translateX: tabIndicatorPosition }],
               },
             ]}
           />
         </View>
       </View>
 
+      {/* Page Content */}
       <ScrollView
         ref={scrollViewRef}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onScroll={onScroll}
-        onMomentumScrollEnd={onMomentumScrollEnd}
-        onScrollBeginDrag={onScrollBeginDrag}
+        onScroll={handleScroll}
+        onScrollBeginDrag={handleScrollBegin}
+        onMomentumScrollEnd={handleScrollEnd}
         scrollEventThrottle={16}
-        style={styles.contentContainer}
+        style={styles.scrollView}
       >
-        {renderContentPane('Open')}
-        {renderContentPane('Closed')}
-        {renderContentPane('All')}
+        {TABS.map((tab) => renderPage(tab))}
       </ScrollView>
 
       {/* Floating Action Button */}
       <TouchableOpacity
-        style={[
-          styles.fab,
-          {
-            backgroundColor: THEME_COLORS.primaryAccent,
-            shadowColor: nightMode ? '#000' : THEME_COLORS.primaryAccent,
-          }
-        ]}
-        onPress={handleFABPress}
+        style={[styles.fab, {
+          backgroundColor: COLORS.primary,
+          shadowColor: nightMode ? '#000' : COLORS.primary,
+        }]}
+        onPress={handleAddRequest}
         activeOpacity={0.8}
       >
-        <Ionicons name="add" size={24} color="#ffffff" />
+        <Ionicons name="add" size={28} color="#FFFFFF" />
       </TouchableOpacity>
     </View>
   );
 };
 
-// --- STYLES (Updated with FAB) ---
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingBottom: 90
-  },
-  header: {
-    paddingHorizontal: 10,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    position: 'relative',
-    borderRadius: 8,
-  },
-  tabItem: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabText: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  activeTabText: {
-    fontWeight: 'bold',
-  },
-  activeTabSlider: {
-    height: 4,
-    borderRadius: 2,
-    position: 'absolute',
-    bottom: -1,
-    left: 0,
-  },
-  contentContainer: {
-    flex: 1,
-  },
-  contentPane: {
-    width: width,
-    flex: 1,
-    paddingHorizontal: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  contentTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  contentText: {
-    fontSize: 16,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 110, // Above your bottom navigation
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-    shadowOffset: {
-      width: 0,
-      height: 4,
+const createStyles = (theme, nightMode) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-});
+    tabBar: {
+      paddingHorizontal: 16,
+      paddingTop: 12,
+      paddingBottom: 8,
+      borderBottomWidth: 1,
+    },
+    tabContainer: {
+      flexDirection: 'row',
+      position: 'relative',
+    },
+    tab: {
+      flex: 1,
+      paddingVertical: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    tabLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      letterSpacing: 0.2,
+    },
+    tabLabelActive: {
+      fontWeight: '700',
+    },
+    tabIndicator: {
+      height: 3,
+      borderRadius: 1.5,
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    page: {
+      width: SCREEN_WIDTH,
+      flex: 1,
+    },
+    fab: {
+      position: 'absolute',
+      bottom: 110,
+      right: 30,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+  });
 
 export default ServiceRequestTabs;

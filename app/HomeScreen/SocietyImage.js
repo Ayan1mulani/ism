@@ -58,7 +58,7 @@ const images = [
 };
 
 const styles = StyleSheet.create({
-  container: { marginTop: 16 },
+  container: { marginTop: 10 },
   imageContainer: {
     width: width - 64,
     height: 120,

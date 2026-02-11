@@ -3,19 +3,18 @@ import {
   View,
   TouchableOpacity,
   StyleSheet,
-  Animated,
   Dimensions,
-  SafeAreaView,
+  Text,
+  Animated,
 } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
 import HomeScreen from './app/HomeScreen/HomeScreen';
-import ServiceRequestScreen from './app/ServiceRequestScreen/ServiceRequestPage';
-import VisitorsScreen from './app/VisitorsScreen/VisitorScreen'; // Check if you want to change Visitors screen import
-import ProfileScreen from './app/HomeScreen/HomeScreen';
+import VisitorsScreen from './app/VisitorsScreen/VisitorScreen';
 import Header from './app/Common/Header/Header';
 import LoginScreen from './app/Login/Login';
 import MoreScreen from './app/MoreScreen/MorePage';
@@ -29,6 +28,8 @@ import NoticesScreen from './app/notices/MyNotices';
 import AccountsScreen from './app/AccountsScreen/AccountsPage';
 import StaffScreen from './app/StaffScreen/StaffPage';
 import StaffDetailsScreen from './app/StaffScreen/StaffDetailsPage';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AddVisitor from './app/VisitorsScreen/AddVisitor';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -41,12 +42,8 @@ const HomeStack = () => {
       <Stack.Screen name="HomeMain" component={HomeScreen} />
       <Stack.Screen name="Notices" component={NoticesScreen} />
       <Stack.Screen name="Accounts" component={AccountsScreen} />
-     <Stack.Screen name="StaffScreen" component={StaffScreen} />
-     <Stack.Screen name="StaffDetailsScreen" component={StaffDetailsScreen} />
-
-
-      {/* Add other child screens for Home tab here */}
-      {/* <Stack.Screen name="HomeDetail" component={HomeDetailScreen} /> */}
+      <Stack.Screen name="StaffScreen" component={StaffScreen} />
+      <Stack.Screen name="StaffDetailsScreen" component={StaffDetailsScreen} />
     </Stack.Navigator>
   );
 };
@@ -56,76 +53,122 @@ const ServiceRequestsStack = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="ServiceRequestsMain" component={ServiceRequestTabs} />
-<Stack.Screen 
-  name="CategorySelection" 
-  component={CategorySelectionScreen}
-  options={{ 
-    headerShown: false,
-    presentation: 'card' // or 'modal' for iOS-style modal presentation
-  }}
-/>
-<Stack.Screen 
-  name="subCategorySelection" 
-  component={SubCategorySelectionScreen}
-  options={{ 
-    headerShown: false,
-    presentation: 'card' // or 'modal' for iOS-style modal presentation
-  }}
-/>
-<Stack.Screen 
-  name="complaintInput" 
-  component={ComplaintInputScreen}
-  options={{ 
-    headerShown: false,
-    presentation: 'card' // or 'modal' for iOS-style modal presentation
-  }}
-/>
-
-      {/* Add other child screens for Service Requests tab here */}
-      {/* <Stack.Screen name="RequestDetail" component={RequestDetailScreen} /> */}
+      <Stack.Screen 
+        name="CategorySelection" 
+        component={CategorySelectionScreen}
+        options={{ 
+          headerShown: false,
+          presentation: 'card'
+        }}
+      />
+      <Stack.Screen 
+        name="subCategorySelection" 
+        component={SubCategorySelectionScreen}
+        options={{ 
+          headerShown: false,
+          presentation: 'card'
+        }}
+      />
+      <Stack.Screen 
+        name="complaintInput" 
+        component={ComplaintInputScreen}
+        options={{ 
+          headerShown: false,
+          presentation: 'card'
+        }}
+      />
     </Stack.Navigator>
   );
 };
 
-// --- Custom Tab Bar ---
+// --- Modern Custom Tab Bar with Sliding Animation ---
 const CustomTabBar = ({ state, descriptors, navigation }) => {
-  const tabWidth = (width - 40) / state.routes.length;
-  const translateX = useRef(new Animated.Value(0)).current;
   const { nightMode } = usePermissions();
+  
+  const PRIMARY_COLOR = nightMode ? "#2A2A2Aee" : "#1996D3ee";
+  const SECONDARY_COLOR = nightMode ? "#4A90E2" : "#FFFFFF";
+  const ICON_COLOR_INACTIVE = nightMode ? "#B0B0B0" : "#E0E0E0";
+
+  // Calculate tab width based on number of routes
+  const totalTabs = state.routes.length;
+  const containerPadding = 15; // 15px on each side
+  const tabGap = 11 * (totalTabs - 1); // gap between tabs
+  const availableWidth = width - 40 - containerPadding - tabGap; // total width minus margins and padding
+  const tabWidth = availableWidth / totalTabs;
+
+  // Animated value for sliding
+  const translateX = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Calculate position including gaps
+    const position = state.index * (tabWidth + 10) + 15; // 15 is paddingHorizontal start
+    
     Animated.spring(translateX, {
-      toValue: state.index * tabWidth,
-      stiffness: 120,
-      damping: 18,
-      mass: 1,
+      toValue: position,
       useNativeDriver: true,
+      damping: 20,
+      stiffness: 150,
+      mass: 1,
     }).start();
-  }, [state.index]);
+  }, [state.index, tabWidth]);
+
+  const getIconByRouteName = (routeName, color, isFocused) => {
+    const iconSize = isFocused ? 18 : 24;
+    
+    switch (routeName) {
+      case "Home":
+        return <Feather name="home" size={iconSize} color={color} />;
+      case "Service Requests":
+        return <Ionicons name={isFocused ? "build" : "build-outline"} size={iconSize} color={color} />;
+      case "Visitors":
+        return <Ionicons name={isFocused ? "people" : "people-outline"} size={iconSize} color={color} />;
+      case "More":
+        return <Ionicons name={isFocused ? "menu" : "menu-outline"} size={iconSize} color={color} />;
+      default:
+        return <Ionicons name="ellipse-outline" size={iconSize} color={color} />;
+    }
+  };
+
+  const getShortLabel = (label) => {
+    if (label === "Service Requests") return "Requests";
+    return label;
+  };
 
   return (
     <View style={styles.bottomNavContainer}>
-      <View style={[styles.bottomNavBar, nightMode && styles.bottomNavBarDark]}>
+      <View style={[styles.bottomNavBar, { backgroundColor: PRIMARY_COLOR }]}>
+        {/* Sliding White Background Indicator */}
         <Animated.View
           style={[
-            styles.activeTabIndicator,
-            { width: tabWidth, transform: [{ translateX }] },
+            styles.slidingIndicator,
+            {
+              width: tabWidth,
+              backgroundColor: SECONDARY_COLOR,
+              transform: [{ translateX }],
+            },
           ]}
-        >
-          <View
-            style={[
-              styles.activeTabIndicatorCircle,
-              nightMode && styles.activeTabIndicatorCircleDark,
-            ]}
-          />
-        </Animated.View>
+        />
 
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const isFocused = state.index === index;
-          const iconName = options.tabBarIconName;
+          
+          const label = options.tabBarLabel !== undefined
+            ? options.tabBarLabel
+            : options.title !== undefined
+            ? options.title
+            : route.name;
+
+          const shortLabel = getShortLabel(label);
 
           const onPress = () => {
+            // Haptic feedback
+            try {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            } catch (error) {
+              // Haptics not available
+            }
+
             const event = navigation.emit({
               type: 'tabPress',
               target: route.key,
@@ -141,14 +184,28 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
             <TouchableOpacity
               key={route.key}
               onPress={onPress}
-              style={styles.tabItem}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel={`${label} tab`}
+              accessibilityState={{ selected: isFocused }}
               activeOpacity={0.7}
+              style={[styles.tabItem, { width: tabWidth }]}
             >
-              <Ionicons
-                name={isFocused ? iconName : `${iconName}-outline`}
-                size={26}
-                color={isFocused ? '#FFFFFF' : nightMode ? '#fcfcfcff' : '#f7f7f7ff'}
-              />
+              <View style={styles.tabContent}>
+                {getIconByRouteName(
+                  route.name,
+                  isFocused ? PRIMARY_COLOR : ICON_COLOR_INACTIVE,
+                  isFocused
+                )}
+                {isFocused && (
+                  <Text
+                    style={[styles.tabLabel, { color: PRIMARY_COLOR }]}
+                    numberOfLines={1}
+                  >
+                    {shortLabel}
+                  </Text>
+                )}
+              </View>
             </TouchableOpacity>
           );
         })}
@@ -190,6 +247,7 @@ const NavigationTabs = () => {
         <Tab.Screen
           name="More"
           component={MoreScreen}
+          header={false}
           options={{ tabBarIconName: 'menu' }}
         />
       </Tab.Navigator>
@@ -212,6 +270,7 @@ const NavigationPage = () => {
         <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Login">
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="MainApp" component={NavigationTabs} />
+           <Stack.Screen name="AddVisitor" component={AddVisitor} />
         </Stack.Navigator>
       </NavigationContainer>
     </PermissionsProvider>
@@ -222,49 +281,45 @@ const NavigationPage = () => {
 const styles = StyleSheet.create({
   bottomNavContainer: {
     position: 'absolute',
-    bottom: 5,
+    bottom: 20,
     left: 20,
     right: 20,
     alignItems: 'center',
   },
   bottomNavBar: {
     flexDirection: 'row',
-    backgroundColor: '#1996D3',
-    height: 70,
+    height: 65,
     borderRadius: 35,
     alignItems: 'center',
+    paddingHorizontal: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.1,
-    shadowRadius: 15,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 15,
+    gap: 10,
   },
-  bottomNavBarDark: {
-    backgroundColor: '#2A2A2A',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-  },
-  activeTabIndicator: {
+  slidingIndicator: {
     position: 'absolute',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  activeTabIndicatorCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#074B7C',
-  },
-  activeTabIndicatorCircleDark: {
-    backgroundColor: '#4A90E2',
+    height: 43,
+    borderRadius: 26,
   },
   tabItem: {
-    flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    height: '100%',
+    alignItems: 'center',
+    height: 52,
     zIndex: 1,
+  },
+  tabContent: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  tabLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
 });
 

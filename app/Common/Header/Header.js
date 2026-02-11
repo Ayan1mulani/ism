@@ -5,57 +5,65 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
-  SafeAreaView,
-  Dimensions,
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePermissions } from '../../../Utils/ConetextApi';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import FlatSwitcherModal from './FlatSwitcherModal';
+import { ismServices } from '../../../services/ismServices';
 import { Common } from '../../../services/Common';
 
-const { width } = Dimensions.get('window');
 
 const ResidentHeader = () => {
-  // Night mode toggle - change to false for light mode
-  const {nightMode} = usePermissions();
+  const { nightMode } = usePermissions();
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [userFlats, setUserFlats] = useState([]);
+  const [selectedAccount, setSelectedAccount] = useState(null);
   const [userDetails,setUserDetails]  = useState()
-  const [userInfo,setUserInfo] = useState()
-  const [societyInfo,setSocietyInfo]  = useState()
-  // Theme colors
+  
+
   const theme = {
     light: {
-      safeAreaBackground: '#ffffff',
-      headerBackground: '#ffffff',
-      borderColor: '#f3f4f6',
-      iconContainerBackground: '#dbeafe',
-      homeIconColor: '#3b82f6',
-      greetingTextColor: '#111827',
-      locationTextColor: '#6b7280',
-      chevronColor: '#6b7280',
-      iconButtonColor: '#6b7280',
-      statusDotColor: '#10b981',
-      notificationBadgeColor: '#ef4444',
+      background: '#ffffff',
+      text: '#111827',
+      subText: '#6b7280',
+      border: '#f3f4f6',
       statusBarStyle: 'dark-content',
-      shadowColor: '#000',
     },
     dark: {
-      safeAreaBackground: '#1f2937',
-      headerBackground: '#1f2937',
-      borderColor: '#374151',
-      iconContainerBackground: '#374151',
-      homeIconColor: '#60a5fa',
-      greetingTextColor: '#f9fafb',
-      locationTextColor: '#d1d5db',
-      chevronColor: '#9ca3af',
-      iconButtonColor: '#d1d5db',
-      statusDotColor: '#34d399',
-      notificationBadgeColor: '#f87171',
+      background: '#1f2937',
+      text: '#f9fafb',
+      subText: '#9ca3af',
+      border: '#374151',
       statusBarStyle: 'light-content',
-      shadowColor: '#000',
     },
   };
 
   const currentTheme = nightMode ? theme.dark : theme.light;
+
+  const toggleModal = () => setIsModalVisible(prev => !prev);
+
+  const fetchAccounts = async () => {
+    try {
+      const payload = {
+        identity: "sahilmulanioneplus@gmail.com",
+        password: "123456",
+        tenant: 0,
+        user_id: null,
+      };
+
+      const response = await ismServices.loginUser(payload);
+
+      if (response.status === "multipleLogin") {
+        setUserFlats(response.data);
+        setIsModalVisible(true);
+      }
+
+    } catch (error) {
+      console.log("Switch error:", error);
+    }
+  };
 useEffect(()=>{
 const getUserDetails = async() =>{
   const res = await Common.getUserDetails()
@@ -71,93 +79,85 @@ getUserDetails()
 getUserInfo()
 },[])
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: currentTheme.safeAreaBackground }]}>
-      <StatusBar 
-        barStyle={currentTheme.statusBarStyle} 
-        backgroundColor={currentTheme.safeAreaBackground} 
+    <SafeAreaView edges={['top']} style={{ backgroundColor: currentTheme.background }}>
+      <StatusBar
+        barStyle={currentTheme.statusBarStyle}
+        backgroundColor={currentTheme.background}
       />
-      <View style={[
-        styles.header,
-        {
-          backgroundColor: currentTheme.headerBackground,
-          borderBottomColor: currentTheme.borderColor,
-          shadowColor: currentTheme.shadowColor,
-        }
-      ]}>
-        <View style={styles.leftSection}>
-          <View style={[
-            styles.iconContainer,
-            { backgroundColor: currentTheme.iconContainerBackground }
-          ]}>
-{societyInfo?.logo ? (
-  <Image
-    source={{ uri: societyInfo.logo }}
-    style={styles.logoImage}
-    resizeMode="contain"
-  />
-) : (
-  <Ionicons name="person" size={20} color="#888" />
-)}
 
+      <View style={[styles.header, { borderBottomColor: currentTheme.border }]}>
+        <View style={styles.leftSection}>
+
+          {/* Logo */}
+          <View style={styles.iconContainer}>
+            <Image
+              source={{ uri: 'https://factech.ai/Final_Logo_white.png' }}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
           </View>
+
           <View style={styles.textContainer}>
-            <Text style={[
-              styles.greetingText,
-              { color: currentTheme.greetingTextColor }
-            ]}>
-              Hello {userDetails?.name.split(' ')[0] || "Resident"}
+            <Text style={[styles.greetingText, { color: currentTheme.text }]}>
+              iSocietyManager
             </Text>
-            <View style={styles.locationContainer}>
-              <View style={[
-                styles.statusDot,
-                { backgroundColor: currentTheme.statusDotColor }
-              ]} />
-              <Text style={[
-                styles.locationText,
-                { color: currentTheme.locationTextColor }
-              ]}>
-               {userDetails?.flat_no}
+
+            {/* Switch Account Button */}
+            <TouchableOpacity
+              style={styles.locationContainer}
+              onPress={fetchAccounts}
+              activeOpacity={0.7}
+            >
+              <View style={styles.statusDot} />
+              <Text style={styles.locationText}>
+              {userDetails?.flat_no || "Switch Account"}
               </Text>
-              <Ionicons name="chevron-down" size={12} color={currentTheme.chevronColor} />
-            </View>
+              <Ionicons
+                name="chevron-down"
+                size={14}
+                color={currentTheme.subText}
+              />
+            </TouchableOpacity>
           </View>
         </View>
-                
+
+        {/* Right Icon */}
         <View style={styles.rightSection}>
           <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="search" size={20} color={currentTheme.iconButtonColor} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="notifications" size={20} color={currentTheme.iconButtonColor} />
-            <View style={[
-              styles.notificationBadge,
-              { backgroundColor: currentTheme.notificationBadgeColor }
-            ]} />
+            <Ionicons
+              name="notifications-outline"
+              size={22}
+              color={currentTheme.subText}
+            />
+            <View style={styles.notificationBadge} />
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Modal */}
+      <FlatSwitcherModal
+        visible={isModalVisible}
+        flats={userFlats}
+        selectedAccount={selectedAccount}
+        onSelect={(account) => {
+          setSelectedAccount(account);
+        }}
+        onClose={toggleModal}
+      />
     </SafeAreaView>
   );
 };
 
+export default ResidentHeader;
+
 const styles = StyleSheet.create({
-  safeArea: {
-    // backgroundColor handled by theme
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
   },
   leftSection: {
     flexDirection: 'row',
@@ -165,62 +165,60 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    overflow: 'hidden',
+    marginRight: 12,
+    backgroundColor: '#003366',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+  },
+  logoImage: {
+    width: '85%',
+    height: '85%',
   },
   textContainer: {
     flex: 1,
   },
-  logoImage: {
-  width: 50,
-  height: 40,
-  borderColor: '#ccc',
-  backgroundColor: '#fff',
-},
   greetingText: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontSize: 16,
+    fontWeight: '700',
   },
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 2,
   },
   statusDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
+    backgroundColor: '#10b981',
     marginRight: 6,
   },
   locationText: {
-    fontSize: 14,
+    fontSize: 13,
     marginRight: 4,
   },
   rightSection: {
     flexDirection: 'row',
-    alignItems: 'center',
   },
   iconButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
     justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
-    position: 'relative',
+    alignItems: 'flex-end',
   },
   notificationBadge: {
     position: 'absolute',
     top: 8,
-    right: 8,
+    right: 0,
     width: 8,
     height: 8,
     borderRadius: 4,
+    backgroundColor: '#ef4444',
+    borderWidth: 1,
+    borderColor: '#fff',
   },
 });
-
-export default ResidentHeader;

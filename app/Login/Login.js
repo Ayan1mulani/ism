@@ -36,8 +36,8 @@ const Wave = () => (
 );
 
 const NewLoginScreen = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("sahilmulanioneplus@gmail.com");
+  const [password, setPassword] = useState("123456");
   const navigation = useNavigation();
   const [modalVisible, setModalVisible] = useState(false);
   const [accounts, setAccounts] = useState([]);

@@ -4,254 +4,277 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   Dimensions,
   ScrollView,
   Animated,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePermissions } from '../../Utils/ConetextApi';
 import VisitsPage from './VisitPage';
 import PassPage from './PassPage';
 import { visitorServices } from '../../services/visitorServices';
-import { otherServices } from '../../services/otherServices';
 
-const { width } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Define the tabs
-const TABS = ['Visits', 'Pass'];
-const TAB_WIDTH = (width - 40) / TABS.length;
+// Tab configuration
+const TABS = ['Visits', 'Visitor Passes'];
+const calculateTabWidth = () => (SCREEN_WIDTH - 32) / TABS.length;
 
-// Updated theme colors with your specified colors
-const THEME_COLORS = {
-  primaryAccent: '#1996D3',
-  darkText: '#074B7C',
-  inactiveText: '#6c757d',
-  lightBackground: '#f4f7f9',
-  componentBackground: '#ffffff',
-  borderColor: '#e0e0e0',
-  // Night mode colors
-  darkBackground: '#121212',
-  darkComponentBackground: '#1e1e1e',
-  darkBorderColor: '#333333',
-  darkTextColor: '#ffffff',
-  darkInactiveText: '#aaaaaa',
+// Theme configuration
+const COLORS = {
+  primary: '#1996D3',
+  
+  // Light theme
+  light: {
+    background: '#FFFFFF',
+    surface: '#F8F9FA',
+    text: '#212529',
+    textSecondary: '#6C757D',
+    border: '#DEE2E6',
+  },
+  
+  // Dark theme
+  dark: {
+    background: '#121212',
+    surface: '#1E1E1E',
+    text: '#FFFFFF',
+    textSecondary: '#9E9E9E',
+    border: '#2C2C2C',
+  },
 };
 
 const VisitorScreen = () => {
-  const [activeTab, setActiveTab] = useState(TABS[0]);
-  const [visitorData, setVisitorData] = useState(null);
-  const [passData, setPassData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  // State management
+  const [activeTabIndex, setActiveTabIndex] = useState(0);
+  const [visits, setVisits] = useState(null);
+  const [passes, setPasses] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Refs
+  const tabIndicatorPosition = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef(null);
-  const isScrolling = useRef(false);
+  const isUserScrolling = useRef(false);
+  
+  // Theme
   const { nightMode } = usePermissions();
+  const theme = nightMode ? COLORS.dark : COLORS.light;
 
-  // Dynamic theme based on night mode
-  const currentTheme = {
-    backgroundColor: nightMode ? THEME_COLORS.darkBackground : THEME_COLORS.lightBackground,
-    componentBackground: nightMode ? THEME_COLORS.darkComponentBackground : THEME_COLORS.componentBackground,
-    borderColor: nightMode ? THEME_COLORS.darkBorderColor : THEME_COLORS.borderColor,
-    textColor: nightMode ? THEME_COLORS.darkTextColor : THEME_COLORS.darkText,
-    inactiveTextColor: nightMode ? THEME_COLORS.darkInactiveText : THEME_COLORS.inactiveText,
-    tabsBackground: nightMode ? '#2a2a2a' : '#f0f0f0',
+  // Fetch visits data
+  const fetchVisits = async () => {
+    try {
+      setIsLoading(true);
+      const response = await visitorServices.getMyVisitors();
+      setVisits(response.data);
+    } catch (error) {
+      console.error('Error fetching visits:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  // Fetch passes data
+  const fetchPasses = async () => {
+    try {
+      setIsLoading(true);
+      const response = await visitorServices.getMyPasses();
+      setPasses(response.data);
+    } catch (error) {
+      console.error('Error fetching passes:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initial data fetch
   useEffect(() => {
-    const newIndex = TABS.indexOf(activeTab);
+    fetchVisits();
+    fetchPasses();
+  }, []);
+
+  // Animate tab indicator when active tab changes
+  useEffect(() => {
+    const tabWidth = calculateTabWidth();
     
-    Animated.spring(slideAnim, {
-      toValue: newIndex * TAB_WIDTH,
+    Animated.spring(tabIndicatorPosition, {
+      toValue: activeTabIndex * tabWidth,
       useNativeDriver: true,
-      tension: 100,
-      friction: 8,
+      tension: 120,
+      friction: 10,
     }).start();
 
-    if (scrollViewRef.current && !isScrolling.current) {
+    // Scroll to active tab content
+    if (scrollViewRef.current && !isUserScrolling.current) {
       scrollViewRef.current.scrollTo({
-        x: newIndex * width,
+        x: activeTabIndex * SCREEN_WIDTH,
         animated: true,
       });
     }
-  }, [activeTab]);
+  }, [activeTabIndex]);
 
-  useEffect(() => {
-    getVisitors();
-    getPasses();
-  }, []);
-
-  const getVisitors = async () => {
-    try {
-      setLoading(true);
-      const response = await visitorServices.getMyVisitors();
-      setVisitorData(response.data);
-    } catch (error) {
-      console.error('Error fetching visitors:', error);
-    } finally {
-      setLoading(false);
-    }
+  // Handle tab press
+  const handleTabPress = (index) => {
+    setActiveTabIndex(index);
   };
 
-  const getPasses = async () => {
-    try {
-      setLoading(true);
-      const response = await visitorServices.getMyPasses();
-      setPassData(response.data);
-    } catch (error) {
-      console.error('Error fetching visitors:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onScroll = (event) => {
+  // Handle scroll events
+  const handleScroll = (event) => {
     const scrollX = event.nativeEvent.contentOffset.x;
-    const progress = scrollX / width;
-    const sliderPosition = progress * TAB_WIDTH;
-    slideAnim.setValue(sliderPosition);
+    const progress = scrollX / SCREEN_WIDTH;
+    const indicatorPosition = progress * calculateTabWidth();
+    tabIndicatorPosition.setValue(indicatorPosition);
   };
 
-  const onMomentumScrollEnd = (event) => {
+  const handleScrollBegin = () => {
+    isUserScrolling.current = true;
+  };
+
+  const handleScrollEnd = (event) => {
     const scrollX = event.nativeEvent.contentOffset.x;
-    const pageIndex = Math.round(scrollX / width);
+    const newIndex = Math.round(scrollX / SCREEN_WIDTH);
     
-    isScrolling.current = false;
+    isUserScrolling.current = false;
     
-    if (TABS[pageIndex] && TABS[pageIndex] !== activeTab) {
-      setActiveTab(TABS[pageIndex]);
+    if (newIndex >= 0 && newIndex < TABS.length && newIndex !== activeTabIndex) {
+      setActiveTabIndex(newIndex);
     }
   };
 
-  const onScrollBeginDrag = () => {
-    isScrolling.current = true;
+  // Render tab button
+  const renderTab = (label, index) => {
+    const isActive = activeTabIndex === index;
+    
+    return (
+      <TouchableOpacity
+        key={label}
+        style={styles.tab}
+        onPress={() => handleTabPress(index)}
+        activeOpacity={0.7}
+      >
+        <Text
+          style={[
+            styles.tabLabel,
+            { color: isActive ? COLORS.primary : theme.textSecondary },
+            isActive && styles.tabLabelActive,
+          ]}
+        >
+          {label}
+        </Text>
+      </TouchableOpacity>
+    );
   };
 
-  const renderContentPane = (tabName) => (
-    <View style={[styles.contentPane, { backgroundColor: currentTheme.backgroundColor }]}>
+  // Render page content
+  const renderPage = (tabName) => (
+    <View style={[styles.page, { backgroundColor: theme.background }]}>
       {tabName === 'Visits' ? (
-        <VisitsPage 
-          nightMode={nightMode} 
-          visitorData={visitorData}
-          loading={loading}
-          onRefresh={getVisitors}
+        <VisitsPage
+          nightMode={nightMode}
+          visitorData={visits}
+          loading={isLoading}
+          onRefresh={fetchVisits}
         />
       ) : (
-        <PassPage 
-          nightMode={nightMode} 
-          passData={passData} 
-          loading={loading} 
-          onRefresh={getPasses} 
+        <PassPage
+          nightMode={nightMode}
+          passData={passes}
+          loading={isLoading}
+          onRefresh={fetchPasses}
         />
       )}
     </View>
   );
 
-  const styles = getStyles(currentTheme);
+  const styles = createStyles(theme);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: currentTheme.backgroundColor }]}>
-      <StatusBar 
-        barStyle={nightMode ? "light-content" : "dark-content"} 
-        backgroundColor={nightMode ? THEME_COLORS.darkBackground : THEME_COLORS.lightBackground} 
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <StatusBar
+        barStyle={nightMode ? 'light-content' : 'dark-content'}
+        backgroundColor={theme.background}
       />
-      
-      {/* Header with Sliding Tabs */}
-      <View style={[styles.header, { 
-        backgroundColor: currentTheme.componentBackground,
-        borderBottomColor: currentTheme.borderColor
-      }]}>
-        <View style={[styles.tabsContainer, { backgroundColor: currentTheme.tabsBackground }]}>
-          {TABS.map((tab) => (
-            <TouchableOpacity
-              key={tab}
-              style={styles.tabItem}
-              onPress={() => setActiveTab(tab)}
-            >
-              <Text style={[
-                styles.tabText, 
-                { color: currentTheme.inactiveTextColor },
-                activeTab === tab && [styles.activeTabText, { color: THEME_COLORS.primaryAccent }]
-              ]}>
-                {tab}
-              </Text>
-            </TouchableOpacity>
-          ))}
+
+      {/* Tab Bar */}
+      <View style={[styles.tabBar, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+        <View style={styles.tabContainer}>
+          {TABS.map((label, index) => renderTab(label, index))}
+          
+          {/* Tab Indicator */}
           <Animated.View
             style={[
-              styles.activeTabSlider,
+              styles.tabIndicator,
               {
-                width: TAB_WIDTH,
-                transform: [{ translateX: slideAnim }],
-                backgroundColor: THEME_COLORS.primaryAccent,
+                width: calculateTabWidth(),
+                backgroundColor: COLORS.primary,
+                transform: [{ translateX: tabIndicatorPosition }],
               },
             ]}
           />
         </View>
       </View>
 
-      {/* Scrollable Content */}
+      {/* Page Content */}
       <ScrollView
         ref={scrollViewRef}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onScroll={onScroll}
-        onMomentumScrollEnd={onMomentumScrollEnd}
-        onScrollBeginDrag={onScrollBeginDrag}
+        onScroll={handleScroll}
+        onScrollBeginDrag={handleScrollBegin}
+        onMomentumScrollEnd={handleScrollEnd}
         scrollEventThrottle={16}
-        style={styles.contentContainer}
+        style={styles.scrollView}
       >
-        {renderContentPane('Visits')}
-        {renderContentPane('Pass')}
+        {TABS.map((tab) => renderPage(tab))}
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-const getStyles = (currentTheme) => StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 16,  // Reduced from 20
-    paddingVertical: 8,      // Reduced from 16
-    borderBottomWidth: 1,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    position: 'relative',
-    borderRadius: 8,         // Reduced from 12
-    padding: 2,              // Reduced from 4
-  },
-  tabItem: {
-    flex: 1,
-    paddingVertical: 8,      // Reduced from 12
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabText: {
-    fontSize: 14,            // Reduced from 16
-    fontWeight: '600',
-  },
-  activeTabText: {
-    fontWeight: '700',
-  },
-  activeTabSlider: {
-    height: 3,               // Reduced from 4
-    borderRadius: 1.5,       // Reduced from 2
-    position: 'absolute',
-    bottom: 1,               // Reduced from 2
-    left: 2,                 // Adjusted to match new padding
-  },
-  contentContainer: {
-    flex: 1,
-  },
-  contentPane: {
-    width: width,
-    flex: 1,
-  },
-});
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    tabBar: {
+      paddingHorizontal: 16,
+      paddingTop: 12,
+      paddingBottom: 8,
+      borderBottomWidth: 1,
+    },
+    tabContainer: {
+      flexDirection: 'row',
+      position: 'relative',
+    },
+    tab: {
+      flex: 1,
+      paddingVertical: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    tabLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      letterSpacing: 0.2,
+    },
+    tabLabelActive: {
+      fontWeight: '700',
+    },
+    tabIndicator: {
+      height: 3,
+      borderRadius: 1.5,
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    page: {
+      width: SCREEN_WIDTH,
+      flex: 1,
+    },
+  });
 
 export default VisitorScreen;
