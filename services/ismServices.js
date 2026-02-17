@@ -67,19 +67,18 @@ const u = encodeURIComponent(JSON.stringify(uObj));
   //   return ApiCommon.getReq(url,data,headers)
   // },
 
-  addMyVisitor: async (data) => {
+addMyVisitor: async (data) => {
 
-  
   const url = await ismServices.appendParamsInUrl(
-    `${API_URL4}/v2/society/society/${user.society_id}/createallpass`
+    `${API_URL4}/v2/society/${user.society_id}/createallpass`
   )
-  
+
   const headers = await Util.getCommonAuth()
-  
+
   console.log("🔗 API URL:", url)
   console.log("📦 Payload:", data)
-  
-  return ApiCommon.postReq(url, data, headers) // ✅ Use POST, not GET
+
+  return ApiCommon.postReq(url, data, headers)
 },
 
 

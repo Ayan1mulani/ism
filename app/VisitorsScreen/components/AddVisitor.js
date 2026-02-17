@@ -10,15 +10,21 @@ import {
     Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { usePermissions } from "../../Utils/ConetextApi";
-import Util from "../../services/Util";
+import { usePermissions } from "../../../Utils/ConetextApi";
+import Util from "../../../services/Util";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CalendarSelector from "./Calender";
+import { useRoute } from "@react-navigation/native";
+import ProviderSelector from "./ProviderSelector";
+import { ismServices } from "../../../services/ismServices";
 
 
 
 
 const AddVisitor = ({ navigation }) => {
+    const route = useRoute();
+
+    const { visitorType } = route.params || {};
     const { nightMode, user } = usePermissions();
 
     const [visitorName, setVisitorName] = useState("");
@@ -30,6 +36,8 @@ const AddVisitor = ({ navigation }) => {
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [loading, setLoading] = useState(false);
     const [selectedParking, setSelectedParking] = useState(null);
+    const [selectedProvider, setSelectedProvider] = useState(null);
+
 
     const theme = {
         bg: nightMode ? "#0F0F0F" : "#ffffff",
@@ -87,43 +95,48 @@ const AddVisitor = ({ navigation }) => {
             new Date(visitDateTime.getTime() + 2 * 60 * 60 * 1000)
         );
 
+        let passType = "GUEST";
+
+        if (visitorType === "cab") {
+            passType = "CAB";
+        } else if (visitorType === "delivery") {
+            passType = "DELIVERY";
+        }
 
         try {
-
             const payload = {
                 booking_from: bookingFrom,
                 booking_to: bookingTo,
                 location_id: 188,
                 data: {
-                    name: visitorName,
-                    phone_no: mobileNumber,
+                    name:
+                        visitorType === "cab" || visitorType === "delivery"
+                            ? selectedProvider
+                            : visitorName,
+                    phone_no:
+                        visitorType === "guest"
+                            ? mobileNumber
+                            : "",
                     date: Util.formatDate(visitDateTime),
-                    type: "VISITOR",
-                    remarks: purpose,
-                    vehicle_no: vehicleNo,
-                    parking_details: selectedParking,
-                    vehicle_last_4: vehicleNo,
+                    type: passType,
                 },
                 reference_id: user.unit_id,
                 status: 1,
                 user_id: JSON.stringify(user),
             };
-            setLoading(true);
-            const res = await ismServices.addMyVisitor(payload)
-            console.log(res, 'this is res')
 
-            setVisitorName("");
-            setMobileNumber("");
-            setPurpose("");
-            setVehicleNo("");
-            setVisitDate("");
-            setVisitTime(new Date());
-            setSelectedParking(null);
+            setLoading(true);
+
+            const res = await ismServices.addMyVisitor(payload);
+            console.log("Response:", res);
+
             Alert.alert("Success", "Visitor added successfully");
+
             navigation.goBack();
-        } catch (err) {
-            console.error("Add visitor error:", err);
-            Alert.alert("Error", "Failed to add visitor. Please try again.");
+
+        } catch (error) {
+            console.error("Add visitor error:", error);
+            Alert.alert("Error", "Something went wrong");
         } finally {
             setLoading(false);
         }
@@ -213,10 +226,19 @@ const AddVisitor = ({ navigation }) => {
                 </TouchableOpacity>
                 <View style={styles.headerTitleContainer}>
                     <Text style={[styles.headerTitleText, { color: theme.text }]}>
-                        Invite Guest
+                        {visitorType === "cab"
+                            ? "Book Cab Entry"
+                            : visitorType === "delivery"
+                                ? "Schedule Delivery"
+                                : "Invite Guest"}
                     </Text>
+
                     <Text style={[styles.headerSubtitleText, { color: theme.textSecondary }]}>
-                        Schedule a guest visit
+                        {visitorType === "cab"
+                            ? "Schedule cab arrival"
+                            : visitorType === "delivery"
+                                ? "Schedule delivery entry"
+                                : "Schedule a guest visit"}
                     </Text>
                 </View>
                 <View>
@@ -254,35 +276,63 @@ const AddVisitor = ({ navigation }) => {
 
                 <View style={[styles.horizontalLine, { backgroundColor: theme.border }]} />
 
-                {/* Mobile Number */}
-                <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
-                    <Text style={[styles.label, { color: theme.text }]}>
-                        Mobile Number <Text style={styles.required}>*</Text>
-                    </Text>
-                    <View style={styles.phoneInputContainer}>
-                        <View style={[styles.countryCode, { backgroundColor: theme.inputBg, borderColor: theme.border }]}>
-                            <Text style={[styles.countryCodeText, { color: theme.text }]}>+91</Text>
-                        </View>
-                        <TextInput
-                            value={mobileNumber}
-                            onChangeText={setMobileNumber}
-                            placeholder="Enter 10-digit mobile number"
-                            placeholderTextColor={theme.textSecondary}
-                            keyboardType="phone-pad"
-                            maxLength={10}
-                            style={[
-                                styles.phoneInput,
-                                {
-                                    backgroundColor: theme.inputBg,
-                                    borderColor: theme.border,
-                                    color: theme.text,
-                                },
-                            ]}
-                        />
-                    </View>
-                </View>
+                {/* Mobile Number - Only for Guest */}
+                {visitorType !== "cab" && visitorType !== "delivery" && (
+                    <>
+                        <View style={[styles.horizontalLine, { backgroundColor: theme.border }]} />
 
-                <View style={[styles.horizontalLine, { backgroundColor: theme.border }]} />
+                        <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
+                            <Text style={[styles.label, { color: theme.text }]}>
+                                Mobile Number <Text style={styles.required}>*</Text>
+                            </Text>
+
+                            <View style={styles.phoneInputContainer}>
+                                <View
+                                    style={[
+                                        styles.countryCode,
+                                        {
+                                            backgroundColor: theme.inputBg,
+                                            borderColor: theme.border,
+                                        },
+                                    ]}
+                                >
+                                    <Text style={[styles.countryCodeText, { color: theme.text }]}>
+                                        +91
+                                    </Text>
+                                </View>
+
+                                <TextInput
+                                    value={mobileNumber}
+                                    onChangeText={setMobileNumber}
+                                    placeholder="Enter 10-digit mobile number"
+                                    placeholderTextColor={theme.textSecondary}
+                                    keyboardType="phone-pad"
+                                    maxLength={10}
+                                    style={[
+                                        styles.phoneInput,
+                                        {
+                                            backgroundColor: theme.inputBg,
+                                            borderColor: theme.border,
+                                            color: theme.text,
+                                        },
+                                    ]}
+                                />
+                            </View>
+                        </View>
+                    </>
+                )}
+
+                {/*  Cab provder */}
+
+                <ProviderSelector
+                    visitorType={visitorType}
+                    theme={theme}
+                    selectedProvider={selectedProvider}
+                    setSelectedProvider={setSelectedProvider}
+                    stylesFromParent={styles}
+                />
+
+
 
                 {/* Visit Date using CalendarSelector */}
                 <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
@@ -294,71 +344,91 @@ const AddVisitor = ({ navigation }) => {
                         nightMode={nightMode}
                     />
                 </View>
-                <View style={[styles.horizontalLine, { backgroundColor: theme.border }]} />
 
 
                 {/* Vehicle Number - Last 4 Digits */}
-                {/* Vehicle Number - Last 4 Digits */}
-                <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
-                    <Text style={[styles.label, { color: theme.text }]}>
-                        Vehicle Number (Last 4 Digits - Optional)
-                    </Text>
+                {visitorType !== "delivery" && (
+                    <>
 
-                    <View
-                        style={[
-                            styles.vehicleContainer,
-                            {
-                                backgroundColor: theme.inputBg,
-                                borderColor: theme.border,
-                            },
-                        ]}
-                    >
-                        <TextInput
-                            value={vehicleNo}
-                            onChangeText={handleVehicleNoChange}
-                            keyboardType="number-pad"
-                            maxLength={4}
-                            style={[styles.vehicleInput, { color: theme.text }]}
-                            placeholder="0000"
-                            placeholderTextColor={theme.textSecondary}
-                        />
-                    </View>
-                </View>
+                        <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
+                            <Text style={[styles.label, { color: theme.text }]}>
+                                Vehicle Number (Last 4 Digits - Optional)
+                            </Text>
 
-                <View style={[styles.horizontalLine, { backgroundColor: theme.border }]} />
+                            <View
+                                style={[
+                                    styles.vehicleContainer,
+                                    {
+                                        backgroundColor: theme.inputBg,
+                                        borderColor: theme.border,
+                                    },
+                                ]}
+                            >
+                                <TextInput
+                                    value={vehicleNo}
+                                    onChangeText={handleVehicleNoChange}
+                                    keyboardType="number-pad"
+                                    maxLength={4}
+                                    style={[styles.vehicleInput, { color: theme.text }]}
+                                    placeholder="0000"
+                                    placeholderTextColor={theme.textSecondary}
+                                />
+                            </View>
+                        </View>
+                    </>
+                )}
+
 
                 {/* Parking Selection */}
-                <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
-                    <Text style={[styles.label, { color: theme.text }]}>
-                        Need parking? Select a parking slot below
-                    </Text>
-                    <TouchableOpacity
-                        style={[
-                            styles.selectButton,
-                            {
-                                backgroundColor: theme.inputBg,
-                                borderColor: theme.border,
-                            },
-                        ]}
-                        onPress={handleParkingNavigation}
-                    >
-                        <Ionicons name="car" size={20} color={theme.primaryBlue} />
-                        <Text
-                            style={[
-                                styles.selectButtonText,
-                                { color: selectedParking ? theme.text : theme.textSecondary },
-                            ]}
-                        >
-                            {selectedParking
-                                ? `Parking Selected - ${getLast4Digits()}`
-                                : "Select Parking"
-                            }
-                        </Text>
-                        <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
-                    </TouchableOpacity>
-                </View>
+                {visitorType !== "cab" && visitorType !== "delivery" && (
+                    <>
 
-                {/* Submit Button */}
+                        <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
+                            <Text style={[styles.label, { color: theme.text }]}>
+                                Need parking?
+                            </Text>
+                            <TouchableOpacity
+                                style={[
+                                    styles.selectButton,
+                                    {
+                                        backgroundColor: theme.inputBg,
+                                        borderColor: theme.border,
+                                    },
+                                ]}
+                                onPress={handleParkingNavigation}
+                            >
+                                <Ionicons name="car" size={20} color={theme.primaryBlue} />
+                                <Text
+                                    style={[
+                                        styles.selectButtonText,
+                                        { color: selectedParking ? theme.text : theme.textSecondary },
+                                    ]}
+                                >
+                                    {selectedParking
+                                        ? `Parking Selected - ${getLast4Digits()}`
+                                        : "Select Parking"
+                                    }
+                                </Text>
+                                <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+                            </TouchableOpacity>
+                        </View>
+                    </>
+                )}
+
+
+                <View style={{ height: 40 }} />
+            </ScrollView>
+
+            {/* Fixed Submit Button */}
+            <View
+                style={[
+                    styles.fixedButtonContainer,
+                    {
+                        backgroundColor: theme.bg,
+                        borderTopColor: theme.border,
+                    },
+                ]}
+            >
                 <TouchableOpacity
                     style={[
                         styles.submitButton,
@@ -372,11 +442,7 @@ const AddVisitor = ({ navigation }) => {
                         {loading ? "Adding Visitor..." : "Add Visitor"}
                     </Text>
                 </TouchableOpacity>
-
-                <View style={{ height: 40 }} />
-            </ScrollView>
-
-            {/* Time Picker Modal */}
+            </View>
             {renderTimePicker()}
         </SafeAreaView>
     );
@@ -413,6 +479,10 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 2,
     },
+    fixedButtonContainer: {
+        padding: 16,
+        borderTopWidth: 1,
+    },
     headerRight: {
         width: 40,
     },
@@ -424,8 +494,7 @@ const styles = StyleSheet.create({
     },
     card: {
         borderRadius: 16,
-        padding: 16,
-        marginBottom: 12,
+        padding: 13,
     },
     label: {
         fontSize: 14,
@@ -464,7 +533,25 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderRadius: 12,
         paddingHorizontal: 14,
+        letterSpacing: 0, 
         fontSize: 14,
+    },
+    providerButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 14,
+        borderRadius: 20,
+        backgroundColor: "#E5E7EB",
+        marginBottom: 8,
+    },
+
+    providerSelected: {
+        backgroundColor: "#1D9BF0",
+        
+    },
+
+    providerText: {
+        fontSize: 13,
+        fontWeight: "600",
     },
 
     vehicleContainer: {
@@ -557,9 +644,5 @@ const styles = StyleSheet.create({
         color: "#FFFFFF",
         fontWeight: "700",
     },
-    horizontalLine: {
-        height: 1,
-        width: "100%",
-        marginTop: 0,
-    },
+
 }); 

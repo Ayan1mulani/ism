@@ -12,15 +12,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePermissions } from '../../Utils/ConetextApi';
-import VisitsPage from './VisitPage';
-import PassPage from './PassPage';
+import VisitRequest from './VisitRequest';
+import SingleEntry from './SingleEntry';
 import { visitorServices } from '../../services/visitorServices';
+import PreApprovedPage from './PreApprovedPage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Tab configuration
-const TABS = ['Visits', 'Visitor Passes'];
-const calculateTabWidth = () => (SCREEN_WIDTH - 32) / TABS.length;
+const TABS = ['Visit Requests', 'Single Entry', 'Pre-Approved'];const calculateTabWidth = () => (SCREEN_WIDTH - 32) / TABS.length;
 
 // Theme configuration
 const COLORS = {
@@ -167,24 +167,29 @@ const VisitorScreen = () => {
 
   // Render page content
   const renderPage = (tabName) => (
-    <View style={[styles.page, { backgroundColor: theme.background }]}>
-      {tabName === 'Visits' ? (
-        <VisitsPage
-          nightMode={nightMode}
-          visitorData={visits}
-          loading={isLoading}
-          onRefresh={fetchVisits}
-        />
-      ) : (
-        <PassPage
-          nightMode={nightMode}
-          passData={passes}
-          loading={isLoading}
-          onRefresh={fetchPasses}
-        />
-      )}
-    </View>
-  );
+  <View style={[styles.page, { backgroundColor: theme.background }]}>
+    {tabName === 'Visit Requests' ? (
+      <VisitRequest
+        nightMode={nightMode}
+        visitorData={visits}
+        loading={isLoading}
+        onRefresh={fetchVisits}
+      />
+    ) : tabName === 'Pre-Approved' ? (
+      <PreApprovedPage
+        nightMode={nightMode}
+        loading={false}
+      />
+    ) : (
+      <SingleEntry
+        nightMode={nightMode}
+        passData={passes}
+        loading={isLoading}
+        onRefresh={fetchPasses}
+      />
+    )}
+  </View>
+);
 
   const styles = createStyles(theme);
 
@@ -241,11 +246,11 @@ const createStyles = (theme) =>
       paddingHorizontal: 16,
       paddingTop: 12,
       paddingBottom: 8,
-      borderBottomWidth: 1,
     },
     tabContainer: {
       flexDirection: 'row',
       position: 'relative',
+
     },
     tab: {
       flex: 1,
@@ -254,7 +259,7 @@ const createStyles = (theme) =>
       justifyContent: 'center',
     },
     tabLabel: {
-      fontSize: 15,
+      fontSize: 13,
       fontWeight: '600',
       letterSpacing: 0.2,
     },

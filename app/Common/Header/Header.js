@@ -21,6 +21,8 @@ const ResidentHeader = () => {
   const [userFlats, setUserFlats] = useState([]);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [userDetails,setUserDetails]  = useState()
+  const [userInfo, setUserInfo] = useState(null);
+const [societyInfo, setSocietyInfo] = useState(null);
   
 
   const theme = {
@@ -64,20 +66,25 @@ const ResidentHeader = () => {
       console.log("Switch error:", error);
     }
   };
-useEffect(()=>{
-const getUserDetails = async() =>{
-  const res = await Common.getUserDetails()
-  setUserDetails(res)
-}
-const getUserInfo = async() =>{
-  const res = await Common.getLoggedInUser()
-  setUserInfo(res)
-  const soc = JSON.parse(res.society.data)
-  setSocietyInfo(soc)
-}
-getUserDetails()
-getUserInfo()
-},[])
+useEffect(() => {
+
+  const getUserDetails = async () => {
+    const res = await Common.getUserDetails();
+    setUserDetails(res);
+  };
+
+  const getUserInfo = async () => {
+    const res = await Common.getLoggedInUser();
+    setUserInfo(res);
+
+    // society already object
+    setSocietyInfo(res?.society);
+  };
+
+  getUserDetails();
+  getUserInfo();
+
+}, []);
   return (
     <SafeAreaView edges={['top']} style={{ backgroundColor: currentTheme.background }}>
       <StatusBar
@@ -99,7 +106,7 @@ getUserInfo()
 
           <View style={styles.textContainer}>
             <Text style={[styles.greetingText, { color: currentTheme.text }]}>
-              iSocietyManager
+  {societyInfo?.name} 
             </Text>
 
             {/* Switch Account Button */}
@@ -108,7 +115,7 @@ getUserInfo()
               onPress={fetchAccounts}
               activeOpacity={0.7}
             >
-              <View style={styles.statusDot} />
+              {/* <View style={styles.statusDot} /> */}
               <Text style={styles.locationText}>
               {userDetails?.flat_no || "Switch Account"}
               </Text>

@@ -9,9 +9,18 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  TextInput,
+  Image
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import VisitorTypeModal from './components/VisiotrTypeSelector';
+import { SafeAreaView } from "react-native-safe-area-context";
+
+
+const BASE_URL = "https://ism-vms.s3.amazonaws.com/company-logo/";
+const DEFAULT_GUEST_IMAGE =
+  "https://app.factech.co.in/user/assets/images/visitor/default-guest.png";
 
 // Theme configuration
 const COLORS = {
@@ -57,15 +66,33 @@ const PURPOSE_ICONS = {
   default: 'card-outline',
 };
 
-const PassPage = ({ nightMode, passData, loading, onRefresh }) => {
+const SingleEntryPassPage = ({ nightMode, passData, loading, onRefresh }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const navigation = useNavigation();
+  const [showVisitorModal, setShowVisitorModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [showFilters, setShowFilters] = useState(false);
 
   const theme = nightMode ? COLORS.dark : COLORS.light;
 
-  const getPurposeIcon = (purpose) => {
-    const key = purpose?.toLowerCase();
-    return PURPOSE_ICONS[key] || PURPOSE_ICONS.default;
+
+  const getPassImage = (pass) => {
+    const purpose = pass.purpose?.toLowerCase();
+
+    if (purpose === "guest") {
+      return DEFAULT_GUEST_IMAGE;
+    }
+
+    if (purpose === "cab" || purpose === "delivery") {
+      const name = pass.company_name || pass.name;
+      if (!name) return null;
+
+      const fileName = name.toLowerCase().replace(/\s+/g, "-");
+      return `${BASE_URL}${fileName}.png`;
+    }
+
+    return null;
   };
 
   const getPassStatus = (status) => {
@@ -101,24 +128,6 @@ const PassPage = ({ nightMode, passData, loading, onRefresh }) => {
     }
   };
 
-  const getValidityText = (pass) => {
-    if (pass.valid_days) {
-      return `Valid for ${pass.valid_days} day${pass.valid_days > 1 ? 's' : ''}`;
-    }
-
-    if (pass.date_time) {
-      const passDate = new Date(pass.date_time);
-      const today = new Date();
-
-      if (passDate.toDateString() === today.toDateString()) {
-        return 'Valid for today';
-      }
-      return `Valid until ${formatDate(pass.date_time)}`;
-    }
-
-    return 'Validity not specified';
-  };
-
   const isParkingBooked = (pass) => {
     // Check if parking is booked - adjust the property name based on your API
     return pass.parking_booked === 1 ||
@@ -129,7 +138,6 @@ const PassPage = ({ nightMode, passData, loading, onRefresh }) => {
 
   const showPassDetails = (pass) => {
     const status = getPassStatus(pass.status);
-
     const details = [
       `Pass No: ${pass.pass_no}`,
       `Name: ${pass.name}`,
@@ -182,20 +190,52 @@ const PassPage = ({ nightMode, passData, loading, onRefresh }) => {
     }
     setIsRefreshing(false);
   };
+  const handleVisitorSelect = (type) => {
+    setShowVisitorModal(false);
+    navigation.navigate('AddVisitor', { visitorType: type });
+  };
 
   const handleAddPass = () => {
-    navigation.navigate('AddVisitor');
+    setShowVisitorModal(true);
+  };
+
+
+
+  const getSmartDateLabel = (dateString) => {
+    if (!dateString) return null;
+
+    const today = new Date();
+    const visitDate = new Date(dateString);
+
+    today.setHours(0, 0, 0, 0);
+    visitDate.setHours(0, 0, 0, 0);
+
+    const diffTime = visitDate.getTime() - today.getTime();
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+    let label = formatDate(dateString);
+
+    if (diffDays === 0) {
+      label = "Today";
+    } else if (diffDays === 1) {
+      label = "Tomorrow";
+    }
+
+    return {
+      label,
+      color: theme.textSecondary, // 👈 SAME COLOR FOR ALL
+    };
   };
 
   const renderPassCard = ({ item: pass }) => {
     const status = getPassStatus(pass.status);
     const hasParkingBooked = isParkingBooked(pass);
+ 
 
     return (
       <TouchableOpacity
         style={[styles.card, {
-          backgroundColor: theme.surface,
-          borderColor: theme.border,
+          backgroundColor: '#ffff',
         }]}
         onPress={() => showPassDetails(pass)}
         activeOpacity={0.7}
@@ -206,28 +246,42 @@ const PassPage = ({ nightMode, passData, loading, onRefresh }) => {
             <View style={[styles.iconContainer, {
               backgroundColor: `${COLORS.primary}15`,
             }]}>
-              <Ionicons
-                name={getPurposeIcon(pass.purpose)}
-                size={24}
-                color={COLORS.primary}
+              <Image
+                source={{ uri: getPassImage(pass) }}
+                style={styles.passImage}
+                resizeMode="contain"
+                onError={() => console.log("Image load failed")}
               />
             </View>
-
             <View style={styles.passInfo}>
               <Text style={[styles.passTitle, { color: theme.text }]} numberOfLines={1}>
                 {pass.purpose.charAt(0).toUpperCase() + pass.purpose.slice(1)} Pass
               </Text>
-              <Text style={[styles.passName, { color: theme.textSecondary }]} numberOfLines={1}>
-                {pass.name}
-              </Text>
-              <Text style={[styles.passPhone, { color: theme.textSecondary }]}>
-                {pass.mobile}
-              </Text>
-              {pass.company_name && (
-                <Text style={[styles.companyName, { color: COLORS.primary }]} numberOfLines={1}>
-                  {pass.company_name}
-                </Text>
-              )}
+              {pass.purpose?.toLowerCase() !== "cab" &&
+                pass.purpose?.toLowerCase() !== "delivery" && (
+                  <Text
+                    style={[styles.passName, { color: theme.textSecondary }]}
+                    numberOfLines={1}
+                  >
+                    {pass.name}
+                  </Text>
+                )}
+
+              {pass.purpose?.toLowerCase() !== "cab" &&
+                pass.purpose?.toLowerCase() !== "delivery" && (
+                  <Text style={[styles.passPhone, { color: theme.textSecondary }]}>
+                    {pass.mobile}
+                  </Text>
+                )}
+              {(pass.purpose?.toLowerCase() === "cab" ||
+                pass.purpose?.toLowerCase() === "delivery") && (
+                  <Text
+                    style={[styles.companyName, { color: COLORS.primary }]}
+                    numberOfLines={1}
+                  >
+                    {pass.company_name || pass.name}
+                  </Text>
+                )}
             </View>
           </View>
 
@@ -235,9 +289,11 @@ const PassPage = ({ nightMode, passData, loading, onRefresh }) => {
             <View style={[styles.statusBadge, { backgroundColor: status.color }]}>
               <Text style={styles.statusLabel}>{status.label}</Text>
             </View>
-            <Text style={[styles.passNumber, { color: COLORS.primary }]}>
-              #{pass.pass_no}
-            </Text>
+            {pass.pass_no && pass.purpose !== "delivery" && (
+              <Text style={[styles.passNumber, { color: COLORS.primary }]}>
+                #{pass.pass_no}
+              </Text>
+            )}
 
             {/* Parking Indicator */}
             {hasParkingBooked && (
@@ -251,15 +307,34 @@ const PassPage = ({ nightMode, passData, loading, onRefresh }) => {
         {/* Card Footer */}
         <View style={[styles.cardFooter, { borderTopColor: theme.border }]}>
           <View style={styles.validitySection}>
-            <Ionicons name="time-outline" size={16} color={status.color} />
-            <Text style={[styles.validityText, { color: status.color }]}>
-              {getValidityText(pass)}
+            <Ionicons
+              name="time-outline"
+              size={16}
+              color={theme.textSecondary}
+            />
+
+            <Text style={{ fontSize: 13 }}>
+              <Text style={{ color: theme.textSecondary }}>
+                {" "}
+              </Text>
+
+              <Text
+                style={{
+                  color: getSmartDateLabel(pass.date_time)?.color,
+                  fontWeight: "600",
+                }}
+              >
+                {getSmartDateLabel(pass.date_time)?.label}
+              </Text>
             </Text>
           </View>
+
           <Text style={[styles.createdDate, { color: theme.textSecondary }]}>
             Created: {formatDate(pass.created_at)}
           </Text>
         </View>
+
+
 
         {/* Remarks Section */}
         {pass.remarks && (
@@ -300,39 +375,130 @@ const PassPage = ({ nightMode, passData, loading, onRefresh }) => {
   if (loading) {
     return renderLoadingState();
   }
+  const filteredData = (passData || []).filter(pass => {
+  const query = searchQuery.toLowerCase();
+
+  const matchesSearch =
+    pass.name?.toLowerCase().includes(query) ||
+    pass.mobile?.toLowerCase().includes(query) ||
+    pass.purpose?.toLowerCase().includes(query);
+
+  const matchesStatus =
+    selectedStatus === 'ALL' ||
+    String(pass.status) === selectedStatus;
+
+  return matchesSearch && matchesStatus;
+});
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Pass List */}
-      <FlatList
-        data={passData || []}
-        renderItem={renderPassCard}
-        keyExtractor={(item) => item.id.toString()}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            colors={[COLORS.primary]}
-            tintColor={COLORS.primary}
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: theme.background }}
+      edges={["top", "left", "right"]}
+    >
+      <View style={styles.searchContainer}>
+        <View style={[styles.searchBar, { backgroundColor: theme.surface }]}>
+          <Ionicons name="search-outline" size={20} color={theme.textSecondary} />
+          <TextInput
+            style={[styles.searchInput, { color: theme.text }]}
+            placeholder="Search name, purpose or phone"
+            placeholderTextColor={theme.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
-        }
-        ListEmptyComponent={renderEmptyState}
-      />
+          {searchQuery !== '' && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
 
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={[styles.fab, {
-          backgroundColor: COLORS.primary,
-          shadowColor: nightMode ? '#000' : COLORS.primary,
-        }]}
-        onPress={handleAddPass}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add" size={28} color="#FFFFFF" />
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            { backgroundColor: showFilters ? COLORS.primary : theme.surface }
+          ]}
+          onPress={() => setShowFilters(!showFilters)}
+        >
+          <Ionicons
+            name="filter"
+            size={20}
+            color={showFilters ? '#fff' : theme.textSecondary}
+          />
+        </TouchableOpacity>
+      </View>
+      {showFilters && (
+        <View style={styles.filterContainer}>
+          {['ALL', '1', '0', 'PENDING'].map(status => (
+            <TouchableOpacity
+              key={status}
+              style={[
+                styles.filterChip,
+                {
+                  backgroundColor:
+                    selectedStatus === status
+                      ? COLORS.primary
+                      : theme.surface
+                }
+              ]}
+              onPress={() => setSelectedStatus(status)}
+            >
+              <Text
+                style={{
+                  color:
+                    selectedStatus === status ? '#fff' : theme.text,
+                  fontWeight: '600',
+                }}
+              >
+                {status === 'ALL'
+                  ? 'All'
+                  : status === '1'
+                    ? 'Active'
+                    : status === '0'
+                      ? 'Inactive'
+                      : 'Pending'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+      <View style={styles.container}>
+        <FlatList
+          data={filteredData}
+          renderItem={renderPassCard}
+          keyExtractor={(item) => item.id.toString()}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={[COLORS.primary]}
+              tintColor={COLORS.primary}
+            />
+          }
+          ListEmptyComponent={renderEmptyState}
+        />
+        <VisitorTypeModal
+          visible={showVisitorModal}
+          onClose={() => setShowVisitorModal(false)}
+          onSelect={handleVisitorSelect}
+          theme={theme}
+        />
+
+        {/* Floating Action Button */}
+        <TouchableOpacity
+          style={[styles.fab, {
+            backgroundColor: COLORS.primary,
+            shadowColor: nightMode ? '#000' : COLORS.primary,
+          }]}
+          onPress={handleAddPass}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="add" size={28} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+
   );
 };
 
@@ -357,15 +523,13 @@ const createStyles = (theme, nightMode) =>
       paddingBottom: 100,
     },
     card: {
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 12,
-      borderWidth: 1,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: nightMode ? 0.3 : 0.08,
-      shadowRadius: 4,
-      elevation: 2,
+    padding: 15,
+  borderRadius: 14,
+  marginBottom: 5,
+  borderWidth: 1,
+  borderColor: 'rgba(0,0,0,0.08)',
+  overflow: 'hidden', // 👈 important
+  
     },
     cardHeader: {
       flexDirection: 'row',
@@ -387,6 +551,10 @@ const createStyles = (theme, nightMode) =>
     },
     passInfo: {
       flex: 1,
+    },
+    passImage: {
+      width: 36,
+      height: 36,
     },
     passTitle: {
       fontSize: 16,
@@ -435,8 +603,6 @@ const createStyles = (theme, nightMode) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingTop: 12,
-      borderTopWidth: 1,
     },
     validitySection: {
       flexDirection: 'row',
@@ -456,15 +622,9 @@ const createStyles = (theme, nightMode) =>
       alignItems: 'flex-start',
       paddingTop: 8,
       marginTop: 8,
-      borderTopWidth: 1,
       gap: 6,
     },
-    remarksText: {
-      fontSize: 12,
-      flex: 1,
-      fontStyle: 'italic',
-      lineHeight: 18,
-    },
+   
     emptyState: {
       flex: 1,
       justifyContent: 'center',
@@ -497,6 +657,48 @@ const createStyles = (theme, nightMode) =>
       shadowRadius: 8,
       elevation: 8,
     },
+    searchContainer: {
+      flexDirection: 'row',
+      paddingHorizontal: 16,
+      paddingTop: 10,
+      gap: 10,
+    },
+
+    searchBar: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      height: 45,
+    },
+
+    searchInput: {
+      flex: 1,
+      marginLeft: 8,
+      fontSize: 14,
+    },
+
+    filterButton: {
+      width: 45,
+      height: 45,
+      borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+
+    filterContainer: {
+      flexDirection: 'row',
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      gap: 10,
+    },
+
+    filterChip: {
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      borderRadius: 20,
+    },
   });
 
-export default PassPage;
+export default SingleEntryPassPage;

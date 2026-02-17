@@ -1,0 +1,351 @@
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  FlatList,
+  StyleSheet,
+  Image,
+  TextInput
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+const BASE_URL = "https://ism-vms.s3.amazonaws.com/company-logo/";
+
+const ProviderSelector = ({
+  visitorType,
+  theme,
+  selectedProvider,
+  setSelectedProvider,
+  stylesFromParent,
+}) => {
+  const [showProviderModal, setShowProviderModal] = useState(false);
+  const [search, setSearch] = useState("");
+
+  if (visitorType !== "cab" && visitorType !== "delivery") {
+    return null;
+  }
+
+
+
+const deliveryCompanies = [
+  { name: "Dominos", logo_url: `${BASE_URL}dominos.png` },
+  { name: "Runnr", logo_url: `${BASE_URL}runnr.png` },
+  { name: "Shadow fax", logo_url: `${BASE_URL}shadow-fax.png` },
+  { name: "Snapdeal", logo_url: `${BASE_URL}snapdeal.png` },
+
+  { name: "Swiggy", logo_url: `${BASE_URL}swiggy.png` },
+  { name: "Uber eats", logo_url: `${BASE_URL}uber-eats.png` },
+  { name: "UPS", logo_url: `${BASE_URL}ups.png` },
+  { name: "Xpressbees", logo_url: `${BASE_URL}xpressbees.png` },
+
+  { name: "Zomato", logo_url: `${BASE_URL}zomato.png` },
+  { name: "Box8", logo_url: `${BASE_URL}box8.png` },
+  { name: "DHL", logo_url: `${BASE_URL}dhl.png` },
+  { name: "Pizza hut", logo_url: `${BASE_URL}pizza-hut.png` },
+
+  { name: "Zop now", logo_url: `${BASE_URL}zop-now.png` },
+  { name: "Licious", logo_url: `${BASE_URL}licious.png` },
+  { name: "Firstcry", logo_url: `${BASE_URL}firstcry.png` },
+  { name: "1mg", logo_url: `${BASE_URL}1MG.jpg` },
+
+  { name: "Yatharth", logo_url: `${BASE_URL}Yatharth.png` },
+  // { name: "Apollo Pharmacy", logo_url: `${BASE_URL}Apollo_pharmacy.jpg` },
+  // { name: "Blinkit", logo_url: `${BASE_URL}blinkit.svg` },
+  // { name: "Zepto", logo_url: `${BASE_URL}zepto.svg` },
+
+  { name: "Ekart", logo_url: `${BASE_URL}ekart.png` },
+  { name: "Flipkart", logo_url: `${BASE_URL}flipkart.png` },
+  { name: "Amazon", logo_url: `${BASE_URL}amazon.png` },
+  { name: "Bharat gas", logo_url: `${BASE_URL}bharat-gas.png` },
+
+  { name: "Big basket", logo_url: `${BASE_URL}big-basket.png` },
+  { name: "Delhivery", logo_url: `${BASE_URL}delhivery.png` },
+  { name: "DTDC", logo_url: `${BASE_URL}dtdc.png` },
+  { name: "Dunzo", logo_url: `${BASE_URL}dunzo.png` },
+
+  { name: "Ecom express", logo_url: `${BASE_URL}ecom-express.png` },
+  { name: "Faasos", logo_url: `${BASE_URL}faasos.png` },
+  { name: "Fedex", logo_url: `${BASE_URL}fedex.png` },
+  { name: "First flight", logo_url: `${BASE_URL}first-flight.png` },
+
+  { name: "ABC Retail", logo_url: `${BASE_URL}abc.jpeg` },
+  { name: "Food panda", logo_url: `${BASE_URL}food-panda.png` },
+  { name: "Freshmenu", logo_url: `${BASE_URL}freshmenu.png` },
+  { name: "Gati", logo_url: `${BASE_URL}gati.png` },
+
+  { name: "Grofers", logo_url: `${BASE_URL}grofers.png` },
+  { name: "HP Gas", logo_url: `${BASE_URL}hp-gas.png` },
+  { name: "Indane", logo_url: `${BASE_URL}indane.png` },
+  { name: "India post", logo_url: `${BASE_URL}india-post.png` },
+
+  { name: "Myntra", logo_url: `${BASE_URL}myntra.png` },
+  { name: "Paytm", logo_url: `${BASE_URL}paytm.png` },
+];
+
+
+const cabCompanies = [
+  { name: "Ola", logo_url: `${BASE_URL}ola.png` },
+  { name: "Uber", logo_url: `${BASE_URL}uber.png` },
+  { name: "Meru", logo_url: `${BASE_URL}meru.png` },
+
+];
+  const rawList =
+    visitorType === "cab" ? cabCompanies : deliveryCompanies;
+
+
+  const popularProviders = [
+    "Amazon",
+    "Dominos",
+    "Zop now",
+    "Licious",
+  ];
+
+  let quickList = [];
+  let otherList = [];
+
+  if (visitorType === "cab") {
+    // 🚕 Show all cab options
+    quickList = rawList;
+    otherList = [];
+  } else {
+    // 📦 Show only selected 4 for delivery
+    quickList = rawList.filter((item) =>
+      popularProviders.includes(item.name)
+    );
+
+    otherList = rawList.filter(
+      (item) => !popularProviders.includes(item.name)
+    );
+  }
+
+  const providerList = otherList.filter((item) =>
+    item.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  /* ================== MODAL ITEM ================== */
+
+  const renderItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.modalItem}
+      onPress={() => {
+        setSelectedProvider(item.name);
+        setShowProviderModal(false);
+      }}
+    >
+      <Image source={{ uri: item.logo_url }} style={styles.modalLogo} />
+      <Text style={{ marginTop: 6 }}>{item.name}</Text>
+    </TouchableOpacity>
+  );
+  // check if selected provider is one of quick list
+const isQuickSelected = quickList.some(
+  (item) => item.name === selectedProvider
+);
+
+// find selected item full data
+const selectedItem =
+  rawList.find((item) => item.name === selectedProvider) || null;
+
+// decide what to show in row
+const displayQuickList =
+  selectedProvider && !isQuickSelected && visitorType === "delivery"
+    ? [selectedItem]
+    : quickList;
+
+  return (
+    <>
+      {/* Divider */}
+      <View
+        style={[
+          stylesFromParent.horizontalLine,
+          { backgroundColor: theme.border },
+        ]}
+      />
+
+      {/* Card */}
+      <View
+        style={[
+          stylesFromParent.card,
+          { backgroundColor: theme.cardBg },
+        ]}
+      >
+        <Text
+          style={[
+            stylesFromParent.label,
+            { color: theme.text },
+          ]}
+        >
+          {visitorType === "cab"
+            ? "Select Cab Provider"
+            : "Select Delivery Company"}
+        </Text>
+
+        {/* QUICK ROW */}
+<View style={styles.row}>
+
+  {displayQuickList.map((item) => (
+    <TouchableOpacity
+      key={item.name}
+      style={styles.quickItem}
+      onPress={() => setSelectedProvider(item.name)}
+    >
+<View
+  style={[
+    styles.logoBox,
+    selectedProvider === item.name && {
+      borderColor: theme.primaryBlue,
+      borderWidth: 2,
+      backgroundColor: "#3b6c92", // light blue highlight
+      elevation: 3, // android shadow
+      shadowColor: "#000",
+      shadowOpacity: 0.5,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+    },
+  ]}
+>
+        <Image source={{ uri: item.logo_url }} style={styles.logo} />
+      </View>
+
+      <Text style={styles.quickText}>
+        {item.name}
+      </Text>
+    </TouchableOpacity>
+  ))}
+
+  {/* SHOW OTHER BUTTON ONLY FOR DELIVERY */}
+  {visitorType === "delivery" && (
+    <TouchableOpacity
+      style={styles.quickItem}
+      onPress={() => setShowProviderModal(true)}
+    >
+      <View style={styles.logoBox}>
+        <Ionicons name="ellipsis-horizontal" size={20} />
+      </View>
+      <Text style={styles.quickText}>Other</Text>
+    </TouchableOpacity>
+  )}
+
+</View>
+      
+      </View>
+
+      {/* MODAL */}
+      {visitorType === "delivery" && (
+        <Modal
+          visible={showProviderModal}
+          animationType="slide"
+          presentationStyle="fullScreen"
+        >
+          <SafeAreaView style={{ flex: 1 }}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                Delivery Companies
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowProviderModal(false)}
+              >
+                <Ionicons name="close" size={26} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Search */}
+            <View style={styles.searchBox}>
+              <Ionicons name="search" size={18} />
+              <TextInput
+                placeholder="Search..."
+                value={search}
+                onChangeText={setSearch}
+                style={{ flex: 1, marginLeft: 8,
+                  letterSpacing: 1
+                 }}
+              />
+            </View>
+
+            <FlatList
+              data={providerList}
+              renderItem={renderItem}
+              keyExtractor={(item) => item.name}
+              numColumns={4}
+              contentContainerStyle={{ padding: 20 }}
+            />
+          </SafeAreaView>
+        </Modal>
+      )}
+    </>
+  );
+};
+
+export default ProviderSelector;
+
+const styles = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    marginTop: 12,
+  },
+
+  quickItem: {
+    alignItems: "center",
+    marginRight: 18,
+  },
+
+  logoBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+    marginBottom: 6,
+  },
+
+  logo: {
+    width: "100%",
+    height: "100%",
+  },
+
+  quickText: {
+    fontSize: 11,
+    textAlign: "center",
+  },
+
+  modalHeader: {
+    backgroundColor: "#2E6AA3",
+    padding: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  modalTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F1F3F5",
+    margin: 16,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+  },
+
+
+  modalItem: {
+    flex: 1,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+
+  modalLogo: {
+    width: 55,
+    height: 55,
+    borderRadius: 14,
+  },
+});

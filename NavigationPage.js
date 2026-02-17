@@ -29,7 +29,8 @@ import AccountsScreen from './app/AccountsScreen/AccountsPage';
 import StaffScreen from './app/StaffScreen/StaffPage';
 import StaffDetailsScreen from './app/StaffScreen/StaffDetailsPage';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AddVisitor from './app/VisitorsScreen/AddVisitor';
+import AddVisitor from './app/VisitorsScreen/components/AddVisitor';
+import AddPreApprovedVisitor from './app/VisitorsScreen/components/AddPreApproved';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -53,26 +54,26 @@ const ServiceRequestsStack = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="ServiceRequestsMain" component={ServiceRequestTabs} />
-      <Stack.Screen 
-        name="CategorySelection" 
+      <Stack.Screen
+        name="CategorySelection"
         component={CategorySelectionScreen}
-        options={{ 
+        options={{
           headerShown: false,
           presentation: 'card'
         }}
       />
-      <Stack.Screen 
-        name="subCategorySelection" 
+      <Stack.Screen
+        name="subCategorySelection"
         component={SubCategorySelectionScreen}
-        options={{ 
+        options={{
           headerShown: false,
           presentation: 'card'
         }}
       />
-      <Stack.Screen 
-        name="complaintInput" 
+      <Stack.Screen
+        name="complaintInput"
         component={ComplaintInputScreen}
-        options={{ 
+        options={{
           headerShown: false,
           presentation: 'card'
         }}
@@ -84,7 +85,7 @@ const ServiceRequestsStack = () => {
 // --- Modern Custom Tab Bar with Sliding Animation ---
 const CustomTabBar = ({ state, descriptors, navigation }) => {
   const { nightMode } = usePermissions();
-  
+
   const PRIMARY_COLOR = nightMode ? "#2A2A2Aee" : "#1996D3ee";
   const SECONDARY_COLOR = nightMode ? "#4A90E2" : "#FFFFFF";
   const ICON_COLOR_INACTIVE = nightMode ? "#B0B0B0" : "#E0E0E0";
@@ -102,7 +103,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
   useEffect(() => {
     // Calculate position including gaps
     const position = state.index * (tabWidth + 10) + 15; // 15 is paddingHorizontal start
-    
+
     Animated.spring(translateX, {
       toValue: position,
       useNativeDriver: true,
@@ -114,7 +115,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
 
   const getIconByRouteName = (routeName, color, isFocused) => {
     const iconSize = isFocused ? 18 : 24;
-    
+
     switch (routeName) {
       case "Home":
         return <Feather name="home" size={iconSize} color={color} />;
@@ -152,12 +153,12 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const isFocused = state.index === index;
-          
+
           const label = options.tabBarLabel !== undefined
             ? options.tabBarLabel
             : options.title !== undefined
-            ? options.title
-            : route.name;
+              ? options.title
+              : route.name;
 
           const shortLabel = getShortLabel(label);
 
@@ -270,7 +271,9 @@ const NavigationPage = () => {
         <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Login">
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="MainApp" component={NavigationTabs} />
-           <Stack.Screen name="AddVisitor" component={AddVisitor} />
+          <Stack.Screen name="AddVisitor" component={AddVisitor} />
+          <Stack.Screen name="AddPreVisitor" component={AddPreApprovedVisitor} />
+
         </Stack.Navigator>
       </NavigationContainer>
     </PermissionsProvider>
