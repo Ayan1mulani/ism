@@ -30,7 +30,8 @@ import StaffScreen from './app/StaffScreen/StaffPage';
 import StaffDetailsScreen from './app/StaffScreen/StaffDetailsPage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AddVisitor from './app/VisitorsScreen/components/AddVisitor';
-import AddPreApprovedVisitor from './app/VisitorsScreen/components/AddPreApproved';
+import AddPreApprovedVisitor from './app/VisitorsScreen/singleMultiVisits/SingleVisitorForm';
+import AddFrequentVisitor from './app/VisitorsScreen/singleMultiVisits/FrequentVisitorForm';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -273,7 +274,7 @@ const NavigationPage = () => {
           <Stack.Screen name="MainApp" component={NavigationTabs} />
           <Stack.Screen name="AddVisitor" component={AddVisitor} />
           <Stack.Screen name="AddPreVisitor" component={AddPreApprovedVisitor} />
-
+          <Stack.Screen name="AddFrequentVisitor" component={AddFrequentVisitor} />
         </Stack.Navigator>
       </NavigationContainer>
     </PermissionsProvider>

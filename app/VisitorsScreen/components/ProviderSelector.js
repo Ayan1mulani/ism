@@ -100,32 +100,27 @@ const cabCompanies = [
     "Amazon",
     "Dominos",
     "Zop now",
-    "Licious",
   ];
 
   let quickList = [];
-  let otherList = [];
 
   if (visitorType === "cab") {
-    // 🚕 Show all cab options
-    quickList = rawList;
-    otherList = [];
+    quickList = [
+      { name: "Any", logo_url: null },
+      ...rawList,
+    ];
   } else {
-    // 📦 Show only selected 4 for delivery
-    quickList = rawList.filter((item) =>
-      popularProviders.includes(item.name)
-    );
-
-    otherList = rawList.filter(
-      (item) => !popularProviders.includes(item.name)
-    );
+    quickList = [
+      { name: "Any", logo_url: null },
+      ...rawList.slice(0, 3),
+    ];
   }
 
-  const providerList = otherList.filter((item) =>
+  /* ================== MODAL LIST ================== */
+
+  const providerList = rawList.filter((item) =>
     item.name.toLowerCase().includes(search.toLowerCase())
   );
-
-  /* ================== MODAL ITEM ================== */
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
@@ -135,24 +130,22 @@ const cabCompanies = [
         setShowProviderModal(false);
       }}
     >
-      <Image source={{ uri: item.logo_url }} style={styles.modalLogo} />
+      <View
+        style={[
+          styles.logoBox,
+          selectedProvider === item.name && {
+            borderColor: theme.primaryBlue,
+            borderWidth: 2,
+            backgroundColor: "#E6F4FB",
+          },
+        ]}
+      >
+        <Image source={{ uri: item.logo_url }} style={styles.logo} />
+      </View>
+
       <Text style={{ marginTop: 6 }}>{item.name}</Text>
     </TouchableOpacity>
   );
-  // check if selected provider is one of quick list
-const isQuickSelected = quickList.some(
-  (item) => item.name === selectedProvider
-);
-
-// find selected item full data
-const selectedItem =
-  rawList.find((item) => item.name === selectedProvider) || null;
-
-// decide what to show in row
-const displayQuickList =
-  selectedProvider && !isQuickSelected && visitorType === "delivery"
-    ? [selectedItem]
-    : quickList;
 
   return (
     <>
@@ -183,62 +176,61 @@ const displayQuickList =
         </Text>
 
         {/* QUICK ROW */}
-<View style={styles.row}>
+        <View style={styles.row}>
+          {quickList.map((item) => (
+            <TouchableOpacity
+              key={item.name}
+              style={styles.quickItem}
+              onPress={() => setSelectedProvider(item.name)}
+            >
+              <View
+                style={[
+                  styles.logoBox,
+                  selectedProvider === item.name && {
+                    borderColor: theme.primaryBlue,
+                    borderWidth: 2,
+                    backgroundColor: "#E6F4FB",
+                  },
+                ]}
+              >
+                {item.name === "Any" ? (
+                  <Ionicons
+                    name="layers-outline"
+                    size={26}
+                    color={theme.primaryBlue}
+                  />
+                ) : (
+                  <Image
+                    source={{ uri: item.logo_url }}
+                    style={styles.logo}
+                  />
+                )}
+              </View>
 
-  {displayQuickList.map((item) => (
-    <TouchableOpacity
-      key={item.name}
-      style={styles.quickItem}
-      onPress={() => setSelectedProvider(item.name)}
-    >
-<View
-  style={[
-    styles.logoBox,
-    selectedProvider === item.name && {
-      borderColor: theme.primaryBlue,
-      borderWidth: 2,
-      backgroundColor: "#3b6c92", // light blue highlight
-      elevation: 3, // android shadow
-      shadowColor: "#000",
-      shadowOpacity: 0.5,
-      shadowRadius: 4,
-      shadowOffset: { width: 0, height: 2 },
-    },
-  ]}
->
-        <Image source={{ uri: item.logo_url }} style={styles.logo} />
+              <Text style={styles.quickText}>
+                {item.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+
+          {/* DELIVERY ONLY */}
+          {visitorType === "delivery" && (
+            <TouchableOpacity
+              style={styles.quickItem}
+              onPress={() => setShowProviderModal(true)}
+            >
+              <View style={styles.logoBox}>
+                <Ionicons name="ellipsis-horizontal" size={20} />
+              </View>
+              <Text style={styles.quickText}>More</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
-      <Text style={styles.quickText}>
-        {item.name}
-      </Text>
-    </TouchableOpacity>
-  ))}
-
-  {/* SHOW OTHER BUTTON ONLY FOR DELIVERY */}
-  {visitorType === "delivery" && (
-    <TouchableOpacity
-      style={styles.quickItem}
-      onPress={() => setShowProviderModal(true)}
-    >
-      <View style={styles.logoBox}>
-        <Ionicons name="ellipsis-horizontal" size={20} />
-      </View>
-      <Text style={styles.quickText}>Other</Text>
-    </TouchableOpacity>
-  )}
-
-</View>
-      
-      </View>
-
-      {/* MODAL */}
+      {/* MODAL (Delivery only) */}
       {visitorType === "delivery" && (
-        <Modal
-          visible={showProviderModal}
-          animationType="slide"
-          presentationStyle="fullScreen"
-        >
+        <Modal visible={showProviderModal} animationType="slide">
           <SafeAreaView style={{ flex: 1 }}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
@@ -251,16 +243,13 @@ const displayQuickList =
               </TouchableOpacity>
             </View>
 
-            {/* Search */}
             <View style={styles.searchBox}>
               <Ionicons name="search" size={18} />
               <TextInput
                 placeholder="Search..."
                 value={search}
                 onChangeText={setSearch}
-                style={{ flex: 1, marginLeft: 8,
-                  letterSpacing: 1
-                 }}
+                style={{ flex: 1, marginLeft: 8 }}
               />
             </View>
 
@@ -279,6 +268,8 @@ const displayQuickList =
 };
 
 export default ProviderSelector;
+
+/* ================== STYLES ================== */
 
 const styles = StyleSheet.create({
   row: {
@@ -305,6 +296,7 @@ const styles = StyleSheet.create({
   logo: {
     width: "100%",
     height: "100%",
+    resizeMode: "contain",
   },
 
   quickText: {
@@ -336,16 +328,9 @@ const styles = StyleSheet.create({
     height: 44,
   },
 
-
   modalItem: {
     flex: 1,
     alignItems: "center",
     marginBottom: 20,
-  },
-
-  modalLogo: {
-    width: 55,
-    height: 55,
-    borderRadius: 14,
   },
 });

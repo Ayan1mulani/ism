@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import VisitorTypeModal from './components/VisiotrTypeSelector';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 
@@ -69,7 +68,6 @@ const PURPOSE_ICONS = {
 const SingleEntryPassPage = ({ nightMode, passData, loading, onRefresh }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const navigation = useNavigation();
-  const [showVisitorModal, setShowVisitorModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [showFilters, setShowFilters] = useState(false);
@@ -190,15 +188,6 @@ const SingleEntryPassPage = ({ nightMode, passData, loading, onRefresh }) => {
     }
     setIsRefreshing(false);
   };
-  const handleVisitorSelect = (type) => {
-    setShowVisitorModal(false);
-    navigation.navigate('AddVisitor', { visitorType: type });
-  };
-
-  const handleAddPass = () => {
-    setShowVisitorModal(true);
-  };
-
 
 
   const getSmartDateLabel = (dateString) => {
@@ -478,24 +467,7 @@ const SingleEntryPassPage = ({ nightMode, passData, loading, onRefresh }) => {
           }
           ListEmptyComponent={renderEmptyState}
         />
-        <VisitorTypeModal
-          visible={showVisitorModal}
-          onClose={() => setShowVisitorModal(false)}
-          onSelect={handleVisitorSelect}
-          theme={theme}
-        />
 
-        {/* Floating Action Button */}
-        <TouchableOpacity
-          style={[styles.fab, {
-            backgroundColor: COLORS.primary,
-            shadowColor: nightMode ? '#000' : COLORS.primary,
-          }]}
-          onPress={handleAddPass}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="add" size={28} color="#FFFFFF" />
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
 
@@ -517,11 +489,11 @@ const createStyles = (theme, nightMode) =>
       fontSize: 16,
       fontWeight: '500',
     },
-    listContent: {
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      paddingBottom: 100,
-    },
+listContent: {
+  paddingHorizontal: 16,
+  paddingVertical: 12,
+  paddingBottom: 200, // more space than FAB bottom
+},
     card: {
     padding: 15,
   borderRadius: 14,

@@ -6,129 +6,117 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-const AddPreVisitorModal = ({
+const PreApproveModal = ({
   visible,
-  nightMode,
+  nightMode = false,
   onClose,
-  onSingleEntry,
-  onPreApproved,
+  onDelivery,
+  onGuest,
+  onCab,
+  onOthers,
 }) => {
 
   const theme = {
-    background: nightMode ? '#1E1E1E' : '#FFFFFF',
-    overlay: 'rgba(0,0,0,0.5)',
-    text: nightMode ? '#FFFFFF' : '#212529',
-    textSecondary: nightMode ? '#9E9E9E' : '#6C757D',
-    border: nightMode ? '#2E2E2E' : '#E9ECEF',
-    primary: '#1996D3',
-    card: nightMode ? '#2A2A2A' : '#F8F9FA',
+    background: nightMode ? '#0F1115' : '#F6F8FC',
+    overlay: 'rgba(0, 0, 0, 0.82)',
+
+    text: nightMode ? '#F5F7FA' : '#1E293B',
+    textSecondary: nightMode ? '#9CA3AF' : '#64748B',
+
+    border: nightMode ? '#1F2937' : '#E5E7EB',
+    primary: '#7C3AED',
+
+    chevron: nightMode ? '#6B7280' : '#94A3B8',
+    headlineText: '#FFFFFF',
+    subText: 'rgba(255,255,255,0.8)',
   };
+
+  const options = [
+    { key: 'delivery', label: 'Delivery', icon: 'moped', onPress: onDelivery },
+    { key: 'guest', label: 'Guest', icon: 'account-group', onPress: onGuest },
+    { key: 'cab', label: 'Cab', icon: 'taxi', onPress: onCab },
+    { key: 'others', label: 'Others', icon: 'account-hard-hat', onPress: onOthers },
+  ];
 
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="none"
+      animationType="slide"
       onRequestClose={onClose}
     >
-      {/* Overlay */}
       <View style={[styles.overlay, { backgroundColor: theme.overlay }]}>
-        
-        {/* Bottom Sheet */}
+
+        {/* ───── Header Area ───── */}
+        <View style={styles.headerArea}>
+
+          {/* Row: Title + Close */}
+          <View style={styles.titleRow}>
+            <Text style={[styles.headline, { color: theme.headlineText }]}>
+              Add Visitor
+            </Text>
+
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={onClose}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close" size={20} color="#000000" />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={[styles.subheadline, { color: theme.subText }]}>
+            Pre-approve visits for faster 
+             smoother entry
+          </Text>
+        </View>
+
+        {/* ───── Bottom Sheet ───── */}
         <View
           style={[
-            styles.container,
+            styles.sheet,
             {
               backgroundColor: theme.background,
               borderColor: theme.border,
             },
           ]}
         >
+          {options.map((opt) => (
+            <TouchableOpacity
+              key={opt.key}
+              style={styles.optionRow}
+              onPress={opt.onPress}
+              activeOpacity={0.75}
+            >
+              <View style={styles.iconWrap}>
+                <MaterialCommunityIcons
+                  name={opt.icon}
+                  size={26}
+                  color={theme.primary}
+                />
+              </View>
 
-          {/* Header Row */}
-          <View style={styles.headerRow}>
-            <Text style={[styles.title, { color: theme.text }]}>
-              Add Visitor
-            </Text>
+              <Text style={[styles.optionLabel, { color: theme.text }]}>
+                {opt.label}
+              </Text>
 
-            <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
-              <Ionicons name="close" size={22} color={theme.textSecondary} />
+              <Ionicons
+                name="chevron-forward"
+                size={18}
+                color={theme.chevron}
+              />
             </TouchableOpacity>
-          </View>
-
-          {/* Option 1 – Single Entry */}
-          <TouchableOpacity
-            style={[
-              styles.optionCard,
-              { backgroundColor: theme.card, borderColor: theme.border },
-            ]}
-            onPress={onSingleEntry}
-            activeOpacity={0.85}
-          >
-            <View style={styles.iconContainer}>
-              <Ionicons
-                name="person-add-outline"
-                size={22}
-                color={theme.primary}
-              />
-            </View>
-
-            <View style={styles.textContainer}>
-              <Text style={[styles.optionTitle, { color: theme.text }]}>
-                Single Entry
-              </Text>
-              <Text
-                style={[
-                  styles.optionDesc,
-                  { color: theme.textSecondary },
-                ]}
-              >
-                Approve a visitor for one visit only.
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          {/* Option 2 – Pre Approved */}
-          <TouchableOpacity
-            style={[
-              styles.optionCard,
-              { backgroundColor: theme.card, borderColor: theme.border },
-            ]}
-            onPress={onPreApproved}
-            activeOpacity={0.85}
-          >
-            <View style={styles.iconContainer}>
-              <Ionicons
-                name="repeat-outline"
-                size={22}
-                color={theme.primary}
-              />
-            </View>
-
-            <View style={styles.textContainer}>
-              <Text style={[styles.optionTitle, { color: theme.text }]}>
-                Pre-Approved
-              </Text>
-              <Text
-                style={[
-                  styles.optionDesc,
-                  { color: theme.textSecondary },
-                ]}
-              >
-                Allow repeated visits (maid, delivery, staff).
-              </Text>
-            </View>
-          </TouchableOpacity>
-
+          ))}
         </View>
+
       </View>
     </Modal>
   );
 };
 
-export default AddPreVisitorModal;
+export default PreApproveModal;
 
 const styles = StyleSheet.create({
   overlay: {
@@ -136,55 +124,71 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
 
-  container: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderWidth: 1, // 🔥 border added
+  /* Header */
+  headerArea: {
+    paddingHorizontal: 24,
+    paddingBottom: 28,
+    paddingTop: 20,
   },
 
-  headerRow: {
+  titleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
   },
 
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
+  headline: {
+    fontSize: 34,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
 
-  optionCard: {
-    flexDirection: 'row',
-    padding: 16,
-    borderRadius: 14,
-    marginBottom: 14,
-    alignItems: 'center',
-    borderWidth: 1, // 🔥 subtle border for each card
+  subheadline: {
+    fontSize: 15,
+    lineHeight: 22,
   },
 
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  closeBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255, 255, 255, 0.54)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
   },
 
-  textContainer: {
+  /* Sheet */
+  sheet: {
+    borderRadius: 25,
+    overflow: 'hidden',
+    borderWidth: 1,
+    marginHorizontal: 15,
+    marginBottom: 20,
+    paddingVertical: 8,
+  },
+
+  /* Options */
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 17,
+    paddingHorizontal: 24,
+  },
+
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(124,58,237,0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+
+  optionLabel: {
     flex: 1,
-  },
-
-  optionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-
-  optionDesc: {
-    fontSize: 13,
+    fontSize: 17,
+    fontWeight: '500',
   },
 });
