@@ -33,7 +33,6 @@ const HomeScreen = () => {
           <CarouselSection />
           <ServicesSection />
           <Action/>
-          <NoticesSection />
           <ImportantContacts />
         </View>
       }

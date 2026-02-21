@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { usePermissions } from '../../Utils/ConetextApi';
 import ComplaintListScreen from './ServiceRequestPage';
 import { complaintService } from '../../services/complaintService';
+import SlidingTabs from '../components/SlidingTabs';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -215,26 +216,21 @@ const ServiceRequestTabs = () => {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Tab Bar */}
-      <View style={[styles.tabBar, {
-        backgroundColor: theme.surface,
-        borderBottomColor: theme.border,
-      }]}>
-        <View style={styles.tabContainer}>
-          {TABS.map((label, index) => renderTab(label, index))}
-          
-          {/* Tab Indicator */}
-          <Animated.View
-            style={[
-              styles.tabIndicator,
-              {
-                width: calculateTabWidth(),
-                backgroundColor: COLORS.primary,
-                transform: [{ translateX: tabIndicatorPosition }],
-              },
-            ]}
-          />
-        </View>
-      </View>
+
+      <SlidingTabs
+  tabs={TABS}
+  activeIndex={activeTabIndex}
+  onTabPress={setActiveTabIndex}
+  primaryColor={COLORS.primary}
+  inactiveColor={theme.textSecondary}
+  containerStyle={{
+    backgroundColor: theme.surface,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+  }}
+/>
+      
 
       {/* Page Content */}
       <ScrollView
@@ -242,7 +238,6 @@ const ServiceRequestTabs = () => {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
         onScrollBeginDrag={handleScrollBegin}
         onMomentumScrollEnd={handleScrollEnd}
         scrollEventThrottle={16}
@@ -270,37 +265,6 @@ const createStyles = (theme, nightMode) =>
   StyleSheet.create({
     container: {
       flex: 1,
-    },
-    tabBar: {
-      paddingHorizontal: 16,
-      paddingTop: 12,
-      paddingBottom: 8,
-      borderBottomWidth: 1,
-    },
-    tabContainer: {
-      flexDirection: 'row',
-      position: 'relative',
-    },
-    tab: {
-      flex: 1,
-      paddingVertical: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    tabLabel: {
-      fontSize: 15,
-      fontWeight: '600',
-      letterSpacing: 0.2,
-    },
-    tabLabelActive: {
-      fontWeight: '700',
-    },
-    tabIndicator: {
-      height: 3,
-      borderRadius: 1.5,
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
     },
     scrollView: {
       flex: 1,

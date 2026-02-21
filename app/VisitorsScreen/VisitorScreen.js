@@ -14,15 +14,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePermissions } from '../../Utils/ConetextApi';
 import VisitRequest from './VisitRequest';
 import { useNavigation } from '@react-navigation/native';
-import AddPreVisitorModal from './components/ AddPreVisitorModal'
+import AddPreVisitorModal from './components/AddPreVisitorModal'
 import SingleEntry from './SingleEntry';
 import { visitorServices } from '../../services/visitorServices';
 import PreApprovedPage from './PreApprovedPage';
 import { Ionicons } from '@expo/vector-icons';
+import SlidingTabs from '../components/SlidingTabs';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const TABS = ['Visit Requests', 'Single Entry', 'Frequent Entry'];
+const TABS = ['Visit Requests', 'Entry Passes',
+  //  'Frequent Entry'
+  ];
 
 const calculateTabWidth = () => (SCREEN_WIDTH - 32) / TABS.length;
 
@@ -46,7 +49,7 @@ const COLORS = {
 
 
 const VisitorScreen = () => {
- const navigation = useNavigation();
+  const navigation = useNavigation();
   // Tab state
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [visits, setVisits] = useState(null);
@@ -54,7 +57,6 @@ const VisitorScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   // ✅ Modal state — shared across all 3 tabs
-  const [showAddModal, setShowAddModal] = useState(false);
   const [showPreApproveModal, setShowPreApproveModal] = useState(false);
 
   const tabIndicatorPosition = useRef(new Animated.Value(0)).current;
@@ -187,21 +189,16 @@ const VisitorScreen = () => {
       />
 
       {/* Tab Bar */}
-      <View style={[styles.tabBar, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
-        <View style={styles.tabContainer}>
-          {TABS.map((label, index) => renderTab(label, index))}
-          <Animated.View
-            style={[
-              styles.tabIndicator,
-              {
-                width: calculateTabWidth(),
-                backgroundColor: COLORS.primary,
-                transform: [{ translateX: tabIndicatorPosition }],
-              },
-            ]}
-          />
-        </View>
-      </View>
+      <SlidingTabs
+        tabs={TABS}
+        activeIndex={activeTabIndex}
+        onTabPress={setActiveTabIndex}
+        primaryColor={COLORS.primary}
+        inactiveColor={theme.textSecondary}
+        containerStyle={{
+          backgroundColor: theme.surface,
+        }}
+      />
 
       {/* Page Content */}
       <ScrollView
@@ -215,7 +212,11 @@ const VisitorScreen = () => {
         scrollEventThrottle={16}
         style={styles.scrollView}
       >
-        {TABS.map((tab) => renderPage(tab))}
+       {TABS.map((tab, index) => (
+  <View key={tab} style={{ width: SCREEN_WIDTH }}>
+    {renderPage(tab)}
+  </View>
+))}
       </ScrollView>
 
       {/* ✅ Single FAB shared across all 3 tabs */}
@@ -224,37 +225,37 @@ const VisitorScreen = () => {
         onPress={() => setShowPreApproveModal(true)}
         activeOpacity={0.8}
       >
-                <Ionicons name="add" size={28} color="#FFFFFF" />
+        <Ionicons name="add" size={28} color="#FFFFFF" />
 
       </TouchableOpacity>
 
 
 
 
- 
+
       {/* ✅ Step 2 — Delivery / Guest / Cab / Others */}
       <AddPreVisitorModal
         visible={showPreApproveModal}
         nightMode={nightMode}
         onClose={() => setShowPreApproveModal(false)}
         onDelivery={() => {
-  setShowPreApproveModal(false);
-  setTimeout(() => navigation.navigate('AddVisitor', { type: 'delivery' }), 200);
-}}
+          setShowPreApproveModal(false);
+          setTimeout(() => navigation.navigate('AddVisitor', { type: 'delivery' }), 200);
+        }}
 
-onGuest={() => {
-  setShowPreApproveModal(false);
-  setTimeout(() => navigation.navigate('AddVisitor', { type: 'guest' }), 200);
-}}
+        onGuest={() => {
+          setShowPreApproveModal(false);
+          setTimeout(() => navigation.navigate('AddVisitor', { type: 'guest' }), 200);
+        }}
 
-onCab={() => {
-  setShowPreApproveModal(false);
-  setTimeout(() => navigation.navigate('AddVisitor', { type: 'cab' }), 200);
-}}
-onOthers={() => {
-  setShowPreApproveModal(false);
-  setTimeout(() => navigation.navigate('AddVisitor', { type: 'others' }), 200);
-}}
+        onCab={() => {
+          setShowPreApproveModal(false);
+          setTimeout(() => navigation.navigate('AddVisitor', { type: 'cab' }), 200);
+        }}
+        onOthers={() => {
+          setShowPreApproveModal(false);
+          setTimeout(() => navigation.navigate('AddVisitor', { type: 'others' }), 200);
+        }}
       />
 
     </SafeAreaView>
@@ -264,36 +265,6 @@ onOthers={() => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  tabBar: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    position: 'relative',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-  },
-  tabLabelActive: {
-    fontWeight: '700',
-  },
-  tabIndicator: {
-    height: 3,
-    borderRadius: 1.5,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
   },
   scrollView: {
     flex: 1,

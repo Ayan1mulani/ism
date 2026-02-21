@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
 import PreApprovedCard from './components/PreApprovedCard';
-import AddPreVisitorModal from './components/ AddPreVisitorModal';
+import AddPreVisitorModal from './components/AddPreVisitorModal';
 
 const mockPreApprovedData = [
    { 

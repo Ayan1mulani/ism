@@ -9,61 +9,135 @@ import {
 } from "react-native";
 import ProviderSelector from "../components/ProviderSelector";
 import CalendarSelector from "../components/Calender";
+import StatusModal from "../../components/StatusModal";
+import { visitorServices } from "../../../services/visitorServices";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
 const SingleCabForm = ({ theme }) => {
+  const navigation = useNavigation();
+
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [visitDate, setVisitDate] = useState(null);
   const [vehicleNo, setVehicleNo] = useState("");
   const [entriesPerDay, setEntriesPerDay] = useState(1);
+  const [errors, setErrors] = useState({});
+  const [modalType, setModalType] = useState(null);
 
   const handleVehicleChange = (text) => {
-    const numeric = text.replace(/[^0-9]/g, "");
-    if (numeric.length <= 4) setVehicleNo(numeric);
-  };
+  const numeric = text.replace(/[^0-9]/g, "");
+  if (numeric.length <= 4) {
+    setVehicleNo(numeric);
+    if (errors.vehicle) {
+      setErrors((prev) => ({ ...prev, vehicle: null }));
+    }
+  }
+};
 
-  const handleSubmit = () => {
-    console.log({
-      type: "cab-single",
-      provider: selectedProvider,
-      visitDate,
-      vehicleLast4: vehicleNo,
-      entriesPerDay,
-    });
-  };
+  const handleSubmit = async () => {
+  let newErrors = {};
+
+  if (!selectedProvider) {
+    newErrors.provider = "Please select cab company";
+  }
+
+  if (!visitDate) {
+    newErrors.date = "Please select visit date";
+  }
+
+  if (!vehicleNo || vehicleNo.length !== 4) {
+    newErrors.vehicle = "Enter 4-digit cab number";
+  }
+
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    return;
+  }
+
+  setErrors({});
+
+  try {
+    const formattedDate =
+      visitDate instanceof Date
+        ? visitDate.toISOString().split("T")[0]
+        : visitDate;
+
+    const payload = {
+      date_time: formattedDate,
+      company_name: selectedProvider?.name || selectedProvider,
+      cab_number: vehicleNo,
+      type: "cab",
+    };
+
+    console.log("📦 Payload 👉", payload);
+
+    setModalType("loading");
+
+    const res = await visitorServices.addMyVisitor(payload);
+
+    if (res) {
+      setModalType("success");
+
+      setTimeout(() => {
+        setModalType(null);
+        navigation.goBack();
+      }, 1400);
+    } else {
+      setModalType("error");
+      setTimeout(() => setModalType(null), 2000);
+    }
+  } catch (error) {
+    setModalType("error");
+    setTimeout(() => setModalType(null), 2000);
+  }
+};
+
 
   return (
-    <View style={{ flex: 1 }}>
-
+    <View style={{ flex: 1, backgroundColor: theme.cardBg }}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* 🔵 Cab Provider */}
+        {/* Provider */}
         <ProviderSelector
           visitorType="cab"
           theme={theme}
           selectedProvider={selectedProvider}
-          setSelectedProvider={setSelectedProvider}
+          setSelectedProvider={(val) => {
+            setSelectedProvider(val);
+            if (errors.provider)
+              setErrors((prev) => ({ ...prev, provider: null }));
+          }}
           stylesFromParent={styles}
         />
+        {errors.provider && (
+          <Text style={styles.errorText}>{errors.provider}</Text>
+        )}
 
-        {/* 🔵 Visit Date */}
+        {/* Visit Date */}
         <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
           <CalendarSelector
             selectedDate={visitDate}
-            onDateSelect={setVisitDate}
+            onDateSelect={(date) => {
+              setVisitDate(date);
+              if (errors.date)
+                setErrors((prev) => ({ ...prev, date: null }));
+            }}
             label="Visit Date"
             required={true}
             nightMode={false}
           />
+          {errors.date && (
+            <Text style={styles.errorText}>{errors.date}</Text>
+          )}
         </View>
 
-        {/* 🔵 Vehicle Number (Optional) */}
+        {/* Vehicle */}
         <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
-          <Text style={[styles.label, { color: theme.text }]}>
-            Vehicle Number
-          </Text>
+         <Text style={[styles.label, { color: theme.text }]}>
+  Vehicle Number (Last 4 Digits) <Text style={{ color: "#EF4444" }}>*</Text>
+</Text>
 
           <TextInput
             value={vehicleNo}
@@ -81,10 +155,13 @@ const SingleCabForm = ({ theme }) => {
               },
             ]}
           />
+          {errors.vehicle && (
+  <Text style={styles.errorText}>{errors.vehicle}</Text>
+)}
         </View>
 
-        {/* 🔵 Entries Per Day */}
-        <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
+        {/* Entries */}
+        {/* <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
           <Text style={[styles.label, { color: theme.text }]}>
             Entries Per Day
           </Text>
@@ -110,19 +187,40 @@ const SingleCabForm = ({ theme }) => {
               <Ionicons name="add" size={18} color={theme.primaryBlue} />
             </TouchableOpacity>
           </View>
-        </View>
+        </View> */}
       </ScrollView>
 
-      {/* 🔵 Sticky Bottom Button */}
+      {/* Sticky Button */}
       <TouchableOpacity
         style={[
           styles.submitButton,
           { backgroundColor: theme.primaryBlue },
         ]}
         onPress={handleSubmit}
+        disabled={modalType === "loading"}
       >
         <Text style={styles.submitText}>Schedule Cab</Text>
       </TouchableOpacity>
+
+      {/* Reusable Modal */}
+      <StatusModal
+        visible={!!modalType}
+        type={modalType}
+        title={
+          modalType === "loading"
+            ? "Scheduling..."
+            : modalType === "success"
+            ? "Cab Scheduled"
+            : "Failed!"
+        }
+        subtitle={
+          modalType === "loading"
+            ? "Please wait"
+            : modalType === "success"
+            ? "Cab pass created"
+            : "Please try again"
+        }
+      />
     </View>
   );
 };
@@ -185,4 +283,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 16,
   },
+  errorText: {
+  color: "#EF4444",
+  fontSize: 12,
+  marginTop: 6,
+  marginLeft: 4,
+},
 });

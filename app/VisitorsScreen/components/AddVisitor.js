@@ -146,7 +146,7 @@ const getHeaderTitle = () => {
     
 
       {/* Toggle */}
-      <View style={styles.toggleWrapper}>
+      {/* <View style={styles.toggleWrapper}>
         <View style={styles.toggleContainer}>
           <Animated.View
             style={[
@@ -193,7 +193,7 @@ const getHeaderTitle = () => {
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </View> */}
 
       {/* Form Section */}
       <ScrollView

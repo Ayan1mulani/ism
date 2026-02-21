@@ -110,21 +110,21 @@ useEffect(() => {
             </Text>
 
             {/* Switch Account Button */}
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.locationContainer}
               onPress={fetchAccounts}
               activeOpacity={0.7}
-            >
+            > */}
               {/* <View style={styles.statusDot} /> */}
               <Text style={styles.locationText}>
               {userDetails?.flat_no || "Switch Account"}
               </Text>
-              <Ionicons
+              {/* <Ionicons
                 name="chevron-down"
                 size={14}
                 color={currentTheme.subText}
-              />
-            </TouchableOpacity>
+              /> */}
+            {/* </TouchableOpacity> */}
           </View>
         </View>
 

@@ -1,35 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import { SafeAreaView, StyleSheet, FlatList, Text, View, ActivityIndicator, StatusBar } from 'react-native';
-import ComplaintCard from './complaintCard'; // Import the card component
-import { complaintService } from '../../services/complaintService';
+import React from 'react';
+import { StyleSheet, FlatList, Text, View, ActivityIndicator, StatusBar } from 'react-native';
+import ComplaintCard from './complaintCard';
 import { usePermissions } from '../../Utils/ConetextApi';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
-// --- YOUR THEME COLORS ---
 const THEME_COLORS = {
-  primaryAccent: '#1996D3',
-  darkText: '#074B7C',
-  inactiveText: '#6c757d',
+  primaryAccent:   '#1996D3',
+  darkText:        '#074B7C',
+  inactiveText:    '#6c757d',
   lightBackground: '#f4f7f9',
-  // Night mode colors
-  darkBackground: '#121212',
-  darkTextColor: '#ffffff',
-  darkInactiveText: '#aaaaaa',
+  darkBackground:  '#121212',
+  darkTextColor:   '#ffffff',
+  darkInactiveText:'#aaaaaa',
 };
 
-const ComplaintListScreen = ({ nightMode, status, complaints = [], isLoading = false }) => {
+const ComplaintListScreen = ({
+  nightMode,
+  status,
+  complaints = [],
+  isLoading = false,
+  listBottomPadding = 182,
+  onRefresh,
+}) => {
+  // ── Hooks — always at top, never inside conditions ──
+  const navigation                     = useNavigation();
   const { nightMode: contextNightMode } = usePermissions();
-  
-  // Use nightMode from props or fallback to context
+
   const currentNightMode = nightMode !== undefined ? nightMode : contextNightMode;
 
-
-  // Dynamic theme based on night mode
   const currentTheme = {
-    backgroundColor: currentNightMode ? THEME_COLORS.darkBackground : THEME_COLORS.lightBackground,
-    textColor: currentNightMode ? THEME_COLORS.darkTextColor : THEME_COLORS.darkText,
-    inactiveTextColor: currentNightMode ? THEME_COLORS.darkInactiveText : THEME_COLORS.inactiveText,
+    backgroundColor:  currentNightMode ? THEME_COLORS.darkBackground  : THEME_COLORS.lightBackground,
+    textColor:        currentNightMode ? THEME_COLORS.darkTextColor    : THEME_COLORS.darkText,
+    inactiveTextColor:currentNightMode ? THEME_COLORS.darkInactiveText : THEME_COLORS.inactiveText,
   };
 
+  // ── Loading state ──
   if (isLoading) {
     return (
       <View style={[styles.centered, { backgroundColor: currentTheme.backgroundColor }]}>
@@ -41,31 +47,40 @@ const ComplaintListScreen = ({ nightMode, status, complaints = [], isLoading = f
     );
   }
 
+  // ── List ──
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: currentTheme.backgroundColor }]}>
-      <StatusBar 
-        barStyle={currentNightMode ? "light-content" : "dark-content"} 
+    <SafeAreaView style={styles.container}>
+      <StatusBar
+        barStyle={currentNightMode ? 'light-content' : 'dark-content'}
         backgroundColor={currentTheme.backgroundColor}
       />
       <FlatList
         data={complaints}
         renderItem={({ item }) => (
-          <ComplaintCard 
-            complaint={item} 
+          <ComplaintCard
+            complaint={item}
             nightMode={currentNightMode}
+            onPress={() => navigation.navigate('ServiceRequestDetail', { complaint: item })}
           />
         )}
-        keyExtractor={(item, index) => item.id ? item.id.toString() : index.toString()}
+        keyExtractor={(item, index) =>
+          item.id ? item.id.toString() : index.toString()
+        }
         ListEmptyComponent={() => (
-          <View style={[styles.centered, { backgroundColor: currentTheme.backgroundColor }]}>
+          <View style={styles.emptyWrap}>
             <Text style={[styles.emptyText, { color: currentTheme.inactiveTextColor }]}>
               No {status.toLowerCase()} complaints found.
             </Text>
           </View>
         )}
-        contentContainerStyle={complaints.length === 0 ? { flex: 1 } : styles.listContent}
+        contentContainerStyle={
+          complaints.length === 0
+            ? styles.emptyContainer
+            : { paddingVertical: 10, paddingBottom: listBottomPadding }
+        }
         showsVerticalScrollIndicator={false}
         refreshing={isLoading}
+        onRefresh={onRefresh}
       />
     </SafeAreaView>
   );
@@ -75,29 +90,37 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 10,
-  },
+
+  // Full-screen center for loading state
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  emptyText: {
-    fontSize: 16,
-    textAlign: 'center',
+
+  // Makes FlatList content fill height so empty component can center
+  emptyContainer: {
+    flexGrow: 1,
   },
+
+  // Centers the empty message inside the full-height container
+  emptyWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+
+  emptyText: {
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+
   loadingText: {
     fontSize: 14,
     marginTop: 10,
     textAlign: 'center',
-  },
-  listContent: {
-    paddingVertical: 10,
   },
 });
 

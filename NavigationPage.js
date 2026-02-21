@@ -13,6 +13,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
+
+
 import HomeScreen from './app/HomeScreen/HomeScreen';
 import VisitorsScreen from './app/VisitorsScreen/VisitorScreen';
 import Header from './app/Common/Header/Header';
@@ -32,6 +34,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AddVisitor from './app/VisitorsScreen/components/AddVisitor';
 import AddPreApprovedVisitor from './app/VisitorsScreen/singleMultiVisits/SingleVisitorForm';
 import AddFrequentVisitor from './app/VisitorsScreen/singleMultiVisits/FrequentVisitorForm';
+import ServiceRequestDetailScreen from './app/ServiceRequestScreen/components/ServiceRequestDetail';
+import PassDetailsScreen from './app/VisitorsScreen/components/PassDetailsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -55,31 +59,10 @@ const ServiceRequestsStack = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="ServiceRequestsMain" component={ServiceRequestTabs} />
-      <Stack.Screen
-        name="CategorySelection"
-        component={CategorySelectionScreen}
-        options={{
-          headerShown: false,
-          presentation: 'card'
-        }}
-      />
-      <Stack.Screen
-        name="subCategorySelection"
-        component={SubCategorySelectionScreen}
-        options={{
-          headerShown: false,
-          presentation: 'card'
-        }}
-      />
-      <Stack.Screen
-        name="complaintInput"
-        component={ComplaintInputScreen}
-        options={{
-          headerShown: false,
-          presentation: 'card'
-        }}
-      />
+
+
     </Stack.Navigator>
+
   );
 };
 
@@ -275,6 +258,12 @@ const NavigationPage = () => {
           <Stack.Screen name="AddVisitor" component={AddVisitor} />
           <Stack.Screen name="AddPreVisitor" component={AddPreApprovedVisitor} />
           <Stack.Screen name="AddFrequentVisitor" component={AddFrequentVisitor} />
+          <Stack.Screen name="CategorySelection" component={CategorySelectionScreen} />
+          <Stack.Screen name="ServiceRequestDetail" component={ServiceRequestDetailScreen} />
+          <Stack.Screen name="SubCategorySelection" component={SubCategorySelectionScreen} />
+          <Stack.Screen name="complaintInput" component={ComplaintInputScreen} />
+          <Stack.Screen name="PassDetails" component={PassDetailsScreen} />
+
         </Stack.Navigator>
       </NavigationContainer>
     </PermissionsProvider>

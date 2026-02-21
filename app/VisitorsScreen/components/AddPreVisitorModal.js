@@ -5,6 +5,7 @@ import {
   Modal,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -15,19 +16,15 @@ const PreApproveModal = ({
   onDelivery,
   onGuest,
   onCab,
-  onOthers,
 }) => {
 
   const theme = {
     background: nightMode ? '#0F1115' : '#F6F8FC',
     overlay: 'rgba(0, 0, 0, 0.82)',
-
     text: nightMode ? '#F5F7FA' : '#1E293B',
     textSecondary: nightMode ? '#9CA3AF' : '#64748B',
-
     border: nightMode ? '#1F2937' : '#E5E7EB',
     primary: '#7C3AED',
-
     chevron: nightMode ? '#6B7280' : '#94A3B8',
     headlineText: '#FFFFFF',
     subText: 'rgba(255,255,255,0.8)',
@@ -37,82 +34,80 @@ const PreApproveModal = ({
     { key: 'delivery', label: 'Delivery', icon: 'moped', onPress: onDelivery },
     { key: 'guest', label: 'Guest', icon: 'account-group', onPress: onGuest },
     { key: 'cab', label: 'Cab', icon: 'taxi', onPress: onCab },
-    { key: 'others', label: 'Others', icon: 'account-hard-hat', onPress: onOthers },
   ];
 
+
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
+<Modal
+  visible={visible}
+  transparent
+  animationType="none"
+  onRequestClose={onClose}
+>
+  <Pressable
+    style={[styles.overlay, { backgroundColor: theme.overlay }]}
+    onPress={onClose}
+  >
+    <View style={styles.headerArea}>
+      <View style={styles.titleRow}>
+        <Text style={[styles.headline, { color: theme.headlineText }]}>
+          Add Visitor
+        </Text>
+
+        <TouchableOpacity
+          style={styles.closeBtn}
+          onPress={onClose}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="close" size={20} color="#000" />
+        </TouchableOpacity>
+      </View>
+
+      <Text style={[styles.subheadline, { color: theme.subText }]}>
+        Pre-approve visits for faster smoother entry
+      </Text>
+    </View>
+
+    {/* Prevent outside press closing when touching sheet */}
+    <TouchableOpacity
+      activeOpacity={1}
+      style={[
+        styles.sheet,
+        {
+          backgroundColor: theme.background,
+          borderColor: theme.border,
+        },
+      ]}
     >
-      <View style={[styles.overlay, { backgroundColor: theme.overlay }]}>
-
-        {/* ───── Header Area ───── */}
-        <View style={styles.headerArea}>
-
-          {/* Row: Title + Close */}
-          <View style={styles.titleRow}>
-            <Text style={[styles.headline, { color: theme.headlineText }]}>
-              Add Visitor
-            </Text>
-
-            <TouchableOpacity
-              style={styles.closeBtn}
-              onPress={onClose}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="close" size={20} color="#000000" />
-            </TouchableOpacity>
+      {options.map((opt) => (
+        <TouchableOpacity
+          key={opt.key}
+          style={styles.optionRow}
+          onPress={opt.onPress}
+          activeOpacity={0.75}
+        >
+          <View style={styles.iconWrap}>
+            <MaterialCommunityIcons
+              name={opt.icon}
+              size={26}
+              color={theme.primary}
+            />
           </View>
 
-          <Text style={[styles.subheadline, { color: theme.subText }]}>
-            Pre-approve visits for faster 
-             smoother entry
+          <Text style={[styles.optionLabel, { color: theme.text }]}>
+            {opt.label}
           </Text>
-        </View>
 
-        {/* ───── Bottom Sheet ───── */}
-        <View
-          style={[
-            styles.sheet,
-            {
-              backgroundColor: theme.background,
-              borderColor: theme.border,
-            },
-          ]}
-        >
-          {options.map((opt) => (
-            <TouchableOpacity
-              key={opt.key}
-              style={styles.optionRow}
-              onPress={opt.onPress}
-              activeOpacity={0.75}
-            >
-              <View style={styles.iconWrap}>
-                <MaterialCommunityIcons
-                  name={opt.icon}
-                  size={26}
-                  color={theme.primary}
-                />
-              </View>
-
-              <Text style={[styles.optionLabel, { color: theme.text }]}>
-                {opt.label}
-              </Text>
-
-              <Ionicons
-                name="chevron-forward"
-                size={18}
-                color={theme.chevron}
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
-
-      </View>
-    </Modal>
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={theme.chevron}
+          />
+        </TouchableOpacity>
+      ))}
+    </TouchableOpacity>
+  </Pressable>
+</Modal>
   );
 };
 
@@ -153,7 +148,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: 'rgba(255, 255, 255, 0.54)',
+    backgroundColor: 'rgba(255,255,255,0.54)',
     justifyContent: 'center',
     alignItems: 'center',
   },

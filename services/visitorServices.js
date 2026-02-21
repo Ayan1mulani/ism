@@ -15,7 +15,7 @@ import { Util } from "./Util";
         input: "",
         residentId: user.id
     }
-    const url =  visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/290/getVisitsForResident?api-token=${user.api_token}&user-id=${367102}`);
+    const url =  await visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/290/getVisitsForResident`);
     const headers = await Util.getCommonAuth()
      const response =   await ApiCommon.postReq(url,paylod,headers);
      return response
@@ -32,11 +32,28 @@ import { Util } from "./Util";
         input: "",
         residentId: user.id
     }
-    const url =  visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/290/searchPass?api-token=${user.api_token}&user-id=${367102}`);
+    const url =  await visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/290/searchPass`);
     const headers = await Util.getCommonAuth()
      const response =   await ApiCommon.postReq(url,paylod,headers);
+     console.log(response,'this is res for pass')
      return response
   },
+
+  addMyVisitor: async (data) => {
+  const user = await Common.getLoggedInUser()
+  const url = await visitorServices.appendParamsInUrl(
+    `${API_URL4}/v2/society/290/createallpass`
+    
+  )
+
+  const headers = await Util.getCommonAuth()
+
+  console.log("🔗 API URL:", url)
+  console.log("📦 Payload:", data)
+
+  return ApiCommon.postReq(url, data, headers)
+},
+
 
 
   
@@ -68,21 +85,46 @@ import { Util } from "./Util";
   },
 
 
-appendParamsInUrl: (url, params) => {
-    if (params && typeof params === "object") {
-      const queryParams = Object.keys(params)
-        .filter((key) => params[key] !== null && params[key] !== undefined)
-        .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
-        .join('&');
+appendParamsInUrl: async (url, extraParams = {}) => {
+  const user = await Common.getLoggedInUser()
 
-      if (queryParams) {
-        url += url.includes('?') ? '&' : '?';
-        url += queryParams;
-      }
-    }
+  const uObj = {
+    user_id: 367102,
+    group_id: 2265,
+    flat_no: "CL1-T112",
+    unit_id: 367102,
+    society_id: 290
+  };
 
-    return url;
+  const u = JSON.stringify(uObj); // ✅ no encode
+
+  const commonParams = {
+    "api-token": user.api_token,
+    "user-id": u,
+    "group-id": 2265,
+    "app_id": "ism_resident"
+  };
+
+  const finalParams = {
+    ...commonParams,
+    ...extraParams
+  };
+
+  const queryParams = Object.keys(finalParams)
+    .filter(key => finalParams[key] !== null && finalParams[key] !== undefined)
+    .map(
+      key =>
+        `${encodeURIComponent(key)}=${encodeURIComponent(finalParams[key])}`
+    )
+    .join("&");
+
+  if (queryParams) {
+    url += url.includes("?") ? "&" : "?";
+    url += queryParams;
   }
+
+  return url;
+}
 
 }
 

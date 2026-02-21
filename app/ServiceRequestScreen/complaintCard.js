@@ -1,353 +1,356 @@
 // ServiceRequestDetailCard.js
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { usePermissions } from '../../Utils/ConetextApi';
 
-// Theme configuration
+
+// ─── Theme configuration ──────────────────────────────────────────────────────
 const COLORS = {
-  primary: '#1996D3',
-  success: '#28A745',
-  warning: '#FFC107',
-  info: '#0052CC',
-  
-  // Light theme
+  primary:  '#1996D3',
+  success:  '#28A745',
+  warning:  '#FFC107',
+  info:     '#0052CC',
   light: {
-    background: '#FFFFFF',
-    surface: '#F8F9FA',
-    text: '#212529',
+    background:    '#FFFFFF',
+    surface:       '#F8F9FA',
+    text:          '#212529',
     textSecondary: '#6C757D',
-    border: '#DEE2E6',
-    description: '#495057',
+    border:        '#DEE2E6',
+    description:   '#495057',
   },
-  
-  // Dark theme
   dark: {
-    background: '#1E1E1E',
-    surface: '#2A2A2A',
-    text: '#FFFFFF',
+    background:    '#1E1E1E',
+    surface:       '#2A2A2A',
+    text:          '#FFFFFF',
     textSecondary: '#9E9E9E',
-    border: '#2C2C2C',
-    description: '#CCCCCC',
+    border:        '#2C2C2C',
+    description:   '#CCCCCC',
   },
 };
 
-// Request status configuration
+// ─── Status configuration ─────────────────────────────────────────────────────
 const REQUEST_STATUS = {
   RESOLVED: {
     light: { bg: '#D4EDDA', color: COLORS.success },
-    dark: { bg: '#1A3D2E', color: COLORS.success },
+    dark:  { bg: '#1A3D2E', color: COLORS.success },
     label: 'Resolved',
-    icon: 'checkmark-circle',
+    icon:  'checkmark-circle',
   },
   PENDING: {
     light: { bg: '#FFF3CD', color: COLORS.warning },
-    dark: { bg: '#3D3A1A', color: COLORS.warning },
+    dark:  { bg: '#3D3A1A', color: COLORS.warning },
     label: 'Pending',
-    icon: 'time-outline',
+    icon:  'time-outline',
   },
   IN_PROGRESS: {
     light: { bg: '#CCE7FF', color: COLORS.primary },
-    dark: { bg: '#1A2D3D', color: COLORS.primary },
+    dark:  { bg: '#1A2D3D', color: COLORS.primary },
     label: 'In Progress',
-    icon: 'sync',
+    icon:  'sync',
   },
   UNKNOWN: {
     light: { bg: '#E9ECEF', color: COLORS.light.textSecondary },
-    dark: { bg: '#2A2A2A', color: COLORS.dark.textSecondary },
+    dark:  { bg: '#2A2A2A', color: COLORS.dark.textSecondary },
     label: 'Unknown',
-    icon: 'help-circle-outline',
+    icon:  'help-circle-outline',
   },
 };
 
-// Category icon configuration
+// ─── Category icon configuration ──────────────────────────────────────────────
 const CATEGORY_ICONS = {
-  AC: { name: 'snowflake', library: 'FontAwesome5', color: COLORS.primary },
-  ELECTRICAL: { name: 'flash', library: 'Ionicons', color: '#FF8B00' },
-  PLUMBING: { name: 'water', library: 'Ionicons', color: COLORS.info },
-  LIGHTING: { name: 'lightbulb-outline', library: 'Ionicons', color: COLORS.warning },
-  MAINTENANCE: { name: 'construct', library: 'Ionicons', color: COLORS.success },
-  DEFAULT: { name: 'build', library: 'Ionicons', color: COLORS.light.textSecondary },
+  AC:          { name: 'snowflake',        library: 'FontAwesome5', color: COLORS.primary },
+  ELECTRICAL:  { name: 'flash',            library: 'Ionicons',     color: '#FF8B00'       },
+  PLUMBING:    { name: 'water',            library: 'Ionicons',     color: COLORS.info     },
+  LIGHTING:    { name: 'bulb-outline',     library: 'Ionicons',     color: COLORS.warning  },
+  MAINTENANCE: { name: 'construct',        library: 'Ionicons',     color: COLORS.success  },
+  DEFAULT:     { name: 'build',            library: 'Ionicons',     color: '#6C757D'       },
 };
 
-const ServiceRequestDetailCard = ({ complaint }) => {
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const getStatusConfig = (status, nightMode) => {
+  const s = status?.toLowerCase() || '';
+
+  let key = 'UNKNOWN';
+  if (['resolved', 'closed', 'completed'].includes(s)) key = 'RESOLVED';
+  else if (['open', 'pending'].includes(s))             key = 'PENDING';
+  else if (s === 'in progress')                         key = 'IN_PROGRESS';
+
+  const config     = REQUEST_STATUS[key];
+  const themeStyle = nightMode ? config.dark : config.light;
+
+  return {
+    ...config,
+    bg:    themeStyle.bg,
+    color: themeStyle.color,
+    // For UNKNOWN, use the original status string as the label
+    label: key === 'UNKNOWN' && status ? status : config.label,
+  };
+};
+
+const getCategoryIcon = (category, theme) => {
+  const c = category?.toLowerCase() || '';
+  if (c.includes('ac') || c.includes('air'))              return CATEGORY_ICONS.AC;
+  if (c.includes('electrical') || c.includes('wiring'))   return CATEGORY_ICONS.ELECTRICAL;
+  if (c.includes('plumbing') || c.includes('water'))      return CATEGORY_ICONS.PLUMBING;
+  if (c.includes('light'))                                 return CATEGORY_ICONS.LIGHTING;
+  if (c.includes('maintenance'))                           return CATEGORY_ICONS.MAINTENANCE;
+  return { ...CATEGORY_ICONS.DEFAULT, color: theme.textSecondary };
+};
+
+const formatDate = (dateString) => {
+  try {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'short', day: 'numeric',
+    });
+  } catch {
+    return dateString || '—';
+  }
+};
+
+const getTimeAgo = (dateString) => {
+  try {
+    const diffTime   = Math.abs(new Date() - new Date(dateString));
+    const diffMins   = Math.floor(diffTime / 60000);
+    const diffHours  = Math.floor(diffMins  / 60);
+    const diffDays   = Math.floor(diffHours / 24);
+    const diffMonths = Math.floor(diffDays  / 30);
+    const diffYears  = Math.floor(diffDays  / 365);
+
+    if (diffMins   <  60) return diffMins  === 0 ? 'Just now' : `${diffMins}m ago`;
+    if (diffHours  <  24) return `${diffHours}h ago`;
+    if (diffDays   <  30) return `${diffDays}d ago`;
+    if (diffMonths <  12) return `${diffMonths}mo ago`;
+    return `${diffYears}y ago`;
+  } catch {
+    return '';
+  }
+};
+
+// ─── Icon renderer ────────────────────────────────────────────────────────────
+const AppIcon = ({ name, library, color, size = 16 }) => {
+  switch (library) {
+    case 'FontAwesome5':
+      return <FontAwesome5 name={name} size={size} color={color} />;
+    case 'MaterialIcons':
+      return <MaterialIcons name={name} size={size} color={color} />;
+    case 'Ionicons':
+    default:
+      return <Ionicons name={name} size={size} color={color} />;
+  }
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
+const ServiceRequestDetailCard = ({ complaint, onPress  }) => {
   const { nightMode } = usePermissions();
-  const theme = nightMode ? COLORS.dark : COLORS.light;
+  const theme        = nightMode ? COLORS.dark : COLORS.light;
 
-  // Get status configuration
-  const getStatusConfig = (status) => {
-    const statusLower = status?.toLowerCase() || '';
-    
-    if (['resolved', 'closed', 'completed'].includes(statusLower)) {
-      const config = REQUEST_STATUS.RESOLVED;
-      const themeConfig = nightMode ? config.dark : config.light;
-      return { ...config, ...themeConfig };
-    }
-    
-    if (['open', 'pending'].includes(statusLower)) {
-      const config = REQUEST_STATUS.PENDING;
-      const themeConfig = nightMode ? config.dark : config.light;
-      return { ...config, ...themeConfig };
-    }
-    
-    if (statusLower === 'in progress') {
-      const config = REQUEST_STATUS.IN_PROGRESS;
-      const themeConfig = nightMode ? config.dark : config.light;
-      return { ...config, ...themeConfig };
-    }
-    
-    const config = REQUEST_STATUS.UNKNOWN;
-    const themeConfig = nightMode ? config.dark : config.light;
-    return { ...config, ...themeConfig, label: status || 'Unknown' };
-  };
-
-  // Get category icon
-  const getCategoryIcon = (category) => {
-    const categoryLower = category?.toLowerCase() || '';
-    
-    if (categoryLower.includes('ac') || categoryLower.includes('air')) {
-      return CATEGORY_ICONS.AC;
-    }
-    if (categoryLower.includes('electrical') || categoryLower.includes('wiring')) {
-      return CATEGORY_ICONS.ELECTRICAL;
-    }
-    if (categoryLower.includes('plumbing') || categoryLower.includes('water')) {
-      return CATEGORY_ICONS.PLUMBING;
-    }
-    if (categoryLower.includes('light')) {
-      return CATEGORY_ICONS.LIGHTING;
-    }
-    if (categoryLower.includes('maintenance')) {
-      return CATEGORY_ICONS.MAINTENANCE;
-    }
-    
-    return { ...CATEGORY_ICONS.DEFAULT, color: theme.textSecondary };
-  };
-
-  // Format date
-  const formatDate = (dateString) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
-    } catch (error) {
-      return dateString;
-    }
-  };
-
-  // Calculate time ago with smart formatting
-  const getTimeAgo = (dateString) => {
-    try {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffTime = Math.abs(now - date);
-      const diffMinutes = Math.floor(diffTime / (1000 * 60));
-      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      const diffMonths = Math.floor(diffDays / 30);
-      const diffYears = Math.floor(diffDays / 365);
-
-      if (diffMinutes < 60) {
-        return diffMinutes === 0 ? 'Just now' : `${diffMinutes}m`;
-      }
-      if (diffHours < 24) {
-        return `${diffHours}h`;
-      }
-      if (diffDays < 30) {
-        return `${diffDays}d`;
-      }
-      if (diffMonths < 12) {
-        return `${diffMonths}mo`;
-      }
-      return `${diffYears}y`;
-    } catch (error) {
-      return '';
-    }
-  };
-
-  // Render icon
-  const renderIcon = (iconConfig, size = 16) => {
-    const { name, library, color } = iconConfig;
-    
-    switch (library) {
-      case 'FontAwesome5':
-        return <FontAwesome5 name={name} size={size} color={color} />;
-      case 'MaterialIcons':
-        return <MaterialIcons name={name} size={size} color={color} />;
-      case 'Ionicons':
-      default:
-        return <Ionicons name={name} size={size} color={color} />;
-    }
-  };
-
-  const statusConfig = getStatusConfig(complaint.status);
-  const categoryIcon = getCategoryIcon(complaint.sub_category);
-  const requestId = complaint.com_no || complaint.id;
-  const requestNumber = `#${requestId}`;
-
-  const styles = createStyles(theme, nightMode);
+  const statusConfig  = getStatusConfig(complaint?.status, nightMode);
+  const categoryIcon  = getCategoryIcon(complaint?.sub_category, theme);
+  const requestNumber = `#${complaint?.com_no ?? complaint?.id ?? '—'}`;
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.background, borderColor: theme.border }]}>
-      {/* Header: ID and Status */}
-      <View style={styles.header}>
-        <View style={styles.idSection}>
-          <MaterialIcons name="receipt-long" size={16} color={theme.textSecondary} />
-          <Text style={[styles.requestId, { color: theme.text }]}>{requestNumber}</Text>
-        </View>
-        
+   <TouchableOpacity
+  activeOpacity={0.8}
+  onPress={onPress}
+  style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}
+>
+
+      {/* ── Row 1: Request ID  +  Status badge ── */}
+      <View style={styles.headerRow}>
+        <Text style={[styles.idText, { color: COLORS.primary }]} numberOfLines={1}>
+          {requestNumber}
+        </Text>
+
         <View style={[styles.statusBadge, { backgroundColor: statusConfig.bg }]}>
-          <Ionicons name={statusConfig.icon} size={12} color={statusConfig.color} />
+          <Ionicons
+            name={statusConfig.icon}
+            size={13}
+            color={statusConfig.color}
+            style={styles.statusIcon}
+          />
           <Text style={[styles.statusLabel, { color: statusConfig.color }]}>
             {statusConfig.label}
           </Text>
         </View>
       </View>
 
-      {/* Category Section */}
-      <View style={styles.categorySection}>
-        <View style={[styles.categoryIcon, {
-          backgroundColor: nightMode ? `${COLORS.primary}25` : `${COLORS.primary}15`,
-        }]}>
-          {renderIcon(categoryIcon, 18)}
+      {/* ── Row 2: Category avatar  +  title / description ── */}
+      <View style={styles.bodyRow}>
+        {/* Avatar circle with category icon */}
+        <View style={[styles.avatar, { backgroundColor: `${categoryIcon.color}18` }]}>
+          <AppIcon
+            name={categoryIcon.name}
+            library={categoryIcon.library}
+            color={categoryIcon.color}
+            size={22}
+          />
         </View>
-        <Text style={[styles.categoryTitle, { color: theme.text }]} numberOfLines={1}>
-          {complaint.sub_category || 'Service Request'}
-        </Text>
-      </View>
 
-      {/* Description */}
-      <View style={styles.descriptionSection}>
-        <Text style={[styles.description, { color: theme.description }]} numberOfLines={3}>
-          {complaint.description || 'No description provided'}
-        </Text>
-      </View>
-
-      {/* Date Information */}
-      <View style={[styles.dateSection, { backgroundColor: theme.surface }]}>
-        <View style={styles.dateRow}>
-          <View style={styles.dateLabel}>
-            <MaterialIcons name="schedule" size={12} color={theme.textSecondary} />
-            <Text style={[styles.dateLabelText, { color: theme.textSecondary }]}>
-              Created:
-            </Text>
-          </View>
-          <Text style={[styles.dateValue, { color: theme.text }]}>
-            {formatDate(complaint.created_at)} ({getTimeAgo(complaint.created_at)})
+        {/* Text block */}
+        <View style={styles.textBlock}>
+          <Text style={[styles.categoryText, { color: categoryIcon.color }]} numberOfLines={1}>
+            {complaint?.sub_category || 'Service Request'}
           </Text>
-        </View>
-        
-        <View style={styles.dateRow}>
-          <View style={styles.dateLabel}>
-            <MaterialIcons name="update" size={12} color={theme.textSecondary} />
-            <Text style={[styles.dateLabelText, { color: theme.textSecondary }]}>
-              Updated:
-            </Text>
-          </View>
-          <Text style={[styles.dateValue, { color: theme.text }]}>
-            {formatDate(complaint.updated_at)}
+          <Text style={[styles.descriptionText, { color: theme.description }]} numberOfLines={2}>
+            {complaint?.description || 'No description provided.'}
           </Text>
         </View>
       </View>
-    </View>
+
+      {/* ── Divider ── */}
+      <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+      {/* ── Row 3: Created date  +  Updated date ── */}
+      <View style={styles.footerRow}>
+        {/* Created */}
+        <View style={styles.dateItem}>
+          <Ionicons name="calendar-outline" size={13} color={theme.textSecondary} />
+          <View style={styles.dateTexts}>
+            <Text style={[styles.dateLabel, { color: theme.textSecondary }]}>Created</Text>
+            <Text style={[styles.dateValue, { color: theme.text }]}>
+              {formatDate(complaint?.created_at)}
+            </Text>
+            <Text style={[styles.timeAgo, { color: theme.textSecondary }]}>
+              {getTimeAgo(complaint?.created_at)}
+            </Text>
+          </View>
+        </View>
+
+        {/* Separator */}
+        <View style={[styles.verticalDivider, { backgroundColor: theme.border }]} />
+
+        {/* Updated */}
+        <View style={styles.dateItem}>
+          <Ionicons name="refresh-outline" size={13} color={theme.textSecondary} />
+          <View style={styles.dateTexts}>
+            <Text style={[styles.dateLabel, { color: theme.textSecondary }]}>Updated</Text>
+            <Text style={[styles.dateValue, { color: theme.text }]}>
+              {formatDate(complaint?.updated_at)}
+            </Text>
+            <Text style={[styles.timeAgo, { color: theme.textSecondary }]}>
+              {getTimeAgo(complaint?.updated_at)}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+</TouchableOpacity>
   );
 };
 
-const createStyles = (theme, nightMode) =>
-  StyleSheet.create({
-    card: {
-      borderRadius: 12,
-      padding: 16,
-      marginVertical: 6,
-      width: '90%',
-      alignSelf:'center',
-      maxWidth: 400,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: nightMode ? 0.3 : 0.08,
-      shadowRadius: 4,
-      elevation: 2,
-      borderWidth: 1,
-    },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 12,
-    },
-    idSection: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
-    requestId: {
-      fontSize: 14,
-      fontWeight: '600',
-    },
-    statusBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      borderRadius: 10,
-      gap: 4,
-    },
-    statusLabel: {
-      fontSize: 11,
-      fontWeight: '700',
-      letterSpacing: 0.3,
-    },
-    categorySection: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 12,
-      gap: 8,
-    },
-    categoryIcon: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    categoryTitle: {
-      fontSize: 16,
-      fontWeight: '700',
-      flex: 1,
-    },
-    descriptionSection: {
-      marginBottom: 12,
-    },
-    description: {
-      fontSize: 13,
-      lineHeight: 20,
-    },
-    dateSection: {
-      borderRadius: 8,
-      padding: 10,
-      gap: 4,
-    },
-    dateRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    dateLabel: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-    },
-    dateLabelText: {
-      fontSize: 11,
-      fontWeight: '600',
-    },
-    dateValue: {
-      fontSize: 11,
-      fontWeight: '600',
-    },
-  });
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const styles = StyleSheet.create({
+  card: {
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginVertical: 2,
+    marginHorizontal: 16,
+    borderWidth: 1,
+    // Shadow (iOS)
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    // Elevation (Android)
+    elevation: 2,
+  },
+
+  // ── Header row ──
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  idText: {
+    fontSize: 15,
+    fontWeight: '700',
+    flexShrink: 1,
+    marginRight: 8,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  statusIcon: {
+    marginRight: 4,
+  },
+  statusLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  // ── Body row ──
+  bodyRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  textBlock: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  categoryText: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  descriptionText: {
+    fontSize: 13,
+    lineHeight: 19,
+  },
+
+  // ── Divider ──
+ 
+
+  // ── Footer row ──
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  dateItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+  },
+  dateTexts: {
+    flex: 1,
+  },
+  dateLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 2,
+  },
+  dateValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 1,
+  },
+  timeAgo: {
+    fontSize: 11,
+  },
+  verticalDivider: {
+    width: 1,
+    height: '100%',
+    minHeight: 36,
+    marginHorizontal: 12,
+  },
+});
 
 export default ServiceRequestDetailCard;

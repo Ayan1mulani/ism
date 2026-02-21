@@ -11,55 +11,105 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { usePermissions } from '../../Utils/ConetextApi';
 import { visitorServices } from '../../services/visitorServices';
+import PreApproveModal from '../VisitorsScreen/components/AddPreVisitorModal';
+import { useNavigation } from '@react-navigation/native';
+
+const BASE_URL = "https://ism-vms.s3.amazonaws.com/company-logo/";
+const DEFAULT_GUEST_IMAGE =
+  "https://app.factech.co.in/user/assets/images/visitor/default-guest.png";
 
 const VisitorSection = () => {
   const [visitors, setVisitors] = useState([]);
   const [loading, setLoading] = useState(true);
   const { nightMode } = usePermissions();
+  const [showPreApproveModal, setShowPreApproveModal] = useState(false);
+  const navigation = useNavigation();
 
-  useEffect(() => {
-    const getMyVisitors = async () => {
-      try {
-        setLoading(true);
-        const response = await visitorServices.getMyVisitors();
+ useEffect(() => {
+  const fetchTodayArrivals = async () => {
+    try {
+      setLoading(true);
 
-        if (response?.data?.visits && Array.isArray(response.data.visits)) {
-          const visitsData = response.data.visits;
-          const mappedVisitors = visitsData.map(visit => ({
-            id: visit.id?.toString() || Math.random().toString(),
-            name: visit.name || visit.visitor_data?.name || 'Unknown',
-            role: visit.purpose || 'Visitor',
-            avatar: visit.image || visit.visitor_data?.image || 'https://via.placeholder.com/60',
-          }));
-          setVisitors(mappedVisitors);
-        } else {
-          setVisitors([]);
-        }
-      } catch (error) {
-        console.error('Error fetching visitors:', error);
-        setVisitors([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+      const [visitorRes, passRes] = await Promise.all([
+        visitorServices.getMyVisitors(),
+        visitorServices.getMyPasses(),
+      ]);
 
-    getMyVisitors();
-  }, []);
+      const visitArray = visitorRes?.data?.visits || [];
+      const passArray =
+        passRes?.data?.passes ||
+        passRes?.data?.visits ||
+        passRes?.data ||
+        [];
+
+      const today = new Date().toISOString().split("T")[0];
+
+      const isToday = (dateString) => {
+        if (!dateString) return false;
+        return dateString.split(" ")[0] === today;
+      };
+
+      const todayVisits = visitArray
+        .filter(v => isToday(v.date_time || v.visit_date))
+        .map(visit => ({
+          id: `visit-${visit.id}`,
+          name: visit.name || visit.visitor_data?.name || 'Unknown',
+          role: visit.purpose || 'Visitor',
+          avatar:
+            visit.image && visit.image.startsWith('http')
+              ? visit.image
+              : DEFAULT_GUEST_IMAGE,
+          created_at: visit.created_at,
+          originalData: visit,
+        }));
+
+      const todayPasses = passArray
+        .filter(p => isToday(p.date_time))
+        .map(pass => ({
+          id: `pass-${pass.id}`,
+          name: pass.company_name || pass.name || 'Unknown',
+          role: pass.purpose || 'Pass',
+          avatar:
+            pass.purpose?.toLowerCase() === "guest"
+              ? DEFAULT_GUEST_IMAGE
+              : pass.company_name
+                ? `${BASE_URL}${pass.company_name
+                    .toLowerCase()
+                    .replace(/\s+/g, "-")}.png`
+                : DEFAULT_GUEST_IMAGE,
+          created_at: pass.created_at,
+          originalData: pass,
+        }));
+
+      const combined = [...todayVisits, ...todayPasses].sort(
+        (a, b) =>
+          new Date(b.created_at) - new Date(a.created_at)
+      );
+
+      setVisitors(combined);
+
+    } catch (error) {
+      console.error("Error fetching arrivals:", error);
+      setVisitors([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchTodayArrivals();
+}, []);
 
   const getRoleColor = (role) => {
     const roleLower = role?.toLowerCase() || '';
     switch (roleLower) {
       case 'guest': return '#9C27B0';
-      case 'zomato': return '#FF6B6B';
-      case 'swiggy': return '#FF8C00';
-      case 'ola': return '#00C853';
-      case 'employee': return '#1976D2';
       case 'delivery': return '#FF8C00';
+      case 'cab': return '#00C853';
+      case 'employee': return '#1976D2';
       default: return '#9C27B0';
     }
   };
 
-  // Plain theme matching your transparent setup
   const theme = {
     background: nightMode ? '#111827' : '#FFFFFF',
     textMain: nightMode ? '#F9FAFB' : '#111827',
@@ -79,72 +129,126 @@ const VisitorSection = () => {
 
   return (
     <View style={styles.container}>
-      
+
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTitleRow}>
           <Ionicons name="people" size={20} color={theme.textMain} />
-          <Text style={[styles.title, { color: theme.textMain }]}>Your Visitors</Text>
+          <Text style={[styles.title, { color: theme.textMain }]}>
+            Arriving Today
+          </Text>
         </View>
+
         <TouchableOpacity
           style={[styles.addButton, { backgroundColor: theme.iconBtnBg }]}
-          onPress={() => console.log('Add visitor clicked')}
+          onPress={() => setShowPreApproveModal(true)}
         >
-          <Ionicons name="add" size={28}color={theme.textMain} />
+          <Ionicons name="add" size={28} color={theme.textMain} />
         </TouchableOpacity>
       </View>
 
-      {/* Main Divider */}
       <View style={[styles.divider, { backgroundColor: theme.divider }]} />
 
-      {/* Empty State */}
       {visitors.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={{ color: theme.textSub, fontSize: 13 }}>No visitors yet</Text>
+          <Text style={{ color: theme.textSub, fontSize: 13 }}>
+            No arrivals today
+          </Text>
         </View>
       ) : (
-        /* Horizontal "Status" Carousel */
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
           {visitors.map((visitor) => (
-            <TouchableOpacity 
-              key={visitor.id} 
-              style={styles.visitorItem}
-              onPress={() => console.log('Visitor pressed:', visitor.name)}
-              activeOpacity={0.8}
-            >
-              {/* Avatar Container with Badge */}
-              <View style={styles.avatarWrapper}>
-                <View style={[styles.avatarRing, { borderColor: theme.ringColor }]}>
-                  <Image source={{ uri: visitor.avatar }} style={styles.avatar} />
-                </View>
-                
-                {/* Role Box attached below image */}
-                <View 
-                  style={[
-                    styles.roleBadge, 
-                    { 
-                      backgroundColor: getRoleColor(visitor.role),
-                      borderColor: theme.background // Creates a cutout effect
-                    }
-                  ]}
-                >
-                  <Text style={styles.roleBadgeText} numberOfLines={1}>
-                    {visitor.role}
-                  </Text>
-                </View>
-              </View>
-              
-              <Text style={[styles.name, { color: theme.textMain }]} numberOfLines={1}>
-                {visitor.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
+  <TouchableOpacity
+    key={visitor.id}
+    style={styles.visitorItem}
+    activeOpacity={0.8}
+    onPress={() =>
+      navigation.navigate('PassDetails', {
+        pass: visitor.originalData,
+      })
+    }
+  >
+    <View style={styles.avatarWrapper}>
+      <View
+        style={[
+          styles.avatarRing,
+          { borderColor: theme.ringColor },
+        ]}
+      >
+        <Image
+          source={{ uri: visitor.avatar }}
+          style={styles.avatar}
+          resizeMode="cover"
+        />
+      </View>
+
+      <View
+        style={[
+          styles.roleBadge,
+          {
+            backgroundColor: getRoleColor(visitor.role),
+            borderColor: theme.background,
+          },
+        ]}
+      >
+        <Text
+          style={styles.roleBadgeText}
+          numberOfLines={1}
+        >
+          {visitor.role}
+        </Text>
+      </View>
+    </View>
+
+    <Text
+      style={[styles.name, { color: theme.textMain }]}
+      numberOfLines={1}
+    >
+      {visitor.name}
+    </Text>
+  </TouchableOpacity>
+))}
+     
         </ScrollView>
       )}
+
+  <PreApproveModal
+  visible={showPreApproveModal}
+  nightMode={nightMode}
+  onClose={() => setShowPreApproveModal(false)}
+
+  onDelivery={() => {
+    setShowPreApproveModal(false);
+    setTimeout(() => {
+      navigation.navigate('AddVisitor', { type: 'delivery' });
+    });
+  }}
+
+  onGuest={() => {
+    setShowPreApproveModal(false);
+    setTimeout(() => {
+      navigation.navigate('AddVisitor', { type: 'guest' });
+    });
+  }}
+
+  onCab={() => {
+    setShowPreApproveModal(false);
+    setTimeout(() => {
+      navigation.navigate('AddVisitor', { type: 'cab' });
+    });
+  }}
+
+  onOthers={() => {
+    setShowPreApproveModal(false);
+    setTimeout(() => {
+      navigation.navigate('AddVisitor', { type: 'others' });
+    });
+  }}
+/>
     </View>
   );
 };
@@ -152,8 +256,7 @@ const VisitorSection = () => {
 const styles = StyleSheet.create({
   container: {
     marginHorizontal: 20,
-    marginTop: -55, // Adjust this based on your layout needs
-    backgroundColor: 'transparent',
+    marginTop: -55,
   },
   header: {
     flexDirection: 'row',
@@ -193,30 +296,30 @@ const styles = StyleSheet.create({
   },
   visitorItem: {
     alignItems: 'center',
-    width: 68,
-    marginRight: 16,
+    width: 60,
+    marginRight: 14,
   },
   avatarWrapper: {
     position: 'relative',
     alignItems: 'center',
-    marginBottom: 10, // Gives space for the badge and name
+    marginBottom: 8,
   },
   avatarRing: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     borderWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 25,
+    height: 25,
+    borderRadius: 19,
   },
   roleBadge: {
     position: 'absolute',
-    bottom: -8, // Pulls the badge down so it overlaps the bottom edge
+    bottom: -8,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,

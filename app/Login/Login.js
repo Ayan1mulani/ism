@@ -1,7 +1,6 @@
 // NewLoginScreen.js
-import React, { useEffect, useLayoutEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  SafeAreaView,
   View,
   TextInput,
   ImageBackground,
@@ -12,16 +11,15 @@ import {
   ScrollView,
   Dimensions,
   Image,
-  Modal,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Svg, Path } from 'react-native-svg';
 import { CommonActions, useNavigation } from '@react-navigation/native';
 import { LoginSrv } from '../../services/LoginSrv';
 import AccountSelectorModal from './SelectUserMode';
 import ErrorPopupModal from '../PopUps/MessagePop';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ismServices } from '../../services/ismServices';
 
 const { width } = Dimensions.get('window');
 

@@ -134,53 +134,6 @@ const SingleEntryPassPage = ({ nightMode, passData, loading, onRefresh }) => {
       pass.has_parking === true;
   };
 
-  const showPassDetails = (pass) => {
-    const status = getPassStatus(pass.status);
-    const details = [
-      `Pass No: ${pass.pass_no}`,
-      `Name: ${pass.name}`,
-      `Mobile: ${pass.mobile}`,
-      `Purpose: ${pass.purpose}`,
-      `Status: ${status.label}`,
-      `Created: ${formatDate(pass.created_at)}`,
-    ];
-
-    if (pass.company_name) {
-      details.push(`Company: ${pass.company_name}`);
-    }
-
-    if (isParkingBooked(pass)) {
-      details.push(`Parking: Booked`);
-    }
-
-    if (pass.remarks) {
-      details.push(`Remarks: ${pass.remarks}`);
-    }
-
-    Alert.alert(
-      'Pass Details',
-      details.join('\n'),
-      [
-        {
-          text: 'Edit',
-          onPress: () => console.log('Edit pass:', pass.id),
-        },
-        {
-          text: 'Share',
-          onPress: () => console.log('Share pass:', pass.id),
-        },
-        {
-          text: 'Call',
-          onPress: () => console.log('Calling:', pass.mobile),
-        },
-        {
-          text: 'Close',
-          style: 'cancel',
-        },
-      ]
-    );
-  };
-
   const handleRefresh = async () => {
     setIsRefreshing(true);
     if (onRefresh) {
@@ -226,7 +179,8 @@ const SingleEntryPassPage = ({ nightMode, passData, loading, onRefresh }) => {
         style={[styles.card, {
           backgroundColor: '#ffff',
         }]}
-        onPress={() => showPassDetails(pass)}
+      onPress={() => navigation.navigate('PassDetails', { pass }, console.log(pass)) }
+
         activeOpacity={0.7}
       >
         {/* Card Header */}
@@ -240,6 +194,7 @@ const SingleEntryPassPage = ({ nightMode, passData, loading, onRefresh }) => {
                 style={styles.passImage}
                 resizeMode="contain"
                 onError={() => console.log("Image load failed")}
+                alt='images'
               />
             </View>
             <View style={styles.passInfo}>
@@ -364,20 +319,34 @@ const SingleEntryPassPage = ({ nightMode, passData, loading, onRefresh }) => {
   if (loading) {
     return renderLoadingState();
   }
-  const filteredData = (passData || []).filter(pass => {
-  const query = searchQuery.toLowerCase();
 
-  const matchesSearch =
-    pass.name?.toLowerCase().includes(query) ||
-    pass.mobile?.toLowerCase().includes(query) ||
-    pass.purpose?.toLowerCase().includes(query);
+  const filteredData = (passData || [])
+  .filter(pass => {
+    const query = searchQuery.toLowerCase();
 
-  const matchesStatus =
-    selectedStatus === 'ALL' ||
-    String(pass.status) === selectedStatus;
+    const searchableText = [
+      pass.name,
+      pass.mobile,
+      pass.purpose,
+      pass.company_name,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
 
-  return matchesSearch && matchesStatus;
-});
+    const matchesSearch = searchableText.includes(query);
+
+    const matchesType =
+      selectedStatus === 'ALL' ||
+      pass.purpose?.toLowerCase() === selectedStatus.toLowerCase();
+
+    return matchesSearch && matchesType;
+  })
+  .sort((a, b) => {
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+
+
 
   return (
     <SafeAreaView
@@ -416,40 +385,37 @@ const SingleEntryPassPage = ({ nightMode, passData, loading, onRefresh }) => {
         </TouchableOpacity>
       </View>
       {showFilters && (
-        <View style={styles.filterContainer}>
-          {['ALL', '1', '0', 'PENDING'].map(status => (
-            <TouchableOpacity
-              key={status}
-              style={[
-                styles.filterChip,
-                {
-                  backgroundColor:
-                    selectedStatus === status
-                      ? COLORS.primary
-                      : theme.surface
-                }
-              ]}
-              onPress={() => setSelectedStatus(status)}
-            >
-              <Text
-                style={{
-                  color:
-                    selectedStatus === status ? '#fff' : theme.text,
-                  fontWeight: '600',
-                }}
-              >
-                {status === 'ALL'
-                  ? 'All'
-                  : status === '1'
-                    ? 'Active'
-                    : status === '0'
-                      ? 'Inactive'
-                      : 'Pending'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
+  <View style={styles.filterContainer}>
+    {['ALL', 'guest', 'delivery', 'cab'].map(type => (
+      <TouchableOpacity
+        key={type}
+        style={[
+          styles.filterChip,
+          {
+            backgroundColor:
+              selectedStatus === type
+                ? COLORS.primary
+                : theme.surface
+          }
+        ]}
+        onPress={() => setSelectedStatus(type)}
+      >
+        <Text
+          style={{
+            color:
+              selectedStatus === type ? '#fff' : theme.text,
+            fontWeight: '600',
+          }}
+        >
+          {type === 'ALL'
+            ? 'All'
+            : type.charAt(0).toUpperCase() + type.slice(1)}
+        </Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+)}
+   
       <View style={styles.container}>
         <FlatList
           data={filteredData}
