@@ -21,12 +21,6 @@ import AddPreApprovedVisitor from "../singleMultiVisits/AddPreApproved";
 import AddPreApprovedMulti from "../singleMultiVisits/AddPreApprovedMulti";
 
 
-
-
-
-
-
-
 const AddVisitor = ({ navigation }) => {
   const { nightMode } = usePermissions();
   const route = useRoute();

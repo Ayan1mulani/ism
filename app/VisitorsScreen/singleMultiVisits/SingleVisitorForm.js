@@ -1,11 +1,10 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -15,6 +14,7 @@ import StatusModal from "../../components/StatusModal";
 
 const SingleVisitorForm = () => {
   const navigation = useNavigation();
+
 
   const theme = {
     cardBg: "#FFFFFF",
@@ -30,135 +30,81 @@ const SingleVisitorForm = () => {
   const [visitDate, setVisitDate] = useState(null);
   const [vehicleNo, setVehicleNo] = useState("");
   const [selectedParking, setSelectedParking] = useState(null);
-  const [modalType, setModalType] = useState(null); // null | "loading" | "success" | "error"
-  const [errors, setErrors] = useState({});
+  const [modalType, setModalType] = useState(null);
 
-  // Animation values
-  const modalOpacity = useRef(new Animated.Value(0)).current;
-  const modalScale = useRef(new Animated.Value(0.7)).current;
-  const iconScale = useRef(new Animated.Value(0)).current;
-  const iconOpacity = useRef(new Animated.Value(0)).current;
 
-  // Animate modal box in when modalType changes to any value
-  useEffect(() => {
-    if (modalType) {
-      Animated.parallel([
-        Animated.timing(modalOpacity, {
-          toValue: 1,
-          duration: 220,
-          useNativeDriver: true,
-        }),
-        Animated.spring(modalScale, {
-          toValue: 1,
-          tension: 120,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      // Reset all animation values for next open
-      modalOpacity.setValue(0);
-      modalScale.setValue(0.7);
-      iconScale.setValue(0);
-      iconOpacity.setValue(0);
-    }
-  }, [modalType]);
+  const formatParkingDateRange = (from, to) => {
+  if (!from || !to) return "";
 
-  // Animate icon bounce when success or error
-  useEffect(() => {
-    if (modalType === "success" || modalType === "error") {
-      Animated.sequence([
-        Animated.delay(100),
-        Animated.parallel([
-          Animated.spring(iconScale, {
-            toValue: 1,
-            tension: 140,
-            friction: 6,
-            useNativeDriver: true,
-          }),
-          Animated.timing(iconOpacity, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-        ]),
-      ]).start();
-    }
-  }, [modalType]);
+  const start = new Date(from);
+  const end = new Date(to);
+  const today = new Date();
 
-  // Clear individual error as user types
-  const handleNameChange = (text) => {
-    setVisitorName(text);
-    if (errors.name) setErrors((prev) => ({ ...prev, name: null }));
-  };
+  const isSameDay =
+    start.toDateString() === end.toDateString();
 
-  const handleMobileChange = (text) => {
-    setMobileNumber(text);
-    if (errors.mobile) setErrors((prev) => ({ ...prev, mobile: null }));
-  };
+  const isToday =
+    start.toDateString() === today.toDateString() &&
+    end.toDateString() === today.toDateString();
 
-  const handleDateChange = (date) => {
-    setVisitDate(date);
-    if (errors.date) setErrors((prev) => ({ ...prev, date: null }));
-  };
+  const formatDate = (date) =>
+    date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+    });
 
-  const handleVehicleNoChange = (text) => {
-    const numericText = text.replace(/[^0-9]/g, "");
-    if (numericText.length <= 4) {
-      setVehicleNo(numericText);
-    }
-  };
+  if (isToday) return "Today";
+
+  if (isSameDay) return formatDate(start);
+
+  return `${formatDate(start)} - ${formatDate(end)}`;
+};
 
   const handleSubmit = async () => {
-    let newErrors = {};
-
-    if (!visitorName.trim()) {
-      newErrors.name = "Visitor name is required";
-    }
-    if (!mobileNumber || mobileNumber.length !== 10) {
-      newErrors.mobile = "Enter valid 10-digit mobile number";
-    }
-    if (!visitDate) {
-      newErrors.date = "Please select a date";
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    setErrors({});
+    if (!visitorName || !mobileNumber || !visitDate) return;
 
     try {
+      setModalType("loading");
+
       const formattedDate =
         visitDate instanceof Date
           ? visitDate.toISOString().split("T")[0]
           : visitDate;
 
-      const payload = {
+      // 1️⃣ Create Visitor
+      const visitorRes = await visitorServices.addMyVisitor({
         date_time: formattedDate,
         mobile: mobileNumber,
         name: visitorName,
         type: "guest",
-      };
+      });
 
-      setModalType("loading");
+      const visitorId = visitorRes?.data?.id;
 
-      const response = await visitorServices.addMyVisitor(payload);
-
-      if (response) {
-        setModalType("success");
-        setTimeout(() => {
-          setModalType(null);
-          navigation.goBack();
-        }, 1400);
-      } else {
-        // API responded but returned falsy
-        setModalType("error");
-        setTimeout(() => setModalType(null), 2000);
+      // 2️⃣ Book Parking if selected
+      if (visitorId && selectedParking) {
+        await visitorServices.bookParking({
+          booking_from: selectedParking.booking_from,
+          booking_to: selectedParking.booking_to,
+          location_id: selectedParking.location_id,
+          reference_id: visitorId,
+          data: {
+            name: visitorName,
+            phone_no: mobileNumber,
+            vehicle_no: vehicleNo || "",
+            type: "PARKING",
+          },
+        });
       }
-    } catch (error) {
-      console.log("❌ Error:", error);
+
+      setModalType("success");
+      setTimeout(() => {
+        setModalType(null);
+        navigation.goBack();
+      }, 1200);
+
+    } catch (err) {
+      console.log("Error:", err);
       setModalType("error");
       setTimeout(() => setModalType(null), 2000);
     }
@@ -169,94 +115,58 @@ const SingleVisitorForm = () => {
       {/* Visitor Name */}
       <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
         <Text style={[styles.label, { color: theme.text }]}>
-          Visitor Name <Text style={styles.required}>*</Text>
+          Visitor Name *
         </Text>
-        {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
         <TextInput
           value={visitorName}
-          onChangeText={handleNameChange}
+          onChangeText={setVisitorName}
           placeholder="Enter visitor name"
           placeholderTextColor={theme.textSecondary}
-          style={[
-            styles.input,
-            {
-              backgroundColor: theme.inputBg,
-              borderColor: errors.name ? "#EF4444" : theme.border,
-              color: theme.text,
-            },
-          ]}
+          style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.border }]}
         />
       </View>
 
       {/* Mobile */}
       <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
         <Text style={[styles.label, { color: theme.text }]}>
-          Mobile Number <Text style={styles.required}>*</Text>
+          Mobile Number *
         </Text>
-        {errors.mobile && <Text style={styles.errorText}>{errors.mobile}</Text>}
-        <View style={styles.phoneInputContainer}>
-          <View
-            style={[
-              styles.countryCode,
-              { backgroundColor: theme.inputBg, borderColor: theme.border },
-            ]}
-          >
-            <Text style={[styles.countryCodeText, { color: theme.text }]}>
-              +91
-            </Text>
-          </View>
-          <TextInput
-            value={mobileNumber}
-            onChangeText={handleMobileChange}
-            keyboardType="phone-pad"
-            maxLength={10}
-            placeholder="Enter 10-digit mobile number"
-            placeholderTextColor={theme.textSecondary}
-            style={[
-              styles.phoneInput,
-              {
-                backgroundColor: theme.inputBg,
-                borderColor: errors.mobile ? "#EF4444" : theme.border,
-                color: theme.text,
-              },
-            ]}
-          />
-        </View>
+        <TextInput
+          value={mobileNumber}
+          onChangeText={setMobileNumber}
+          keyboardType="phone-pad"
+          maxLength={10}
+          placeholder="Enter 10-digit mobile"
+          placeholderTextColor={theme.textSecondary}
+          style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.border }]}
+        />
       </View>
 
       {/* Date */}
       <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
         <CalendarSelector
           selectedDate={visitDate}
-          onDateSelect={handleDateChange}
+          onDateSelect={setVisitDate}
           label="Scheduled Date"
-          required={true}
+          required
           nightMode={false}
         />
-        {errors.date && <Text style={styles.errorText}>{errors.date}</Text>}
       </View>
 
-      {/* Vehicle Number */}
+      {/* Vehicle */}
       <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
         <Text style={[styles.label, { color: theme.text }]}>
           Vehicle Number (Last 4 Digits - Optional)
         </Text>
-        <View
-          style={[
-            styles.vehicleContainer,
-            { backgroundColor: theme.inputBg, borderColor: theme.border },
-          ]}
-        >
-          <TextInput
-            value={vehicleNo}
-            onChangeText={handleVehicleNoChange}
-            keyboardType="number-pad"
-            maxLength={4}
-            placeholder="0000"
-            placeholderTextColor={theme.textSecondary}
-            style={[styles.vehicleInput, { color: theme.text }]}
-          />
-        </View>
+        <TextInput
+          value={vehicleNo}
+          onChangeText={setVehicleNo}
+          keyboardType="number-pad"
+          maxLength={4}
+          placeholder="0000"
+          placeholderTextColor={theme.textSecondary}
+          style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.border }]}
+        />
       </View>
 
       {/* Parking */}
@@ -264,16 +174,36 @@ const SingleVisitorForm = () => {
         <Text style={[styles.label, { color: theme.text }]}>
           Need parking?
         </Text>
+
         <TouchableOpacity
           style={[
             styles.selectButton,
             { backgroundColor: theme.inputBg, borderColor: theme.border },
           ]}
+         
+          onPress={() => {
+  if (!visitDate) {
+    alert("Please select visit date first");
+    return;
+  }
+
+  navigation.navigate("BookParking", {
+    visitDate,
+    onSelectParking: (data) => {
+      setSelectedParking(data);
+    },
+  });
+}}
         >
           <Ionicons name="car" size={20} color={theme.primaryBlue} />
-          <Text style={[styles.selectButtonText, { color: theme.textSecondary }]}>
-            {selectedParking ? "Parking Selected" : "Select Parking"}
-          </Text>
+ <Text style={[styles.selectButtonText, { color: theme.textSecondary }]}>
+  {selectedParking?.booking_from && selectedParking?.booking_to
+    ? formatParkingDateRange(
+        selectedParking.booking_from,
+        selectedParking.booking_to
+      )
+    : "Select Parking"}
+</Text>
           <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
         </TouchableOpacity>
       </View>
@@ -282,30 +212,11 @@ const SingleVisitorForm = () => {
       <TouchableOpacity
         style={[styles.submitBtn, { backgroundColor: theme.primaryBlue }]}
         onPress={handleSubmit}
-        disabled={modalType === "loading"}
       >
         <Text style={styles.submitText}>Add Visitor</Text>
       </TouchableOpacity>
 
-      {/* Animated Modal — loading / success / error */}
-     <StatusModal
-  visible={!!modalType}
-  type={modalType}
-  title={
-    modalType === "loading"
-      ? "Saving..."
-      : modalType === "success"
-      ? "Visitor Added"
-      : "Failed!"
-  }
-  subtitle={
-    modalType === "loading"
-      ? "Please wait"
-      : modalType === "success"
-      ? "Redirecting..."
-      : "Please try again"
-  }
-/>
+      <StatusModal visible={!!modalType} type={modalType} />
     </>
   );
 };
@@ -316,14 +227,12 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
     padding: 16,
+    marginBottom:-10
   },
   label: {
     fontSize: 14,
     fontWeight: "600",
     marginBottom: 8,
-  },
-  required: {
-    color: "#EF4444",
   },
   input: {
     height: 48,
@@ -331,45 +240,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     fontSize: 14,
-    letterSpacing:0
-  },
-  phoneInputContainer: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  countryCode: {
-    width: 60,
-    height: 48,
-    borderWidth: 1,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  countryCodeText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  phoneInput: {
-    flex: 1,
-    height: 48,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    fontSize: 14,
-  },
-  vehicleContainer: {
-    height: 60,
-    borderWidth: 1,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  vehicleInput: {
-    fontSize: 28,
-    fontWeight: "700",
-    textAlign: "center",
-    letterSpacing: 15,
-    width: "100%",
+    letterSpacing: 1,
+
   },
   selectButton: {
     flexDirection: "row",
@@ -393,42 +265,9 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 30,
   },
-  errorText: {
-    color: "#EF4444",
-    fontSize: 12,
-    marginBottom: 3,
-  },
   submitText: {
     color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "700",
-  },
-  successOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  successBox: {
-    width: 260,
-    backgroundColor: "#FFFFFF",
-    padding: 24,
-    borderRadius: 18,
-    alignItems: "center",
-  },
-  successTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginTop: 10,
-    color: "#111827",
-  },
-  successSubtitle: {
-    fontSize: 13,
-    marginTop: 4,
-    color: "#6B7280",
   },
 });

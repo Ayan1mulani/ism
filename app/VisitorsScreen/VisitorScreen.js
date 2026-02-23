@@ -20,6 +20,7 @@ import { visitorServices } from '../../services/visitorServices';
 import PreApprovedPage from './PreApprovedPage';
 import { Ionicons } from '@expo/vector-icons';
 import SlidingTabs from '../components/SlidingTabs';
+import MyParkingPage from './singleMultiVisits/MyParkingPage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -55,6 +56,18 @@ const VisitorScreen = () => {
   const [visits, setVisits] = useState(null);
   const [passes, setPasses] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [parkingBookings, setParkingBookings] = useState([]);
+
+  // Dynamic Tabs
+const TABS = React.useMemo(() => {
+  return [
+    'Visit Requests',
+    'Entry Passes',
+    ...(parkingBookings?.length > 0 ? ['Parking'] : [])
+  ];
+}, [parkingBookings]);
+
+const calculateTabWidth = () => (SCREEN_WIDTH - 32) / TABS.length;
 
   // ✅ Modal state — shared across all 3 tabs
   const [showPreApproveModal, setShowPreApproveModal] = useState(false);
@@ -90,10 +103,7 @@ const VisitorScreen = () => {
     }
   };
 
-  useEffect(() => {
-    fetchVisits();
-    fetchPasses();
-  }, []);
+
 
   useEffect(() => {
     const tabWidth = calculateTabWidth();
@@ -134,6 +144,37 @@ const VisitorScreen = () => {
     }
   };
 
+  const fetchParkingBookings = async () => {
+  const response = await visitorServices.getParkingBookings();
+  console.log("🔥 PARKING BOOKINGS RESPONSE:", response.data);
+  setParkingBookings(response?.data || []);
+  }
+  const fetchpass = async () => {
+  const response = await visitorServices.getMyPasses();
+  console.log("🔥 MY PASSES RESPONSE:", response.data);
+  setPasses(response?.data || []);
+};
+
+useEffect(() => {
+  const loadData = async () => {
+    setIsLoading(true);
+
+    const [visitsRes, passesRes, parkingRes] = await Promise.all([
+      visitorServices.getMyVisitors(),
+      visitorServices.getMyPasses(),
+      visitorServices.getParkingBookings(),
+    ]);
+
+    setVisits(visitsRes.data || []);
+    setPasses(passesRes.data || []);
+    setParkingBookings(parkingRes.data || []);
+
+    setIsLoading(false);
+  };
+
+  loadData();
+}, []);
+
   const renderTab = (label, index) => {
     const isActive = activeTabIndex === index;
     return (
@@ -157,29 +198,34 @@ const VisitorScreen = () => {
   };
 
   const renderPage = (tabName) => (
-    <View style={[styles.page, { backgroundColor: theme.background }]}>
-      {tabName === 'Visit Requests' ? (
-        <VisitRequest
-          nightMode={nightMode}
-          visitorData={visits}
-          loading={isLoading}
-          onRefresh={fetchVisits}
-        />
-      ) : tabName === 'Frequent Entry' ? (
-        <PreApprovedPage
-          nightMode={nightMode}
-          loading={false}
-        />
-      ) : (
-        <SingleEntry
-          nightMode={nightMode}
-          passData={passes}
-          loading={isLoading}
-          onRefresh={fetchPasses}
-        />
-      )}
-    </View>
-  );
+  <View style={[styles.page, { backgroundColor: theme.background }]}>
+    {tabName === 'Visit Requests' ? (
+      <VisitRequest
+        nightMode={nightMode}
+        visitorData={visits}
+        loading={isLoading}
+        onRefresh={fetchVisits}
+      />
+    ) : tabName === 'Entry Passes' ? (
+      <SingleEntry
+        nightMode={nightMode}
+        passData={passes}
+        loading={isLoading}
+        onRefresh={async () => {
+          await fetchpass();
+          await fetchParkingBookings();
+        }}
+      />
+    ) : (
+      <MyParkingPage
+        nightMode={nightMode}
+        parkingBookings={parkingBookings}
+        loading={isLoading}
+        onRefresh={fetchParkingBookings}
+      />
+    )}
+  </View>
+);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>

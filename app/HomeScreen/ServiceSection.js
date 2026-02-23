@@ -21,7 +21,7 @@ const ServicesSection = () => {
   const allServices = [
     { id: '1', title: 'Accounts', icon: 'card', route: 'Accounts' },
     { id: '2', title: 'Staff', icon: 'checkmark-circle-outline', route: 'StaffScreen' },
-    { id: '3', title: 'Visitors', icon: 'people-outline', route: 'VisitorsScreen' },
+    { id: '3', title: 'Visitors', icon: 'people-outline', route: 'Visitors' },
     { id: '4', title: 'Amenities', icon: 'fitness-outline' },
     { id: '5', title: 'Maintenance', icon: 'construct-outline' },
     { id: '6', title: 'Security', icon: 'shield-checkmark-outline' },
@@ -30,7 +30,7 @@ const ServicesSection = () => {
     { id: '9', title: 'Events', icon: 'calendar-outline' },
     { id: '10', title: 'Vendors', icon: 'briefcase-outline' },
     { id: '11', title: 'Bills', icon: 'document-text-outline' },
-    { id: '12', title: 'Help Desk', icon: 'help-circle-outline' },
+    { id: '12', title: 'More', icon: 'ellipsis-horizontal-outline' },
     // Removed the 13th item to ensure exactly 3 rows of 4 items.
   ];
 
@@ -40,9 +40,7 @@ const ServicesSection = () => {
   // Simplified Theme
   const theme = {
     titleColor: nightMode ? '#F9FAFB' : '#111827',
-    iconBgSelected: nightMode ? '#3B82F6' : '#E0F2FE', // Blue tint for selected
     iconBgUnselected: nightMode ? '#1F2937' : '#F3F4F6', // Light gray for unselected
-    iconColorSelected: nightMode ? '#FFFFFF' : '#0284C7',
     iconColorUnselected: nightMode ? '#D1D5DB' : '#4B5563',
     textColor: nightMode ? '#D1D5DB' : '#374151',
   };

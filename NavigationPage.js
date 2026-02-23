@@ -28,14 +28,21 @@ import SubCategorySelectionScreen from './app/ServiceRequestScreen/subCateScreen
 import ComplaintInputScreen from './app/ServiceRequestScreen/complaintInput';
 import NoticesScreen from './app/notices/MyNotices';
 import AccountsScreen from './app/AccountsScreen/AccountsPage';
-import StaffScreen from './app/StaffScreen/StaffPage';
-import StaffDetailsScreen from './app/StaffScreen/StaffDetailsPage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AddVisitor from './app/VisitorsScreen/components/AddVisitor';
 import AddPreApprovedVisitor from './app/VisitorsScreen/singleMultiVisits/SingleVisitorForm';
 import AddFrequentVisitor from './app/VisitorsScreen/singleMultiVisits/FrequentVisitorForm';
 import ServiceRequestDetailScreen from './app/ServiceRequestScreen/components/ServiceRequestDetail';
 import PassDetailsScreen from './app/VisitorsScreen/components/PassDetailsScreen';
+import BookParkingScreen from './app/VisitorsScreen/components/BookParkingScreen';
+import VisitDetailScreen from './app/VisitorsScreen/components/VisitRequestDetailScreen';
+import NotificationsScreen from './app/components/NotificationsScreen';
+import AddVehicleScreen from './app/VehicleScreen/AddVehicleScreen';
+import MyVehiclesScreen from './app/VehicleScreen/MyvehicleScreen';
+import VehicleDetailsScreen from './app/VehicleScreen/VehicleDetailsScreen';
+import VehicleLogsScreen from './app/VehicleScreen/VehicleLogsScreen';
+import VehicleTagScreen from './app/VehicleScreen/VehicleTagScreen';
+import StaffScreen from './app/StaffScreen/StaffScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -47,9 +54,7 @@ const HomeStack = () => {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="HomeMain" component={HomeScreen} />
       <Stack.Screen name="Notices" component={NoticesScreen} />
-      <Stack.Screen name="Accounts" component={AccountsScreen} />
-      <Stack.Screen name="StaffScreen" component={StaffScreen} />
-      <Stack.Screen name="StaffDetailsScreen" component={StaffDetailsScreen} />
+      <Stack.Screen name="StaffDetailsScreen" component={StaffScreen} />
     </Stack.Navigator>
   );
 };
@@ -263,6 +268,23 @@ const NavigationPage = () => {
           <Stack.Screen name="SubCategorySelection" component={SubCategorySelectionScreen} />
           <Stack.Screen name="complaintInput" component={ComplaintInputScreen} />
           <Stack.Screen name="PassDetails" component={PassDetailsScreen} />
+          <Stack.Screen name="Accounts" component={AccountsScreen} />
+          <Stack.Screen name="BookParking" component={BookParkingScreen} />
+          <Stack.Screen name="VisitDetailScreen" component={VisitDetailScreen} />
+          <Stack.Screen name="NotificationsScreen" component={NotificationsScreen} />
+          <Stack.Screen name="AddVehicleScreen" component={AddVehicleScreen} />
+          <Stack.Screen name="MyVehiclesScreen" component={MyVehiclesScreen} />
+          <Stack.Screen name="VehicleDetailsScreen" component={VehicleDetailsScreen} />
+          <Stack.Screen name="VehicleLogsScreen" component={VehicleLogsScreen} />
+          <Stack.Screen name="VehicleTagScreen" component={VehicleTagScreen} />
+          <Stack.Screen name="StaffScreen" component={StaffScreen} />
+
+
+
+
+
+
+
 
         </Stack.Navigator>
       </NavigationContainer>

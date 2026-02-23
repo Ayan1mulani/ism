@@ -2,6 +2,7 @@ import {API_URL4}   from "@env"
 import { ApiCommon } from "./ApiCommon"
 import { Common } from "./Common";
 import { Util } from "./Util";
+import { API_URL2 } from "@env";
 
  const visitorServices = {
 
@@ -15,13 +16,23 @@ import { Util } from "./Util";
         input: "",
         residentId: user.id
     }
-    const url =  await visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/290/getVisitsForResident`);
+    const url =  await visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/${user.societyId}/getVisitsForResident`);
     const headers = await Util.getCommonAuth()
      const response =   await ApiCommon.postReq(url,paylod,headers);
      return response
   },
 
+getParkingBookings: async () => {
+  const user = await Common.getLoggedInUser();
 
+  const url = await visitorServices.appendParamsInUrl(
+    `${API_URL2}/society/${user.societyId}/bookings`
+  );
+
+  const headers = await Util.getCommonAuth();
+
+  return ApiCommon.getReq(url, headers);
+},
   getMyPasses: async () => {
     const user = await Common.getLoggedInUser()
     const params = {
@@ -32,24 +43,95 @@ import { Util } from "./Util";
         input: "",
         residentId: user.id
     }
-    const url =  await visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/290/searchPass`);
+    const url =  await visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/${user.societyId}/searchPass`);
     const headers = await Util.getCommonAuth()
      const response =   await ApiCommon.postReq(url,paylod,headers);
-     console.log(response,'this is res for pass')
      return response
   },
+
+getParkingLocations: async () => {
+  const user = await Common.getLoggedInUser();
+
+  const url = await visitorServices.appendParamsInUrl(
+    `${API_URL2}/${user.societyId}/locations`,
+    { type: "PARKING" }
+  );
+
+
+  const headers = await Util.getCommonAuth();
+
+  return ApiCommon.getReq(url, headers);
+},
+
+getParkingFormFields: async () => {
+  const user = await Common.getLoggedInUser();
+
+  const url = await visitorServices.appendParamsInUrl(
+    `${API_URL2}/${user.society_id}/getfields?form_id=769`
+  );
+
+
+  const headers = await Util.getCommonAuth();
+
+  const res = await ApiCommon.getReq(url, headers);
+
+
+  return res;
+},
+
+
+  visitAttended: async (visitId, attendedValue) => {
+  const user = await Common.getLoggedInUser();
+   const uObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no:  user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId
+    };
+
+
+  const url = await visitorServices.appendParamsInUrl(
+    `${API_URL4}/v1/society/${uObj.society_id}/visitAttended`
+  );
+
+  const payload = {
+    attended: attendedValue,
+    visit_id: visitId,
+  };
+
+  const headers = await Util.getCommonAuth();
+
+  return ApiCommon.postReq(url, payload, headers);
+},
+
+
+
+  bookParking: async (payload) => {
+  const user = await Common.getLoggedInUser();
+
+  const url = await visitorServices.appendParamsInUrl(
+    `${API_URL2}/${user.societyId}/my/bookLocation`
+  );
+
+  const headers = await Util.getCommonAuth();
+
+  return ApiCommon.postReq(url, payload, headers);
+},
+
+
+
 
   addMyVisitor: async (data) => {
   const user = await Common.getLoggedInUser()
   const url = await visitorServices.appendParamsInUrl(
-    `${API_URL4}/v2/society/290/createallpass`
+    `${API_URL4}/v2/society/${user.societyId}/createallpass`
     
   )
 
   const headers = await Util.getCommonAuth()
 
-  console.log("🔗 API URL:", url)
-  console.log("📦 Payload:", data)
+
 
   return ApiCommon.postReq(url, data, headers)
 },
@@ -64,7 +146,7 @@ import { Util } from "./Util";
       "user-id": user.id,
     };
   
-    const url =  visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/290/allstaffcategory`,params);
+    const url =  visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/${user.societyId}/allstaffcategory`,params);
     const headers = await Util.getCommonAuth()
      const response =   await ApiCommon.getReq(url,headers);
      return response
@@ -78,23 +160,40 @@ import { Util } from "./Util";
       "category": category || null,
     };
   
-    const url =  visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/290/staffbycategory`,params);
+    const url =  visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/${user.societyId}/staffbycategory`,params);
     const headers = await Util.getCommonAuth()
      const response =   await ApiCommon.getReq(url,headers);
      return response
   },
 
+  cancelPass: async (passId) => {
+  const user = await Common.getLoggedInUser();
+
+  const url = await visitorServices.appendParamsInUrl(
+    `${API_URL4}/v2/society/${user.societyId}/cancelpass`
+  );
+
+  const headers = await Util.getCommonAuth();
+
+  const payload = {
+    id: passId,
+  };
+
+  return ApiCommon.postReq(url, payload, headers);
+},
+
+
 
 appendParamsInUrl: async (url, extraParams = {}) => {
   const user = await Common.getLoggedInUser()
 
-  const uObj = {
-    user_id: 367102,
-    group_id: 2265,
-    flat_no: "CL1-T112",
-    unit_id: 367102,
-    society_id: 290
-  };
+    const uObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no:  user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId
+    };
 
   const u = JSON.stringify(uObj); // ✅ no encode
 

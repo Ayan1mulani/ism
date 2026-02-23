@@ -1,5 +1,5 @@
 // VisitsPage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,13 +8,14 @@ import {
   TouchableOpacity,
   TextInput,
   RefreshControl,
-  Alert,
   Image,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
 const VisitsPage = ({ visitorData, loading, onRefresh, nightMode }) => {
+  const navigation = useNavigation();
 
   const [filteredVisits, setFilteredVisits] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,20 +23,21 @@ const VisitsPage = ({ visitorData, loading, onRefresh, nightMode }) => {
   const [showFilters, setShowFilters] = useState(false);
 
   const theme = {
-    background: nightMode ? '#121212' : '#F3F4F6',
+    background: nightMode ? '#121212' : '#ffffff',
     card: nightMode ? '#1E1E1E' : '#FFFFFF',
     text: nightMode ? '#FFFFFF' : '#1F2937',
     textSecondary: nightMode ? '#9E9E9E' : '#6B7280',
     primary: '#2E8BC0',
-    danger: '#FF3B30',
+    danger: '#EF4444',
+    success: '#10B981',
+    warning: '#F59E0B',
+    grey: '#6B7280',
     searchBg: nightMode ? '#2E2E2E' : '#F1F3F5',
     border: '#E5E7EB',
   };
 
   useEffect(() => {
-    if (visitorData?.visits) {
-      applySearch();
-    }
+    applySearch();
   }, [visitorData, searchQuery]);
 
   const applySearch = () => {
@@ -49,9 +51,9 @@ const VisitsPage = ({ visitorData, loading, onRefresh, nightMode }) => {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       data = data.filter(v =>
-        v.name.toLowerCase().includes(q) ||
-        v.mobile.includes(searchQuery) ||
-        v.purpose.toLowerCase().includes(q)
+        v.name?.toLowerCase().includes(q) ||
+        v.mobile?.includes(searchQuery) ||
+        v.purpose?.toLowerCase().includes(q)
       );
     }
 
@@ -64,65 +66,79 @@ const VisitsPage = ({ visitorData, loading, onRefresh, nightMode }) => {
     setRefreshing(false);
   };
 
-  const showDetails = (visit) => {
-    Alert.alert(
-      "Visit Details",
-      `Visitor: ${visit.name}
-Phone: ${visit.mobile}
-Purpose: ${visit.purpose}
-Date: ${visit.start_time}`,
-      [{ text: "Close" }]
-    );
+  // ✅ Backend-driven status logic
+  const getStatus = (visit) => {
+    if (visit.attended === 1) {
+      return { label: "ATTENDED", color: theme.success };
+    }
+    if (visit.attended === 0) {
+      return { label: "NOT VISITED", color: theme.grey };
+    }
+    if (visit.end_time) {
+      return { label: "COMPLETED", color: theme.warning };
+    }
+    return { label: "PENDING", color: theme.danger };
   };
 
-  const renderCard = ({ item }) => (
-    <TouchableOpacity
-      style={[styles.card, { backgroundColor: theme.card }]}
-      activeOpacity={0.85}
-      onPress={() => showDetails(item)}
-    >
-      <View style={styles.cardHeader}>
-        <Image
-          source={{ uri: item.image || 'https://via.placeholder.com/100' }}
-          style={styles.avatar}
-        />
+  const renderCard = ({ item }) => {
+    const status = getStatus(item);
 
-        <View style={styles.infoSection}>
-          <Text style={[styles.title, { color: theme.text }]}>
-            {item.purpose}
-          </Text>
-          <Text style={[styles.subText, { color: theme.textSecondary }]}>
-            {item.name}
-          </Text>
-          <Text style={[styles.subText, { color: theme.textSecondary }]}>
-            {item.mobile}
-          </Text>
-        </View>
+    return (
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: theme.card }]}
+        activeOpacity={0.85}
+        onPress={() =>
+          navigation.navigate("VisitDetailScreen", { visit: item })
+        }
+      >
+        <View style={styles.cardHeader}>
+          <Image
+            source={{ uri: item.image || 'https://via.placeholder.com/100' }}
+            style={styles.avatar}
+          />
 
-        <View style={styles.rightSection}>
-          <View style={[styles.statusBadge, { backgroundColor: theme.danger }]}>
-            <Text style={styles.statusText}>INACTIVE</Text>
+          <View style={styles.infoSection}>
+            <Text style={[styles.title, { color: theme.text }]}>
+              {item.purpose}
+            </Text>
+            <Text style={[styles.subText, { color: theme.textSecondary }]}>
+              {item.name}
+            </Text>
+            <Text style={[styles.subText, { color: theme.textSecondary }]}>
+              {item.mobile}
+            </Text>
           </View>
-          <Text style={[styles.ticketId, { color: theme.primary }]}>
-            #{item.id}
-          </Text>
-        </View>
-      </View>
 
-      <View style={[styles.footer, { borderTopColor: theme.border }]}>
-        <View style={styles.dateRow}>
-          <Ionicons name="time-outline" size={16} color={theme.textSecondary} />
-          <Text style={[styles.dateText, { color: theme.textSecondary }]}>
-            {new Date(item.start_time).toDateString()}
-          </Text>
+          <View style={styles.rightSection}>
+            <View style={[styles.statusBadge, { backgroundColor: status.color }]}>
+              <Text style={styles.statusText}>{status.label}</Text>
+            </View>
+
+            <Text style={[styles.ticketId, { color: theme.primary }]}>
+              #{item.id}
+            </Text>
+          </View>
         </View>
 
-        <Text style={[styles.createdText, { color: theme.textSecondary }]}>
-          Created: {new Date(item.start_time).toDateString()}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
+        <View style={[styles.footer, { borderTopColor: theme.border }]}>
+          <View style={styles.dateRow}>
+            <Ionicons name="time-outline" size={16} color={theme.textSecondary} />
+            <Text style={[styles.dateText, { color: theme.textSecondary }]}>
+              {item.start_time
+                ? new Date(item.start_time).toDateString()
+                : "—"}
+            </Text>
+          </View>
+
+          <Text style={[styles.createdText, { color: theme.textSecondary }]}>
+            Created: {item.start_time
+              ? new Date(item.start_time).toDateString()
+              : "—"}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
@@ -133,9 +149,8 @@ Date: ${visit.start_time}`,
   }
 
   return (
-    <View style={styles.container}>
-
-      {/* SEARCH + FILTER (Like PreApprovedPage) */}
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* SEARCH BAR */}
       <View style={styles.searchContainer}>
         <View style={[styles.searchBar, { backgroundColor: theme.searchBg }]}>
           <Ionicons name="search-outline" size={20} color={theme.textSecondary} />
@@ -284,8 +299,6 @@ const styles = StyleSheet.create({
   },
 
   footer: {
-    marginTop: 14,
-    borderTopWidth: 1,
     paddingTop: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -49,6 +49,7 @@ const ResidentProfile = () => {
     try {
       const res = await ismServices.getMyBalance();
       setBill(res.data);
+      console.log("Balance:", res.data);
     } catch (err) {
       console.log(err);
     }

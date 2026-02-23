@@ -1,4 +1,4 @@
-import { API_URL2 ,API_URL4} from "@env"
+import { API_URL2, API_URL4 } from "@env"
 import { ApiCommon } from "./ApiCommon"
 import { Common } from "./Common"
 import { Util } from "./Util"
@@ -6,34 +6,45 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 
 const ismServices = {
 
-getUserDetails: async () => {
-  const user = await Common.getLoggedInUser()
 
-const uObj = {
-  user_id: 367102,
-  group_id: 2265,
-  flat_no: "CL1-T112",
-  unit_id: 367102,
-  society_id: 290
-};
-
-// ✅ stringify ONCE
-const u = encodeURIComponent(JSON.stringify(uObj));
-
-
-  // 👇 build base url
-  let url = `${API_URL2}/userDetailsById/${u}`;
-
-  // 👇 pass primitive string, not object
-  url = await ismServices.appendParamsInUrl(url);
-
+  getMyNotifications: async () => {
+  const url = await ismServices.appendParamsInUrl(
+    `${API_URL2}/getmynotifications`,
+    { cache: 0 }   
+  );
 
   const headers = await Util.getCommonAuth();
-  const response = await ApiCommon.getReq(url, headers);
-
-  await AsyncStorage.setItem("userDetails", JSON.stringify(response));
-  return response;
+  return ApiCommon.getReq(url, headers);
 },
+
+  getUserDetails: async () => {
+    const user = await Common.getLoggedInUser()
+
+    const uObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no:  user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId
+    };
+
+    // ✅ stringify ONCE
+    const u = encodeURIComponent(JSON.stringify(uObj));
+
+
+    // 👇 build base url
+    let url = `${API_URL2}/userDetailsById/${u}`;
+
+    // 👇 pass primitive string, not object
+    url = await ismServices.appendParamsInUrl(url);
+
+
+    const headers = await Util.getCommonAuth();
+    const response = await ApiCommon.getReq(url, headers);
+
+    await AsyncStorage.setItem("userDetails", JSON.stringify(response));
+    return response;
+  },
 
   getMyBalance: async () => {
     const user = await Common.getLoggedInUser()
@@ -60,14 +71,6 @@ const u = encodeURIComponent(JSON.stringify(uObj));
     }
   },
 
-  
-  // addMyVisitor: async (data) => {
-  //   const url = await ismServices.appendParamsInUrl(`${API_URL4}/v1/society/${user.society_id}/addVisitor`)
-  //   const headers = await Util.getCommonAuth()
-  //   return ApiCommon.getReq(url,data,headers)
-  // },
-
-
 
 
   getMyNotices: async () => {
@@ -81,46 +84,47 @@ const u = encodeURIComponent(JSON.stringify(uObj));
   },
 
   // 🔥 Common param handler
-appendParamsInUrl: async (url, extraParams = {}) => {
-  const user = await Common.getLoggedInUser()
+  appendParamsInUrl: async (url, extraParams = {}) => {
+    const user = await Common.getLoggedInUser()
 
-  const uObj = {
-    user_id: 367102,
-    group_id: 2265,
-    flat_no: "CL1-T112",
-    unit_id: 367102,
-    society_id: 290
-  };
+    const uObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no:  user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId
+    };
 
-  const u = JSON.stringify(uObj); // ✅ no encode
 
-  const commonParams = {
-    "api-token": user.api_token,
-    "user-id": u,
-    "group-id": 2265,
-    "app_id": "ism_resident"
-  };
+    const u = JSON.stringify(uObj); // ✅ no encode
 
-  const finalParams = {
-    ...commonParams,
-    ...extraParams
-  };
+   const commonParams = {
+  "api-token": user.api_token,
+  "user-id": u,
+  "group-id": user.role_id,   // dynamic
+  "app_id": "ism_resident"
+};
 
-  const queryParams = Object.keys(finalParams)
-    .filter(key => finalParams[key] !== null && finalParams[key] !== undefined)
-    .map(
-      key =>
-        `${encodeURIComponent(key)}=${encodeURIComponent(finalParams[key])}`
-    )
-    .join("&");
+    const finalParams = {
+      ...commonParams,
+      ...extraParams
+    };
 
-  if (queryParams) {
-    url += url.includes("?") ? "&" : "?";
-    url += queryParams;
+    const queryParams = Object.keys(finalParams)
+      .filter(key => finalParams[key] !== null && finalParams[key] !== undefined)
+      .map(
+        key =>
+          `${encodeURIComponent(key)}=${encodeURIComponent(finalParams[key])}`
+      )
+      .join("&");
+
+    if (queryParams) {
+      url += url.includes("?") ? "&" : "?";
+      url += queryParams;
+    }
+
+    return url;
   }
-
-  return url;
-}
 
 }
 

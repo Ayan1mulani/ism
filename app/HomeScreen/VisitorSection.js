@@ -18,86 +18,87 @@ const BASE_URL = "https://ism-vms.s3.amazonaws.com/company-logo/";
 const DEFAULT_GUEST_IMAGE =
   "https://app.factech.co.in/user/assets/images/visitor/default-guest.png";
 
-const VisitorSection = () => {
+const VisitorSection = ({ refreshTrigger }) => {
   const [visitors, setVisitors] = useState([]);
   const [loading, setLoading] = useState(true);
   const { nightMode } = usePermissions();
   const [showPreApproveModal, setShowPreApproveModal] = useState(false);
   const navigation = useNavigation();
+  
 
- useEffect(() => {
-  const fetchTodayArrivals = async () => {
-    try {
-      setLoading(true);
 
-      const [visitorRes, passRes] = await Promise.all([
-        visitorServices.getMyVisitors(),
-        visitorServices.getMyPasses(),
-      ]);
 
-      const visitArray = visitorRes?.data?.visits || [];
-      const passArray =
-        passRes?.data?.passes ||
-        passRes?.data?.visits ||
-        passRes?.data ||
-        [];
+const fetchTodayArrivals = async () => {
+  try {
+    setLoading(true);
 
-      const today = new Date().toISOString().split("T")[0];
+    const [visitorRes, passRes] = await Promise.all([
+      visitorServices.getMyVisitors(),
+      visitorServices.getMyPasses(),
+    ]);
 
-      const isToday = (dateString) => {
-        if (!dateString) return false;
-        return dateString.split(" ")[0] === today;
-      };
+    const visitArray = visitorRes?.data?.visits || [];
+    const passArray =
+      passRes?.data?.passes ||
+      passRes?.data?.visits ||
+      passRes?.data ||
+      [];
 
-      const todayVisits = visitArray
-        .filter(v => isToday(v.date_time || v.visit_date))
-        .map(visit => ({
-          id: `visit-${visit.id}`,
-          name: visit.name || visit.visitor_data?.name || 'Unknown',
-          role: visit.purpose || 'Visitor',
-          avatar:
-            visit.image && visit.image.startsWith('http')
-              ? visit.image
+    const today = new Date().toISOString().split("T")[0];
+
+    const isToday = (dateString) => {
+      if (!dateString) return false;
+      return dateString.split(" ")[0] === today;
+    };
+
+    const todayVisits = visitArray
+      .filter(v => isToday(v.date_time || v.visit_date))
+      .map(visit => ({
+        id: `visit-${visit.id}`,
+        name: visit.name || visit.visitor_data?.name || 'Unknown',
+        role: visit.purpose || 'Visitor',
+        avatar:
+          visit.image && visit.image.startsWith('http')
+            ? visit.image
+            : DEFAULT_GUEST_IMAGE,
+        created_at: visit.created_at,
+        originalData: visit,
+      }));
+
+    const todayPasses = passArray
+      .filter(p => isToday(p.date_time))
+      .map(pass => ({
+        id: `pass-${pass.id}`,
+        name: pass.company_name || pass.name || 'Unknown',
+        role: pass.purpose || 'Pass',
+        avatar:
+          pass.purpose?.toLowerCase() === "guest"
+            ? DEFAULT_GUEST_IMAGE
+            : pass.company_name
+              ? `${BASE_URL}${pass.company_name
+                  .toLowerCase()
+                  .replace(/\s+/g, "-")}.png`
               : DEFAULT_GUEST_IMAGE,
-          created_at: visit.created_at,
-          originalData: visit,
-        }));
+        created_at: pass.created_at,
+        originalData: pass,
+      }));
 
-      const todayPasses = passArray
-        .filter(p => isToday(p.date_time))
-        .map(pass => ({
-          id: `pass-${pass.id}`,
-          name: pass.company_name || pass.name || 'Unknown',
-          role: pass.purpose || 'Pass',
-          avatar:
-            pass.purpose?.toLowerCase() === "guest"
-              ? DEFAULT_GUEST_IMAGE
-              : pass.company_name
-                ? `${BASE_URL}${pass.company_name
-                    .toLowerCase()
-                    .replace(/\s+/g, "-")}.png`
-                : DEFAULT_GUEST_IMAGE,
-          created_at: pass.created_at,
-          originalData: pass,
-        }));
+    const combined = [...todayVisits, ...todayPasses].sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    );
 
-      const combined = [...todayVisits, ...todayPasses].sort(
-        (a, b) =>
-          new Date(b.created_at) - new Date(a.created_at)
-      );
+    setVisitors(combined);
 
-      setVisitors(combined);
-
-    } catch (error) {
-      console.error("Error fetching arrivals:", error);
-      setVisitors([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  } catch (error) {
+    console.error("Error fetching arrivals:", error);
+    setVisitors([]);
+  } finally {
+    setLoading(false);
+  }
+};
+useEffect(() => {
   fetchTodayArrivals();
-}, []);
+}, [refreshTrigger]);
 
   const getRoleColor = (role) => {
     const roleLower = role?.toLowerCase() || '';

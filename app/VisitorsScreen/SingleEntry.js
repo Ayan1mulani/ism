@@ -65,7 +65,7 @@ const PURPOSE_ICONS = {
   default: 'card-outline',
 };
 
-const SingleEntryPassPage = ({ nightMode, passData, loading, onRefresh }) => {
+const SingleEntryPassPage = ({ nightMode, passData, loading, parkingBookings, onRefresh }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -114,6 +114,7 @@ const SingleEntryPassPage = ({ nightMode, passData, loading, onRefresh }) => {
     }
   };
 
+
   const formatDate = (dateString) => {
     try {
       return new Date(dateString).toLocaleDateString('en-US', {
@@ -126,13 +127,7 @@ const SingleEntryPassPage = ({ nightMode, passData, loading, onRefresh }) => {
     }
   };
 
-  const isParkingBooked = (pass) => {
-    // Check if parking is booked - adjust the property name based on your API
-    return pass.parking_booked === 1 ||
-      pass.parking_booked === true ||
-      pass.has_parking === 1 ||
-      pass.has_parking === true;
-  };
+
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -169,17 +164,28 @@ const SingleEntryPassPage = ({ nightMode, passData, loading, onRefresh }) => {
     };
   };
 
-  const renderPassCard = ({ item: pass }) => {
-    const status = getPassStatus(pass.status);
-    const hasParkingBooked = isParkingBooked(pass);
- 
+  // 👇 PLACE THIS ABOVE renderPassCard
+const getParkingBooking = (pass) => {
+  if (!parkingBookings || parkingBookings.length === 0) return null;
 
+  return parkingBookings.find(
+    booking =>
+      booking.reference_id &&
+      String(booking.reference_id) === String(pass.id)
+  );
+};
+  const renderPassCard = ({ item: pass }) => {
+    const parkingBooking = getParkingBooking(pass);
+
+    const status = getPassStatus(pass.status);
+ 
+    // console.log("PASS:", pass.id, "Parking Match:", parkingBooking);
     return (
       <TouchableOpacity
         style={[styles.card, {
           backgroundColor: '#ffff',
         }]}
-      onPress={() => navigation.navigate('PassDetails', { pass }, console.log(pass)) }
+        onPress={() => navigation.navigate('PassDetails', { pass }, console.log(pass))}
 
         activeOpacity={0.7}
       >
@@ -239,12 +245,17 @@ const SingleEntryPassPage = ({ nightMode, passData, loading, onRefresh }) => {
               </Text>
             )}
 
+
+
             {/* Parking Indicator */}
-            {hasParkingBooked && (
+            {parkingBooking && (
               <View style={styles.parkingIndicator}>
-                <Ionicons name="car" size={20} color={COLORS.primary} />
+                <Ionicons name="car" size={18} color={COLORS.primary} />
               </View>
             )}
+
+
+
           </View>
         </View>
 
@@ -321,30 +332,30 @@ const SingleEntryPassPage = ({ nightMode, passData, loading, onRefresh }) => {
   }
 
   const filteredData = (passData || [])
-  .filter(pass => {
-    const query = searchQuery.toLowerCase();
+    .filter(pass => {
+      const query = searchQuery.toLowerCase();
 
-    const searchableText = [
-      pass.name,
-      pass.mobile,
-      pass.purpose,
-      pass.company_name,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
+      const searchableText = [
+        pass.name,
+        pass.mobile,
+        pass.purpose,
+        pass.company_name,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
 
-    const matchesSearch = searchableText.includes(query);
+      const matchesSearch = searchableText.includes(query);
 
-    const matchesType =
-      selectedStatus === 'ALL' ||
-      pass.purpose?.toLowerCase() === selectedStatus.toLowerCase();
+      const matchesType =
+        selectedStatus === 'ALL' ||
+        pass.purpose?.toLowerCase() === selectedStatus.toLowerCase();
 
-    return matchesSearch && matchesType;
-  })
-  .sort((a, b) => {
-    return new Date(b.created_at) - new Date(a.created_at);
-  });
+      return matchesSearch && matchesType;
+    })
+    .sort((a, b) => {
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
 
 
 
@@ -385,37 +396,37 @@ const SingleEntryPassPage = ({ nightMode, passData, loading, onRefresh }) => {
         </TouchableOpacity>
       </View>
       {showFilters && (
-  <View style={styles.filterContainer}>
-    {['ALL', 'guest', 'delivery', 'cab'].map(type => (
-      <TouchableOpacity
-        key={type}
-        style={[
-          styles.filterChip,
-          {
-            backgroundColor:
-              selectedStatus === type
-                ? COLORS.primary
-                : theme.surface
-          }
-        ]}
-        onPress={() => setSelectedStatus(type)}
-      >
-        <Text
-          style={{
-            color:
-              selectedStatus === type ? '#fff' : theme.text,
-            fontWeight: '600',
-          }}
-        >
-          {type === 'ALL'
-            ? 'All'
-            : type.charAt(0).toUpperCase() + type.slice(1)}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-)}
-   
+        <View style={styles.filterContainer}>
+          {['ALL', 'guest', 'delivery', 'cab'].map(type => (
+            <TouchableOpacity
+              key={type}
+              style={[
+                styles.filterChip,
+                {
+                  backgroundColor:
+                    selectedStatus === type
+                      ? COLORS.primary
+                      : theme.surface
+                }
+              ]}
+              onPress={() => setSelectedStatus(type)}
+            >
+              <Text
+                style={{
+                  color:
+                    selectedStatus === type ? '#fff' : theme.text,
+                  fontWeight: '600',
+                }}
+              >
+                {type === 'ALL'
+                  ? 'All'
+                  : type.charAt(0).toUpperCase() + type.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
       <View style={styles.container}>
         <FlatList
           data={filteredData}
@@ -455,19 +466,19 @@ const createStyles = (theme, nightMode) =>
       fontSize: 16,
       fontWeight: '500',
     },
-listContent: {
-  paddingHorizontal: 16,
-  paddingVertical: 12,
-  paddingBottom: 200, // more space than FAB bottom
-},
+    listContent: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      paddingBottom: 200, // more space than FAB bottom
+    },
     card: {
-    padding: 15,
-  borderRadius: 14,
-  marginBottom: 5,
-  borderWidth: 1,
-  borderColor: 'rgba(0,0,0,0.08)',
-  overflow: 'hidden', // 👈 important
-  
+      padding: 15,
+      borderRadius: 14,
+      marginBottom: 5,
+      borderWidth: 1,
+      borderColor: 'rgba(0,0,0,0.08)',
+      overflow: 'hidden', // 👈 important
+
     },
     cardHeader: {
       flexDirection: 'row',
@@ -562,7 +573,7 @@ listContent: {
       marginTop: 8,
       gap: 6,
     },
-   
+
     emptyState: {
       flex: 1,
       justifyContent: 'center',

@@ -46,6 +46,8 @@ const NewLoginScreen = () => {
   const [errorTitle, setErrorTitle] = useState('Login Failed');
   const [isLoading, setIsLoading] = useState(false);
 
+
+
 const getUserDetails = async () => {
   try {
     // Fetch & store user details

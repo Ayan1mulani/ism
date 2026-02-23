@@ -13,9 +13,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import FlatSwitcherModal from './FlatSwitcherModal';
 import { ismServices } from '../../../services/ismServices';
 import { Common } from '../../../services/Common';
+import { useNavigation } from '@react-navigation/native';
 
 
 const ResidentHeader = () => {
+
+  const navigation = useNavigation();
   const { nightMode } = usePermissions();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [userFlats, setUserFlats] = useState([]);
@@ -130,7 +133,10 @@ useEffect(() => {
 
         {/* Right Icon */}
         <View style={styles.rightSection}>
-          <TouchableOpacity style={styles.iconButton}>
+          <TouchableOpacity style={styles.iconButton}
+                      onPress={() => navigation.navigate("NotificationsScreen")}
+
+          >
             <Ionicons
               name="notifications-outline"
               size={22}

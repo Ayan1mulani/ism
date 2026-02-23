@@ -1,14 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   Image,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePermissions } from '../../../Utils/ConetextApi';
 import AppHeader from '../../components/AppHeader';
+import { visitorServices } from '../../../services/visitorServices';
+import { useNavigation } from '@react-navigation/native';
 
 const BASE_URL = "https://ism-vms.s3.amazonaws.com/company-logo/";
 const DEFAULT_GUEST_IMAGE =
@@ -17,6 +22,8 @@ const DEFAULT_GUEST_IMAGE =
 const PassDetailsScreen = ({ route }) => {
   const { pass } = route.params;
   const { nightMode } = usePermissions();
+  const navigation = useNavigation();
+  const [deleting, setDeleting] = useState(false);
 
   const theme = {
     background: nightMode ? '#121212' : '#F4F6F9',
@@ -56,6 +63,37 @@ const PassDetailsScreen = ({ route }) => {
     return DEFAULT_GUEST_IMAGE;
   };
 
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete Pass",
+      "Are you sure you want to delete this pass?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setDeleting(true);
+              
+            const res = await visitorServices.cancelPass(pass.id);
+
+              if (res?.status === "success") {
+              navigation.goBack();
+              } else {
+                Alert.alert("Error", res?.message || "Failed to delete");
+              }
+            } catch (error) {
+              Alert.alert("Error", "Something went wrong");
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const status = getStatus();
   const isCab = pass.purpose?.toLowerCase() === "cab";
   const isGuest = pass.purpose?.toLowerCase() === "guest";
@@ -78,8 +116,7 @@ const PassDetailsScreen = ({ route }) => {
       <ScrollView>
 
         <View style={[styles.card, { backgroundColor: theme.card }]}>
-          
-          {/* Logo */}
+
           <View style={styles.logoContainer}>
             <Image
               source={{ uri: getLogo() }}
@@ -88,73 +125,81 @@ const PassDetailsScreen = ({ route }) => {
             />
           </View>
 
-          {/* Status Badge */}
           <View style={[styles.statusBadge, { backgroundColor: status.color }]}>
             <Text style={styles.statusText}>
               {status.label}
             </Text>
           </View>
 
-          {/* Company / Name */}
           <View style={styles.section}>
             <Text style={[styles.label, { color: theme.subText }]}>
               {isGuest ? "Visitor Name" : "Company Name"}
             </Text>
             <Text style={[styles.value, { color: theme.text }]}>
-              {pass.company_name || pass.name}
+              {pass.company_name || pass.name || "-"}
             </Text>
           </View>
 
-          {/* Phone (only valid) */}
           {validMobile && (
             <View style={styles.section}>
               <Text style={[styles.label, { color: theme.subText }]}>
                 Phone
               </Text>
               <Text style={[styles.value, { color: theme.text }]}>
-                {pass.mobile}
+                {pass.mobile || "-"}
               </Text>
             </View>
           )}
 
-          {/* Cab Number */}
           {isCab && pass.pass_no && (
             <View style={styles.cabBox}>
               <Text style={[styles.cabLabel, { color: theme.subText }]}>
                 Cab No.
               </Text>
               <Text style={styles.cabNumber}>
-                {pass.pass_no}
+                {pass.pass_no || "-"}
               </Text>
             </View>
           )}
 
-          {/* Pass Number for Guest */}
           {isGuest && pass.pass_no && (
             <View style={styles.section}>
               <Text style={[styles.label, { color: theme.subText }]}>
                 Pass No.
               </Text>
               <Text style={[styles.value, { color: theme.text }]}>
-                {pass.pass_no}
+                {pass.pass_no || "-"}
               </Text>
             </View>
           )}
 
-          {/* Date */}
           <View style={styles.section}>
             <Text style={[styles.label, { color: theme.subText }]}>
               Visit Date
             </Text>
             <Text style={[styles.value, { color: theme.text }]}>
-              {formatDate(pass.date_time)}
+              {formatDate(pass.date_time) || "-"}
             </Text>
           </View>
 
-          {/* Footer */}
+          {/* DELETE BUTTON */}
+          <View style={styles.deleteContainer}>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.deleteText}>Delete Pass</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
           <View style={[styles.footer, { borderTopColor: theme.border }]}>
             <Text style={[styles.footerText, { color: theme.subText }]}>
-              Created at {formatDate(pass.created_at)}
+              Created at {formatDate(pass.created_at) || "-"}
             </Text>
           </View>
 
@@ -219,6 +264,20 @@ const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: '800',
     letterSpacing: 3,
+  },
+  deleteContainer: {
+    marginTop: 24,
+  },
+  deleteButton: {
+    backgroundColor: '#FF3B30',
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  deleteText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
   },
   footer: {
     marginTop: 30,

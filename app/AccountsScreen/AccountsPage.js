@@ -1,4 +1,3 @@
-// AccountsScreen.js
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -12,38 +11,48 @@ import {
   Alert,
   Linking,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { usePermissions } from '../../Utils/ConetextApi';
 import { otherServices } from '../../services/otherServices';
+import AppHeader from '../components/AppHeader';
 
 const THEME = {
-  primaryAccent: '#1996D3',
-  darkText: '#074B7C',
-  inactiveText: '#6c757d',
-  lightBackground: '#f4f7f9',
-  componentBackground: '#ffffff',
-  borderColor: '#e0e0e0',
-  darkBackground: '#121212',
-  darkComponentBackground: '#1e1e1e',
-  darkBorderColor: '#333333',
-  darkTextColor: '#ffffff',
-  darkInactiveText: '#aaaaaa',
+  primary: '#1996D3',
+  primaryLight: '#E8F5FD',
+  primaryDark: '#1279AD',
+  success: '#10B981',
+  warning: '#F59E0B',
+  danger: '#EF4444',
+  lightBg: '#F0F4F8',
+  darkBg: '#0F1117',
+  lightCard: '#FFFFFF',
+  darkCard: '#1A1D27',
+  border: '#E5E7EB',
+  darkBorder: '#2A2D3A',
 };
 
 export default function AccountsScreen() {
+  const navigation = useNavigation();
   const { nightMode } = usePermissions();
+
   const [outstanding, setOutstanding] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [selectedBill, setSelectedBill] = useState(null);
 
   const theme = {
-    backgroundColor: nightMode ? THEME.darkBackground : THEME.lightBackground,
-    componentBackground: nightMode ? THEME.darkComponentBackground : THEME.componentBackground,
-    borderColor: nightMode ? THEME.darkBorderColor : THEME.borderColor,
-    textColor: nightMode ? THEME.darkTextColor : THEME.darkText,
-    inactiveText: nightMode ? THEME.darkInactiveText : THEME.inactiveText,
+    bg: nightMode ? THEME.darkBg : THEME.lightBg,
+    card: nightMode ? THEME.darkCard : THEME.lightCard,
+    border: nightMode ? THEME.darkBorder : THEME.border,
+    text: nightMode ? '#F1F5F9' : '#111827',
+    sub: nightMode ? '#94A3B8' : '#6B7280',
+    divider: nightMode ? '#2A2D3A' : '#F1F5F9',
+    pillBg: nightMode ? '#1E2235' : THEME.primaryLight,
   };
 
   useEffect(() => {
@@ -53,18 +62,12 @@ export default function AccountsScreen() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch outstanding data
       const outstandingResp = await otherServices.getOutStandings();
       setOutstanding(outstandingResp.data || []);
-
-      // Fetch accounts data
       const accountsResp = await otherServices.getMyAccounts();
       setAccounts(accountsResp.data || accountsResp || []);
-      
     } catch (error) {
-      console.error('Error fetching data:', error);
-      Alert.alert('Error', 'Failed to load account data');
+      Alert.alert('Error', 'Failed to load accounts');
     } finally {
       setLoading(false);
     }
@@ -76,460 +79,524 @@ export default function AccountsScreen() {
     setRefreshing(false);
   };
 
-  const handleDownloadBill = (url, statementNo) => {
-    if (url) {
-      Linking.openURL(url).catch(() => {
-        Alert.alert('Error', 'Unable to open the bill URL');
-      });
+  const formatCurrency = (amount) =>
+    `₹${parseFloat(amount || 0).toLocaleString('en-IN')}`;
+
+  const formatDate = (date) => {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
+  const openMenu = (bill) => {
+    setSelectedBill(bill);
+    setMenuVisible(true);
+  };
+
+  const downloadBill = () => {
+    if (selectedBill?.url) {
+      Linking.openURL(selectedBill.url);
     } else {
-      Alert.alert('Info', `Statement: ${statementNo}\nDownload not available`);
+      Alert.alert('Info', 'Download not available');
     }
+    setMenuVisible(false);
   };
-
-  const formatCurrency = (amount) => {
-    return `₹${parseFloat(amount || 0).toLocaleString('en-IN')}`;
-  };
-
-  const formatDate = (dateString) => {
-    try {
-      return new Date(dateString).toLocaleDateString('en-IN', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    } catch (error) {
-      return dateString;
-    }
-  };
-
-  const getTotalOutstanding = () => {
-    return outstanding.reduce((total, item) => total + (item.data?.balance || 0), 0);
-  };
-
-  // Function to get appropriate icon based on bill type or statement number
-  const getBillIcon = (statementNo, billType) => {
-    const statement = statementNo?.toLowerCase() || '';
-    
-    if (statement.includes('electricity') || statement.includes('electric')) {
-      return 'flash-outline';
-    } else if (statement.includes('maintenance') || statement.includes('maintain')) {
-      return 'construct-outline';
-    } else if (statement.includes('water') || statement.includes('plumbing')) {
-      return 'water-outline';
-    } else if (statement.includes('gas') || statement.includes('cooking')) {
-      return 'flame-outline';
-    } else if (statement.includes('parking') || statement.includes('vehicle')) {
-      return 'car-outline';
-    } else if (statement.includes('security') || statement.includes('guard')) {
-      return 'shield-outline';
-    } else if (statement.includes('cleaning') || statement.includes('housekeeping')) {
-      return 'broom-outline';
-    } else if (statement.includes('internet') || statement.includes('wifi')) {
-      return 'wifi-outline';
-    } else if (statement.includes('amenity') || statement.includes('facility')) {
-      return 'fitness-outline';
-    } else {
-      return 'receipt-outline'; // Default bill icon
-    }
-  };
-
-  const renderOutstandingCard = ({ item }) => (
-    <View style={[styles.outstandingCard, { 
-      backgroundColor: theme.componentBackground,
-      borderColor: theme.borderColor,
-    }]}>
-      <View style={styles.outstandingHeader}>
-        <View style={[styles.iconContainer, { 
-          backgroundColor: `${THEME.primaryAccent}15` 
-        }]}>
-          <Ionicons 
-            name={item.name === 'Electricity' ? 'flash-outline' : 'home-outline'} 
-            size={24} 
-            color={THEME.primaryAccent} 
-          />
-        </View>
-        <View style={styles.outstandingInfo}>
-          <Text style={[styles.outstandingName, { color: theme.textColor }]}>
-            {item.name}
-          </Text>
-          <Text style={[styles.outstandingMessage, { color: theme.inactiveText }]}>
-            {item.message}
-          </Text>
-        </View>
-        <View style={styles.outstandingAmount}>
-          <Text style={[styles.amountText, { color: THEME.primaryAccent }]}>
-            {formatCurrency(item.data?.balance)}
-          </Text>
-          <Text style={[styles.dateText, { color: theme.inactiveText }]}>
-            Due: {formatDate(item.data?.bill_date || item.data?.date)}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-
-  const renderAccountCard = ({ item }) => (
-    <TouchableOpacity 
-      style={[styles.accountCard, { 
-        backgroundColor: theme.componentBackground,
-        borderColor: theme.borderColor,
-      }]}
-      onPress={() => handleDownloadBill(item.url, item.statement_no)}
-    >
-      <View style={styles.accountHeader}>
-        {/* Added icon container for bill history */}
-        <View style={[styles.billIconContainer, { 
-          backgroundColor: `${THEME.primaryAccent}15` 
-        }]}>
-          <Ionicons 
-            name={getBillIcon(item.statement_no, item.bill_type)} 
-            size={20} 
-            color={THEME.primaryAccent} 
-          />
-        </View>
-        
-        <View style={styles.accountLeft}>
-          <Text style={[styles.statementNo, { color: theme.textColor }]}>
-            {item.statement_no}
-          </Text>
-          <Text style={[styles.accountDate, { color: theme.inactiveText }]}>
-            {formatDate(item.date)}
-          </Text>
-          <View style={styles.accountAmounts}>
-            <Text style={[styles.currentAmount, { color: THEME.primaryAccent }]}>
-              Current: {formatCurrency(item.current)}
-            </Text>
-            {item.arrear > 0 && (
-              <Text style={[styles.arrearAmount, { color: '#FF3B30' }]}>
-                Arrear: {formatCurrency(item.arrear)}
-              </Text>
-            )}
-          </View>
-        </View>
-        <View style={styles.accountRight}>
-          <Text style={[styles.balanceAmount, { color: theme.textColor }]}>
-            {formatCurrency(item.balance)}
-          </Text>
-          <Text style={[styles.balanceLabel, { color: theme.inactiveText }]}>
-            Balance
-          </Text>
-          {item.url && (
-            <View style={styles.downloadButton}>
-              <Ionicons name="download-outline" size={16} color={THEME.primaryAccent} />
-              <Text style={[styles.downloadText, { color: THEME.primaryAccent }]}>
-                Download
-              </Text>
-            </View>
-          )}
-        </View>
-      </View>
-      
-      {item.remarks && (
-        <View style={[styles.remarksContainer, { borderTopColor: theme.borderColor }]}>
-          <Ionicons name="information-circle-outline" size={14} color={theme.inactiveText} />
-          <Text style={[styles.remarksText, { color: theme.inactiveText }]}>
-            {item.remarks}
-          </Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-
-  const styles = getStyles(theme, nightMode);
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
-        <StatusBar 
-          barStyle={nightMode ? "light-content" : "dark-content"} 
-          backgroundColor={theme.backgroundColor}
-        />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={THEME.primaryAccent} />
-          <Text style={[styles.loadingText, { color: theme.textColor }]}>
-            Loading account information...
-          </Text>
-        </View>
+      <SafeAreaView style={[styles.center, { backgroundColor: theme.bg }]}>
+        <ActivityIndicator size="large" color={THEME.primary} />
+        <Text style={{ color: theme.sub, marginTop: 12, fontSize: 14 }}>
+          Loading accounts...
+        </Text>
       </SafeAreaView>
     );
   }
 
+  // Total outstanding balance
+  const totalOutstanding = outstanding.reduce(
+    (sum, item) => sum + parseFloat(item.data?.balance || 0),
+    0
+  );
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
-      <StatusBar 
-        barStyle={nightMode ? "light-content" : "dark-content"} 
-        backgroundColor={theme.backgroundColor}
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }}>
+      <StatusBar barStyle={nightMode ? 'light-content' : 'dark-content'} />
+
+      <AppHeader
+        title="Accounts"
+        nightMode={nightMode}
+        showBack
+        onBackPress={() => navigation.goBack()}
       />
-      
-      {/* Header */}
-      <View style={[styles.header, { 
-        backgroundColor: theme.componentBackground,
-        borderBottomColor: theme.borderColor 
-      }]}>
-      
-        <View style={[styles.totalContainer, { backgroundColor: `${THEME.primaryAccent}15` }]}>
-          <Text style={[styles.totalLabel, { color: theme.inactiveText }]}>
-            Total Outstanding
-          </Text>
-          <Text style={[styles.totalAmount, { color: THEME.primaryAccent }]}>
-            {formatCurrency(getTotalOutstanding())}
-          </Text>
-        </View>
-      </View>
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[THEME.primaryAccent]}
-            tintColor={THEME.primaryAccent}
+            colors={[THEME.primary]}
+            tintColor={THEME.primary}
           />
         }
+        showsVerticalScrollIndicator={false}
       >
-        {/* Outstanding Section */}
-        {outstanding.length > 0 && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.textColor }]}>
-              Outstanding Bills
-            </Text>
-            {outstanding.map((item, index) => (
-              <View key={item.id || index}>
-                {renderOutstandingCard({ item })}
-              </View>
-            ))}
-          </View>
-        )}
 
-        {/* Accounts Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.textColor }]}>
-            Bill History
-          </Text>
-          {accounts.length > 0 ? (
-            accounts.map((item, index) => (
-              <View key={item.id || index}>
-                {renderAccountCard({ item })}
-              </View>
-            ))
-          ) : (
-            <View style={styles.emptyState}>
-              <Ionicons name="document-outline" size={64} color={theme.inactiveText} />
-              <Text style={[styles.emptyStateTitle, { color: theme.textColor }]}>
-                No Bills Found
+        {/* ── Total Balance Summary Card ── */}
+        <View style={[styles.summaryCard, { backgroundColor: THEME.primary }]}>
+          <View style={styles.summaryInner}>
+            <View>
+              <Text style={styles.summaryLabel}>Total Outstanding</Text>
+              <Text style={styles.summaryAmount}>
+                {formatCurrency(totalOutstanding)}
               </Text>
-              <Text style={[styles.emptyStateSubtitle, { color: theme.inactiveText }]}>
-                Your bill history will appear here
+              <Text style={styles.summaryNote}>
+                {outstanding.length} pending {outstanding.length === 1 ? 'item' : 'items'}
               </Text>
             </View>
-          )}
+            <View style={styles.summaryIcon}>
+              <Ionicons name="wallet-outline" size={32} color="rgba(255,255,255,0.9)" />
+            </View>
+          </View>
         </View>
+
+        {/* ── Outstanding Section ── */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Outstanding</Text>
+          <View style={[styles.badge, { backgroundColor: theme.pillBg }]}>
+            <Text style={[styles.badgeText, { color: THEME.primary }]}>
+              {outstanding.length}
+            </Text>
+          </View>
+        </View>
+
+        {outstanding.length === 0 ? (
+          <View style={[styles.emptyCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Ionicons name="checkmark-circle-outline" size={36} color={THEME.success} />
+            <Text style={[styles.emptyText, { color: theme.sub }]}>No outstanding dues</Text>
+          </View>
+        ) : (
+          outstanding.map((item, index) => (
+            <View
+              key={index}
+              style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
+            >
+              {/* Left accent bar */}
+              <View style={styles.accentBar} />
+
+              <View style={styles.outstandingContent}>
+                <View style={styles.outstandingTop}>
+                  <View style={[styles.iconCircle, { backgroundColor: theme.pillBg }]}>
+                    <Ionicons name="receipt-outline" size={18} color={THEME.primary} />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={[styles.cardTitle, { color: theme.text }]}>
+                      {item.name}
+                    </Text>
+                    {item.message ? (
+                      <Text style={[styles.cardSub, { color: theme.sub }]} numberOfLines={1}>
+                        {item.message}
+                      </Text>
+                    ) : null}
+                  </View>
+                </View>
+
+                <View style={[styles.divider, { backgroundColor: theme.divider }]} />
+
+                <View style={styles.outstandingBottom}>
+                  <Text style={[styles.amountLabel, { color: theme.sub }]}>Balance Due</Text>
+                  <Text style={[styles.outstandingAmount, { color: THEME.danger }]}>
+                    {formatCurrency(item.data?.balance)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ))
+        )}
+
+        {/* ── Bill History Section ── */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Bill History</Text>
+          <View style={[styles.badge, { backgroundColor: theme.pillBg }]}>
+            <Text style={[styles.badgeText, { color: THEME.primary }]}>
+              {accounts.length}
+            </Text>
+          </View>
+        </View>
+
+        {accounts.length === 0 ? (
+          <View style={[styles.emptyCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Ionicons name="document-outline" size={36} color={theme.sub} />
+            <Text style={[styles.emptyText, { color: theme.sub }]}>No bill history</Text>
+          </View>
+        ) : (
+          accounts.map((item, index) => (
+            <View
+              key={index}
+              style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
+            >
+              {/* Header row */}
+              <View style={styles.billHeader}>
+                <View style={[styles.iconCircle, { backgroundColor: theme.pillBg }]}>
+                  <Ionicons name="document-text-outline" size={18} color={THEME.primary} />
+                </View>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={[styles.cardTitle, { color: theme.text }]}>
+                    {item.statement_no || 'Statement'}
+                  </Text>
+                  <Text style={[styles.cardSub, { color: theme.sub }]}>
+                    {formatDate(item.date)}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.moreBtn, { backgroundColor: theme.divider }]}
+                  onPress={() => openMenu(item)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons name="ellipsis-horizontal" size={16} color={theme.sub} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Divider */}
+              <View style={[styles.divider, { backgroundColor: theme.divider }]} />
+
+              {/* Amount row */}
+              <View style={styles.billAmounts}>
+                <View style={styles.amountItem}>
+                  <Text style={[styles.amountLabel, { color: theme.sub }]}>Current</Text>
+                  <Text style={[styles.amountValue, { color: theme.text }]}>
+                    {formatCurrency(item.current)}
+                  </Text>
+                </View>
+
+                <View style={[styles.amountDivider, { backgroundColor: theme.border }]} />
+
+                <View style={styles.amountItem}>
+                  <Text style={[styles.amountLabel, { color: theme.sub }]}>Arrear</Text>
+                  <Text style={[styles.amountValue, { color: theme.text }]}>
+                    {formatCurrency(item.arrear)}
+                  </Text>
+                </View>
+
+                <View style={[styles.amountDivider, { backgroundColor: theme.border }]} />
+
+                <View style={styles.amountItem}>
+                  <Text style={[styles.amountLabel, { color: theme.sub }]}>Balance</Text>
+                  <Text style={[styles.amountValue, { color: THEME.primary, fontWeight: '700' }]}>
+                    {formatCurrency(item.balance)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ))
+        )}
       </ScrollView>
+
+      {/* ── Bottom Sheet Menu Modal ── */}
+      <Modal
+        transparent
+        visible={menuVisible}
+        animationType="none"
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setMenuVisible(false)}
+        >
+          <View style={[styles.bottomSheet, { backgroundColor: theme.card }]}>
+            {/* Handle */}
+            <View style={[styles.sheetHandle, { backgroundColor: theme.border }]} />
+
+            <Text style={[styles.sheetTitle, { color: theme.text }]}>
+              {selectedBill?.statement_no || 'Options'}
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.sheetItem, { borderColor: theme.border }]}
+              onPress={downloadBill}
+            >
+              <View style={[styles.sheetIconWrap, { backgroundColor: THEME.primaryLight }]}>
+                <Ionicons name="download-outline" size={20} color={THEME.primary} />
+              </View>
+              <View style={{ flex: 1, marginLeft: 14 }}>
+                <Text style={[styles.sheetItemTitle, { color: theme.text }]}>
+                  Download Bill
+                </Text>
+                <Text style={[styles.sheetItemSub, { color: theme.sub }]}>
+                  Save as PDF to your device
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={theme.sub} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.cancelBtn, { backgroundColor: theme.divider }]}
+              onPress={() => setMenuVisible(false)}
+            >
+              <Text style={[styles.cancelText, { color: theme.sub }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
-
-const getStyles = (theme, nightMode) => StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
+const styles = StyleSheet.create({
+  center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 16,
-  },
-  totalContainer: {
+
+  /* ───── SUMMARY CARD ───── */
+  summaryCard: {
+    borderRadius: 14,
     padding: 16,
-    borderRadius: 12,
+    marginBottom: 16,
+    elevation: 2,
+  },
+  summaryInner: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  totalLabel: {
-    fontSize: 14,
-    marginBottom: 4,
+  summaryLabel: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.8)',
   },
-  totalAmount: {
-    fontSize: 24,
+  summaryAmount: {
+    fontSize: 22,
     fontWeight: '700',
+    color: '#fff',
+    marginTop: 2,
   },
-  scrollView: {
-    flex: 1,
+  summaryNote: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: 2,
   },
-  contentContainer: {
-    paddingBottom: 20,
+  summaryIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  section: {
-    marginTop: 16,
+
+  /* ───── SECTION HEADER ───── */
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    marginTop: 8,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: '600',
-    marginHorizontal: 20,
-    marginBottom: 12,
   },
-  outstandingCard: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: nightMode ? 0.3 : 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  outstandingHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  outstandingInfo: {
-    flex: 1,
-  },
-  outstandingName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  outstandingMessage: {
-    fontSize: 14,
-  },
-  outstandingAmount: {
-    alignItems: 'flex-end',
-  },
-  amountText: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  dateText: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  accountCard: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: nightMode ? 0.3 : 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  accountHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  // New style for bill history icon
-  billIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    marginTop: 2,
-  },
-  accountLeft: {
-    flex: 1,
-  },
-  statementNo: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  accountDate: {
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  accountAmounts: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  currentAmount: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  arrearAmount: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  accountRight: {
-    alignItems: 'flex-end',
-  },
-  balanceAmount: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  balanceLabel: {
-    fontSize: 12,
-    marginBottom: 8,
-  },
-  downloadButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: `${THEME.primaryAccent}15`,
-    borderRadius: 8,
-  },
-  downloadText: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginLeft: 4,
-  },
-  remarksContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingTop: 12,
-    marginTop: 12,
-    borderTopWidth: 1,
-  },
-  remarksText: {
-    fontSize: 12,
+  badge: {
+    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     marginLeft: 6,
-    flex: 1,
-    fontStyle: 'italic',
   },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-  },
-  emptyStateTitle: {
-    fontSize: 18,
+  badgeText: {
+    fontSize: 11,
     fontWeight: '600',
-    marginTop: 16,
+  },
+
+  /* ───── CARD ───── */
+  card: {
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+
+  accentBar: {
+    width: 3,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    backgroundColor: '#EF4444',
+  },
+
+  outstandingContent: {
+    padding: 12,
+    paddingLeft: 16,
+  },
+
+  outstandingTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  outstandingBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+
+  outstandingAmount: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  /* ───── BILL CARD ───── */
+  billHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    paddingBottom: 8,
+  },
+
+  billAmounts: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+  },
+
+  amountItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+
+  amountLabel: {
+    fontSize: 10,
+    marginBottom: 2,
+    textTransform: 'uppercase',
+  },
+
+  amountValue: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  amountDivider: {
+    width: 1,
+    marginHorizontal: 4,
+  },
+
+  /* ───── SHARED ───── */
+  iconCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  cardTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  cardSub: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+
+  divider: {
+    height: 1,
+    marginVertical: 8,
+    marginHorizontal: -12,
+  },
+
+  moreBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  /* ───── EMPTY ───── */
+  emptyCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 20,
+    alignItems: 'center',
     marginBottom: 8,
   },
-  emptyStateSubtitle: {
+
+  emptyText: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: 6,
+  },
+
+  /* ───── BOTTOM SHEET ───── */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+
+  bottomSheet: {
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    padding: 16,
+    paddingBottom: 24,
+  },
+
+  sheetHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 12,
+  },
+
+  sheetTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 12,
+    opacity: 0.6,
+  },
+
+  sheetItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+  },
+
+  sheetIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  sheetItemTitle: {
     fontSize: 14,
-    textAlign: 'center',
+    fontWeight: '600',
+  },
+
+  sheetItemSub: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+
+  cancelBtn: {
+    marginTop: 12,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+
+  cancelText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
