@@ -1,4 +1,4 @@
-import {API_URL2}   from "@env"
+import {API_URL2 , API_URL4}   from "@env"
 import { ApiCommon } from "./ApiCommon"
 import { Common } from "./Common";
 import { Util } from "./Util";
@@ -300,7 +300,212 @@ createOrUpdateVehicleTag: async (vehicleId, payload) => {
   }
 },
 
- 
+getAllStaffs: async () => {
+  try {
+    const user = await Common.getLoggedInUser();
+
+    const userObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no: user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId,
+    };
+
+    const encodedUser = encodeURIComponent(
+      JSON.stringify(userObj)
+    );
+
+    const url = `https://vms-api.isocietymanager.com/v1/society/${
+      user.societyId
+    }/${encodedUser}/staffs?api-token=${user.api_token}&user-id=${encodedUser}`;
+
+    const headers = await Util.getCommonAuth();
+
+    return await ApiCommon.getReq(url, headers);
+  } catch (error) {
+    console.log("Get All Staff Error:", error);
+    throw error;
+  }
+},
+getStaffRatingById: async (staffId) => {
+  try {
+    const user = await Common.getLoggedInUser();
+
+    const userObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no: user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId,
+    };
+
+    const params = {
+      "api-token": user.api_token,
+      "user-id": JSON.stringify(userObj),
+      staff_id: staffId,
+    };
+
+    const url = otherServices.appendParamsInUrl(
+      `https://vms-api.isocietymanager.com/v1/society/${user.societyId}/getStaffRatingByStaffId`,
+      params
+    );
+
+    const headers = await Util.getCommonAuth();
+
+    const response = await ApiCommon.getReq(url, headers);
+
+    return response;
+
+  } catch (error) {
+    console.log("Get Staff Rating Error:", error);
+    throw error;
+  }
+},
+
+assignStaff: async (staffId) => {
+  try {
+    const user = await Common.getLoggedInUser();
+
+    const userObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no: user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId,
+    };
+
+    const encodedUser = encodeURIComponent(JSON.stringify(userObj));
+
+    const url = `${API_URL4}/v1/society/${user.societyId}/assignStaff?api-token=${user.api_token}&user-id=${encodedUser}`;
+
+    const headers = await Util.getCommonAuth();
+
+    // 🔥 THIS IS THE IMPORTANT FIX
+    const payload = {
+      staff_id: staffId,
+      user: {
+        flat_no: user.flat_no,
+        id: JSON.stringify(userObj),   // must be stringified
+        name: user.name || "",         // add name if available
+      },
+    };
+
+    const response = await ApiCommon.postReq(url, payload, headers);
+
+    return response;
+
+  } catch (error) {
+    console.log("Assign Staff Error:", error);
+    throw error;
+  }
+},
+
+getStaffAttendance: async (staffId, month, year) => {
+  try {
+    const user = await Common.getLoggedInUser();
+
+    const userObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no: user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId,
+    };
+
+    const params = {
+      "api-token": user.api_token,
+      "user-id": JSON.stringify(userObj),
+      month,
+      year,
+      staff_id: staffId,
+    };
+
+    const url = otherServices.appendParamsInUrl(
+      `${API_URL4}/v2/society/${user.societyId}/staffattendance`,
+      params
+    );
+
+    const headers = await Util.getCommonAuth();
+
+    return await ApiCommon.getReq(url, headers);
+
+  } catch (error) {
+    console.log("Attendance Error:", error);
+    throw error;
+  }
+},
+unassignStaff: async (staffId) => {
+  try {
+    const user = await Common.getLoggedInUser();
+
+    const userObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no: user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId,
+    };
+
+    const encodedUser = encodeURIComponent(JSON.stringify(userObj));
+
+    const url = `${API_URL4}/v1/society/${user.societyId}/unassignStaff?api-token=${user.api_token}&user-id=${encodedUser}`;
+
+    const headers = await Util.getCommonAuth();
+
+    // 🔥 IMPORTANT — user must NOT be stringified
+    const payload = {
+      staff_id: staffId,
+      user: userObj,   // ✅ object, not string
+    };
+
+    const response = await ApiCommon.postReq(url, payload, headers);
+
+    console.log("Unassign Response:", response);
+
+    return response;
+
+  } catch (error) {
+    console.log("Unassign Staff Error:", error);
+    throw error;
+  }
+},
+ addOrUpdateRating: async (staffId, rating, review) => {
+  try {
+    const user = await Common.getLoggedInUser();
+
+    const userObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no: user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId,
+    };
+
+    const encodedUser = encodeURIComponent(JSON.stringify(userObj));
+
+    const url = `${API_URL4}/v1/society/${user.societyId}/addOrUpdateRating?api-token=${user.api_token}&user-id=${encodedUser}`;
+
+    const headers = await Util.getCommonAuth();
+
+    const payload = {
+      staff_id: staffId,
+      rating: rating,
+      remarks: review,
+      user: userObj,
+    };
+
+    const response = await ApiCommon.postReq(url, payload, headers);
+
+    console.log("Rating Response:", response);
+
+    return response;
+
+  } catch (error) {
+    console.log("Rating Error:", error);
+    throw error;
+  }
+},
 appendParamsInUrl: (url, params) => {
     if (params && typeof params === "object") {
       const queryParams = Object.keys(params)

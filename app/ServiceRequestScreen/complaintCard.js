@@ -205,14 +205,10 @@ const ServiceRequestDetailCard = ({ complaint, onPress  }) => {
       <View style={styles.footerRow}>
         {/* Created */}
         <View style={styles.dateItem}>
-          <Ionicons name="calendar-outline" size={13} color={theme.textSecondary} />
           <View style={styles.dateTexts}>
             <Text style={[styles.dateLabel, { color: theme.textSecondary }]}>Created</Text>
             <Text style={[styles.dateValue, { color: theme.text }]}>
               {formatDate(complaint?.created_at)}
-            </Text>
-            <Text style={[styles.timeAgo, { color: theme.textSecondary }]}>
-              {getTimeAgo(complaint?.created_at)}
             </Text>
           </View>
         </View>
@@ -222,14 +218,10 @@ const ServiceRequestDetailCard = ({ complaint, onPress  }) => {
 
         {/* Updated */}
         <View style={styles.dateItem}>
-          <Ionicons name="refresh-outline" size={13} color={theme.textSecondary} />
           <View style={styles.dateTexts}>
             <Text style={[styles.dateLabel, { color: theme.textSecondary }]}>Updated</Text>
             <Text style={[styles.dateValue, { color: theme.text }]}>
               {formatDate(complaint?.updated_at)}
-            </Text>
-            <Text style={[styles.timeAgo, { color: theme.textSecondary }]}>
-              {getTimeAgo(complaint?.updated_at)}
             </Text>
           </View>
         </View>

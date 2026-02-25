@@ -43,6 +43,9 @@ import VehicleDetailsScreen from './app/VehicleScreen/VehicleDetailsScreen';
 import VehicleLogsScreen from './app/VehicleScreen/VehicleLogsScreen';
 import VehicleTagScreen from './app/VehicleScreen/VehicleTagScreen';
 import StaffScreen from './app/StaffScreen/StaffScreen';
+import StaffDetailScreen from './app/StaffScreen/StaffDetailScreen';
+import MyStaffDetailScreen from './app/StaffScreen/MyStaffDetailScreen';
+import MyStaffAttendanceScreen from './app/StaffScreen/MyStaffAttendanceScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -91,8 +94,16 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
 
   useEffect(() => {
     // Calculate position including gaps
-    const position = state.index * (tabWidth + 10) + 15; // 15 is paddingHorizontal start
+    let position = state.index * (tabWidth + 10) + 15;
 
+    const activeRoute = state.routes[state.index].name;
+
+    if (
+      activeRoute === "Service Requests" ||
+      activeRoute === "Visitors"
+    ) {
+      position -= 10; // shift left slightly to keep centered
+    }
     Animated.spring(translateX, {
       toValue: position,
       useNativeDriver: true,
@@ -117,10 +128,11 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
       default:
         return <Ionicons name="ellipse-outline" size={iconSize} color={color} />;
     }
+
   };
 
   const getShortLabel = (label) => {
-    if (label === "Service Requests") return "Requests";
+    if (label === "Service Requests") return "Request";
     return label;
   };
 
@@ -132,7 +144,11 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
           style={[
             styles.slidingIndicator,
             {
-              width: tabWidth,
+              width:
+                state.routes[state.index].name === "Service Requests" ||
+                  state.routes[state.index].name === "Visitors"
+                  ? tabWidth + 20   // increase only active indicator width
+                  : tabWidth,
               backgroundColor: SECONDARY_COLOR,
               transform: [{ translateX }],
             },
@@ -257,7 +273,12 @@ const NavigationPage = () => {
   return (
     <PermissionsProvider>
       <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Login">
+        <Stack.Navigator screenOptions={{
+          cardStyle: { backgroundColor: "#F4F6F9" },       // match your screen bg
+          cardOverlayEnabled: false,
+          cardShadowEnabled: false,
+          headerShown: false,
+        }} initialRouteName="Login">
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="MainApp" component={NavigationTabs} />
           <Stack.Screen name="AddVisitor" component={AddVisitor} />
@@ -278,14 +299,9 @@ const NavigationPage = () => {
           <Stack.Screen name="VehicleLogsScreen" component={VehicleLogsScreen} />
           <Stack.Screen name="VehicleTagScreen" component={VehicleTagScreen} />
           <Stack.Screen name="StaffScreen" component={StaffScreen} />
-
-
-
-
-
-
-
-
+          <Stack.Screen name="StaffDetailScreen" component={StaffDetailScreen} />
+          <Stack.Screen name="MyStaffDetailScreen" component={MyStaffDetailScreen} />
+          <Stack.Screen name="MyStaffAttendanceScreen" component={MyStaffAttendanceScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </PermissionsProvider>
@@ -316,9 +332,18 @@ const styles = StyleSheet.create({
   },
   slidingIndicator: {
     position: 'absolute',
-    height: 43,
-    borderRadius: 26,
+    height: 40,
+    width: 80,
+    borderRadius: 20,
+    top: 12.5,
+    left: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
+
   tabItem: {
     justifyContent: 'center',
     alignItems: 'center',

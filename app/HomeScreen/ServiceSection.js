@@ -22,7 +22,7 @@ const ServicesSection = () => {
     { id: '1', title: 'Accounts', icon: 'card', route: 'Accounts' },
     { id: '2', title: 'Staff', icon: 'checkmark-circle-outline', route: 'StaffScreen' },
     { id: '3', title: 'Visitors', icon: 'people-outline', route: 'Visitors' },
-    { id: '4', title: 'Amenities', icon: 'fitness-outline' },
+    { id: '4', title: 'Setting', icon: 'settings-outline', route: 'SettingsScreen' },
     { id: '5', title: 'Maintenance', icon: 'construct-outline' },
     { id: '6', title: 'Security', icon: 'shield-checkmark-outline' },
     { id: '7', title: 'Parking', icon: 'car-outline' },

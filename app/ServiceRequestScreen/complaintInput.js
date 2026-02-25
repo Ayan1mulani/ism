@@ -11,6 +11,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePermissions } from '../../Utils/ConetextApi';
 import CalendarSelector from '.././VisitorsScreen/components/Calender';
+import { complaintService } from '../../services/complaintService';
+
 
 const { width } = Dimensions.get('window');
 
@@ -215,23 +217,89 @@ const ComplaintInputScreen = ({ navigation, route }) => {
     if (!result.canceled) setImages(prev => [...prev, ...result.assets].slice(0, 5));
   };
 
-  const handleSubmit = async () => {
-    if (!location)        { Alert.alert('Required', 'Please select a location.');             return; }
-    if (!remarks.trim())  { Alert.alert('Required', 'Please describe the issue in remarks.'); return; }
-    if (!isASAP && !selectedDate) { Alert.alert('Required', 'Please select a date.'); return; }
+const handleSubmit = async () => {
+  if (!location) {
+    Alert.alert("Required", "Please select a location.");
+    return;
+  }
 
-    setSubmitting(true);
-    try {
-      await new Promise(r => setTimeout(r, 1500));
-      Alert.alert('Submitted!', 'Your complaint has been submitted.', [
-        { text: 'OK', onPress: () => navigation.navigate('ServiceRequestsMain') },
-      ]);
-    } catch {
-      Alert.alert('Error', 'Failed to submit. Please try again.');
-    } finally {
-      setSubmitting(false);
+  if (!remarks.trim()) {
+    Alert.alert("Required", "Please describe the issue.");
+    return;
+  }
+
+  if (!isASAP && !selectedDate) {
+    Alert.alert("Required", "Please select a date.");
+    return;
+  }
+if (!isASAP) {
+  if (!selectedDate) {
+    Alert.alert("Required", "Please select a date.");
+    return;
+  }
+
+  if (!fromTime || !toTime) {
+    Alert.alert("Required", "Please select both start and end time.");
+    return;
+  }
+
+  if (fromTime >= toTime) {
+    Alert.alert("Invalid Time", "End time must be after start time.");
+    return;
+  }
+}
+  setSubmitting(true);
+  
+
+  try {
+    
+    const res = await complaintService.addComplaint({
+      sub_category: subCategory?.name,
+      complaint_type: category?.id,
+      description: remarks,
+      severity: "normal",
+      sub_category_id: subCategory?.id,
+
+   probable_date: !isASAP && selectedDate
+  ? new Date(selectedDate).toISOString().split("T")[0]
+  : null,
+
+      probable_time:
+        !isASAP && fromTime && toTime
+         ? `${fmtTime(fromTime)} to ${fmtTime(toTime)}`
+          : null,
+
+      location_id: location?.id,   // ✅ IMPORTANT
+    });
+
+    if (res?.status === "success") {
+      Alert.alert(
+        "Success",
+        `Complaint No: ${res.data.com_no}`,
+        [
+          {
+            text: "OK",
+            onPress: () => navigation.navigate("MainApp", {
+  screen: "Service Requests",
+  params: {
+    screen: "ServiceRequestsMain",
+  },
+}),
+          },
+        ]
+      );
+    } else {
+      Alert.alert("Error", res?.message || "Failed to submit complaint.");
     }
-  };
+
+  } catch (error) {
+    console.log("Submit Error:", error);
+    Alert.alert("Error", "Something went wrong.");
+  } finally {
+    setSubmitting(false);
+  }
+};
+ 
 
   return (
     <SafeAreaView style={[s.root, { backgroundColor: t.bg }]} edges={['top']}>

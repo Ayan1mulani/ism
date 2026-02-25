@@ -15,8 +15,10 @@ import { usePermissions } from '../../Utils/ConetextApi';
 import ComplaintListScreen from './ServiceRequestPage';
 import { complaintService } from '../../services/complaintService';
 import SlidingTabs from '../components/SlidingTabs';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { useCallback } from 'react';
 
 // Tab configuration
 const TABS = ['Open', 'Closed', 'All'];
@@ -73,9 +75,11 @@ const ServiceRequestTabs = () => {
   const theme = nightMode ? COLORS.dark : COLORS.light;
 
   // Fetch service requests data
-  useEffect(() => {
+useFocusEffect(
+  useCallback(() => {
     fetchServiceRequests();
-  }, []);
+  }, [])
+);
 
   const fetchServiceRequests = async () => {
     try {

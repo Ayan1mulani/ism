@@ -39,30 +39,36 @@ const VehicleDetailScreen = ({ route, navigation }) => {
     fetchLatestLog();
   }, []);
 
-  const fetchLatestLog = async () => {
-    try {
-      setLoadingLog(true);
+ const fetchLatestLog = async () => {
+  try {
+    setLoadingLog(true);
 
-      const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toISOString().split("T")[0];
 
-      const res = await otherServices.getVehicleLogs({
-        vehicleId: vehicle.id,
-        from: today,
-        to: today,
-        getAll: 1,
-      });
+    const res = await otherServices.getVehicleLogs({
+      vehicleId: vehicle.id,
+      from: "2000-01-01",   // get all history
+      to: today,
+      getAll: 1,
+    });
 
-      const logs = res?.data || [];
+    const logs = res?.data || [];
 
-      if (logs.length > 0) {
-        setLastLog(logs[0]); // latest record
-      }
-    } catch (error) {
-      console.log("Log error:", error);
-    } finally {
-      setLoadingLog(false);
+    if (logs.length > 0) {
+      const latest = logs.sort(
+        (a, b) =>
+          new Date(b.date_time.replace(" ", "T")) -
+          new Date(a.date_time.replace(" ", "T"))
+      )[0];
+
+      setLastLog(latest);
     }
-  };
+  } catch (error) {
+    console.log("Log error:", error);
+  } finally {
+    setLoadingLog(false);
+  }
+};
   const formatDateTime = (date) => {
     return new Date(date.replace(" ", "T") + "Z").toLocaleString("en-IN", {
       day: "2-digit",

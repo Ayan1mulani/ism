@@ -86,7 +86,6 @@ const s = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 16,
-    borderWidth: 1,
  
   },
 

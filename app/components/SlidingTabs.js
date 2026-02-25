@@ -1,14 +1,11 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   Animated,
   StyleSheet,
-  Dimensions,
 } from "react-native";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const SlidingTabs = ({
   tabs = [],
@@ -17,29 +14,43 @@ const SlidingTabs = ({
   primaryColor = "#1996D3",
   inactiveColor = "#6B7280",
   containerStyle,
+  scrollX, // optional animated value for swipe sync
 }) => {
-  const tabWidth = (SCREEN_WIDTH - 32) / tabs.length;
+  const [containerWidth, setContainerWidth] = useState(0);
   const translateX = useRef(new Animated.Value(0)).current;
 
+  const tabWidth =
+    containerWidth && tabs.length
+      ? containerWidth / tabs.length
+      : 0;
+
+  // If scrollX is provided → sync with swipe
   useEffect(() => {
-    Animated.spring(translateX, {
-      toValue: activeIndex * tabWidth,
-      useNativeDriver: true,
-      tension: 120,
-      friction: 10,
-    }).start();
-  }, [activeIndex]);
+    if (!scrollX && tabWidth) {
+      Animated.spring(translateX, {
+        toValue: activeIndex * tabWidth,
+        useNativeDriver: true,
+        tension: 120,
+        friction: 10,
+      }).start();
+    }
+  }, [activeIndex, tabWidth]);
 
   return (
-    <View style={[styles.wrapper, containerStyle]}>
-      <View style={styles.container}>
+  <View style={[styles.wrapper, containerStyle]}>
+  <View
+    style={styles.container}
+    onLayout={(e) =>
+      setContainerWidth(e.nativeEvent.layout.width)
+    }
+  >
         {tabs.map((tab, index) => {
           const isActive = activeIndex === index;
 
           return (
             <TouchableOpacity
               key={tab}
-              style={styles.tab}
+              style={[styles.tab, { width: tabWidth }]}
               activeOpacity={0.7}
               onPress={() => onTabPress(index)}
             >
@@ -56,16 +67,32 @@ const SlidingTabs = ({
           );
         })}
 
-        <Animated.View
-          style={[
-            styles.indicator,
-            {
-              width: tabWidth,
-              backgroundColor: primaryColor,
-              transform: [{ translateX }],
-            },
-          ]}
-        />
+        {tabWidth > 0 && (
+          <Animated.View
+            style={[
+              styles.indicator,
+              {
+                width: tabWidth,
+                backgroundColor: primaryColor,
+                transform: scrollX
+                  ? [
+                      {
+                        translateX: scrollX.interpolate({
+                          inputRange: tabs.map(
+                            (_, i) => i * containerWidth
+                          ),
+                          outputRange: tabs.map(
+                            (_, i) => i * tabWidth
+                          ),
+                          extrapolate: "clamp",
+                        }),
+                      },
+                    ]
+                  : [{ translateX }],
+              },
+            ]}
+          />
+        )}
       </View>
     </View>
   );
@@ -84,7 +111,6 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   tab: {
-    flex: 1,
     paddingVertical: 12,
     alignItems: "center",
   },
@@ -100,6 +126,5 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     position: "absolute",
     bottom: 0,
-    left: 0,
   },
 });

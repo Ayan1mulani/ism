@@ -79,7 +79,7 @@ const PassDetailsScreen = ({ route }) => {
             const res = await visitorServices.cancelPass(pass.id);
 
               if (res?.status === "success") {
-              navigation.goBack();
+                navigation.goBack({ refresh: true });
               } else {
                 Alert.alert("Error", res?.message || "Failed to delete");
               }

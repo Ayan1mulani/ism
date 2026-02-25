@@ -5,7 +5,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
@@ -13,13 +12,14 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Calendar } from "react-native-calendars";
 import { otherServices } from "../../services/otherServices";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const VehicleLogsScreen = ({ route, navigation }) => {
   const { vehicle } = route.params;
 
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
 
   const getStatusLabel = (status) => {
