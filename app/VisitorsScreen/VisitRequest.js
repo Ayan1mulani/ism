@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   borderRadius: 14,
   marginBottom: 5,
   borderWidth: 1,
-  borderColor: 'rgba(0,0,0,0.08)',
+  borderColor: 'rgba(3, 65, 109, 0.04)',
   overflow: 'hidden', // 👈 important
   },
 
@@ -312,10 +312,10 @@ const styles = StyleSheet.create({
 
   dateText: {
     marginLeft: 6,
-    fontSize: 14,
+    fontSize: 11,
   },
 
   createdText: {
-    fontSize: 13,
+    fontSize: 11,
   },
 });

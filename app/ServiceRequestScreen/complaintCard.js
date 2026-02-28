@@ -13,7 +13,7 @@ const COLORS = {
   info:     '#0052CC',
   light: {
     background:    '#FFFFFF',
-    surface:       '#F8F9FA',
+    surface:       '#ffffff',
     text:          '#212529',
     textSecondary: '#6C757D',
     border:        '#DEE2E6',
@@ -153,7 +153,7 @@ const ServiceRequestDetailCard = ({ complaint, onPress  }) => {
    <TouchableOpacity
   activeOpacity={0.8}
   onPress={onPress}
-  style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}
+  style={[styles.card, { backgroundColor: theme.surface,}]}
 >
 
       {/* ── Row 1: Request ID  +  Status badge ── */}
@@ -240,13 +240,10 @@ const styles = StyleSheet.create({
     marginVertical: 2,
     marginHorizontal: 16,
     borderWidth: 1,
-    // Shadow (iOS)
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    // Elevation (Android)
-    elevation: 2,
+     borderColor: 'rgba(3, 65, 109, 0.09)',
+    overflow: 'hidden', // 👈 important
+
+ 
   },
 
   // ── Header row ──

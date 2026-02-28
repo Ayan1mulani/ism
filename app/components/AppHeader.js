@@ -12,8 +12,6 @@ const AppHeader = ({
   title,
   nightMode = false,
   showBack = true,
-  rightIcon,
-  onRightPress,
 }) => {
   const navigation = useNavigation();
 
@@ -48,13 +46,9 @@ const AppHeader = ({
           {title}
         </Text>
       </View>
+      
 
-      {/* Right Section */}
-      {rightIcon && (
-        <TouchableOpacity onPress={onRightPress} style={styles.iconBtn}>
-          <Ionicons name={rightIcon} size={22} color={theme.text} />
-        </TouchableOpacity>
-      )}
+    
     </View>
   );
 };

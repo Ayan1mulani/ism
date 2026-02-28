@@ -152,6 +152,36 @@ getParkingFormFields: async () => {
      return response
   },
 
+  addFamilyMember: async (memberData) => {
+  try {
+    const user = await Common.getLoggedInUser();
+
+    // Build URL with common params
+    const url = await visitorServices.appendParamsInUrl(
+      `${API_URL2}/addFamilyMember`
+    );
+
+    const headers = await Util.getCommonAuth();
+
+    // Payload exactly as backend expects
+    const payload = {
+      name: memberData.name,
+      phone_no: memberData.phone_no,
+      email: memberData.email,
+      relation: memberData.relation,
+      vehicle_no: memberData.vehicle_no,
+      image_src: memberData.image_src || null,
+    };
+
+    const response = await ApiCommon.postReq(url, payload, headers);
+
+    return response;
+  } catch (error) {
+    console.log("Add Family Member Error:", error);
+    throw error;
+  }
+},
+
     getMyStaffs: async (category) => {
     const user = await Common.getLoggedInUser()
     const params = {

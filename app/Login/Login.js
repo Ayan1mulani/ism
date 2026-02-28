@@ -20,6 +20,7 @@ import { LoginSrv } from '../../services/LoginSrv';
 import AccountSelectorModal from './SelectUserMode';
 import ErrorPopupModal from '../PopUps/MessagePop';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ismServices } from '../../services/ismServices';
 
 const { width } = Dimensions.get('window');
 
@@ -47,33 +48,40 @@ const NewLoginScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
 
 
-
 const getUserDetails = async () => {
   try {
-    // Fetch & store user details
-    // await ismServices.getUserDetails()
+    // ✅ Check if user is already logged in
+    const userInfo = await AsyncStorage.getItem("userInfo");
+    
+    if (!userInfo) {
+      console.log("No user info found, user not logged in");
+      return; // Exit early, don't try to fetch
+    }
 
-    // ⚠️ Use the SAME key that was saved
-    const userInfo = await AsyncStorage.getItem("userInfo")
+    // ✅ Only fetch if user exists
+    await ismServices.getUserDetails();
 
-
-    // if (userInfo) {
-    //   navigation.dispatch(
-    //     CommonActions.reset({
-    //       index: 0,
-    //       routes: [{ name: "MainApp" }],
-    //     })
-    //   )
-    // } 
+    // ✅ Double-check the data is valid
+    const updatedUserInfo = await AsyncStorage.getItem("userInfo");
+    if (updatedUserInfo) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'MainApp' }],
+        })
+      );   
+    } 
   } catch (error) {
-    console.error("Error getting user details:", error)
+    console.error("Error getting user details:", error);
+    // Don't navigate on error, let user login manually
   }
-}
+};
 
 useEffect(() => {
-  getUserDetails()
-}, [])
-
+  getUserDetails(); // Only checks for existing session
+}, []);
 
   const handleLogin = async (userid) => {
     setIsLoading(true);
@@ -103,7 +111,8 @@ useEffect(() => {
                  index: 0,
                  routes: [{ name: 'MainApp' }],
                })
-             );      }
+             );   
+               }
     } catch (error) {
       console.error('Login failed:', error);
       // Show generic error message

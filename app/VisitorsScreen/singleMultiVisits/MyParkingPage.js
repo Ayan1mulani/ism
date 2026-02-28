@@ -46,7 +46,7 @@ const MyParkingPage = ({ nightMode, parkingBookings = [], loading, onRefresh }) 
     const isActive = item.status === 1;
 
     return (
-      <View style={[styles.card, { backgroundColor: theme.surface }]}>
+      <View style={[styles.card]}>
         <View style={styles.header}>
           <View style={styles.left}>
             <Ionicons name="car-outline" size={22} color={COLORS.primary} />
@@ -145,7 +145,10 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 14,
     marginBottom: 12,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(3, 65, 109, 0.04)',
+    overflow: 'hidden', // 👈 important
+
   },
   header: {
     flexDirection: 'row',

@@ -8,7 +8,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const ACTIONS = [
   { id: "1", title: "Pass", icon: "create-outline", screen: "VisitorScreen" },

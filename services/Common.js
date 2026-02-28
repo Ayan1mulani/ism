@@ -1,45 +1,40 @@
-//this deals with localstorage
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Common = {
     getLoggedInUser: async () => {
         try {
-
-
             const userInfo = await AsyncStorage.getItem('userInfo');
-            // Check if userInfo exists before proceeding
+            
             if (!userInfo) {
                 throw new Error("User info not found");
             }
 
-            // Parse the user info to get required data
             const parsedUserInfo = JSON.parse(userInfo);
             return parsedUserInfo;
 
         } catch (e) {
             console.error("Error in getLoggedInUser", e)
+            throw e; // ✅ Re-throw so caller knows it failed
         }
-
     },
 
     getUserDetails: async () => {
         try {
-
-
-            const userDetails = await AsyncStorage.getItem('userDetails');
-            // Check if userInfo exists before proceeding
-            if (!userDetails) {
+            // ✅ Use 'userInfo' instead of 'userDetails'
+            const userInfo = await AsyncStorage.getItem('userInfo');
+            
+            if (!userInfo) {
                 throw new Error("User info not found");
             }
 
-            // Parse the user info to get required data
-            const parsedUserInfo = JSON.parse(userDetails);
+            const parsedUserInfo = JSON.parse(userInfo);
             return parsedUserInfo;
 
         } catch (e) {
-            console.error("Error in getLoggedInUser", e)
+            console.error("Error in getUserDetails", e); // ✅ Fixed log name
+            throw e; // ✅ Re-throw
         }
-
     },
 }
+
 export { Common };

@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView } from "react-native-safe-area-context";
 
 
 const BASE_URL = "https://ism-vms.s3.amazonaws.com/company-logo/";
@@ -360,7 +359,7 @@ const getParkingBooking = (pass) => {
 
 
   return (
-    <SafeAreaView
+    <View
       style={{ flex: 1, backgroundColor: theme.background }}
       edges={["top", "left", "right"]}
     >
@@ -446,7 +445,7 @@ const getParkingBooking = (pass) => {
         />
 
       </View>
-    </SafeAreaView>
+    </View>
 
   );
 };
@@ -476,7 +475,7 @@ const createStyles = (theme, nightMode) =>
       borderRadius: 14,
       marginBottom: 5,
       borderWidth: 1,
-      borderColor: 'rgba(0,0,0,0.08)',
+      borderColor: 'rgba(3, 65, 109, 0.04)',
       overflow: 'hidden', // 👈 important
 
     },

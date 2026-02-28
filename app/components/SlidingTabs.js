@@ -5,7 +5,10 @@ import {
   TouchableOpacity,
   Animated,
   StyleSheet,
+  Dimensions,
 } from "react-native";
+
+const screenWidth = Dimensions.get("window").width;
 
 const SlidingTabs = ({
   tabs = [],
@@ -14,7 +17,7 @@ const SlidingTabs = ({
   primaryColor = "#1996D3",
   inactiveColor = "#6B7280",
   containerStyle,
-  scrollX, // optional animated value for swipe sync
+  scrollX,
 }) => {
   const [containerWidth, setContainerWidth] = useState(0);
   const translateX = useRef(new Animated.Value(0)).current;
@@ -24,7 +27,7 @@ const SlidingTabs = ({
       ? containerWidth / tabs.length
       : 0;
 
-  // If scrollX is provided → sync with swipe
+  // When NOT using scrollX (manual tab press animation)
   useEffect(() => {
     if (!scrollX && tabWidth) {
       Animated.spring(translateX, {
@@ -37,19 +40,19 @@ const SlidingTabs = ({
   }, [activeIndex, tabWidth]);
 
   return (
-  <View style={[styles.wrapper, containerStyle]}>
-  <View
-    style={styles.container}
-    onLayout={(e) =>
-      setContainerWidth(e.nativeEvent.layout.width)
-    }
-  >
+    <View style={[styles.wrapper, containerStyle]}>
+      <View
+        style={styles.container}
+        onLayout={(e) =>
+          setContainerWidth(e.nativeEvent.layout.width)
+        }
+      >
         {tabs.map((tab, index) => {
           const isActive = activeIndex === index;
 
           return (
             <TouchableOpacity
-              key={tab}
+              key={index}
               style={[styles.tab, { width: tabWidth }]}
               activeOpacity={0.7}
               onPress={() => onTabPress(index)}
@@ -79,7 +82,7 @@ const SlidingTabs = ({
                       {
                         translateX: scrollX.interpolate({
                           inputRange: tabs.map(
-                            (_, i) => i * containerWidth
+                            (_, i) => i * screenWidth
                           ),
                           outputRange: tabs.map(
                             (_, i) => i * tabWidth

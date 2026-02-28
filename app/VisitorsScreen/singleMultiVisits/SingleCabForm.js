@@ -246,6 +246,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 26,
     letterSpacing: 15,
+    paddingTop: 0,
   },
 
   counterRow: {

@@ -17,8 +17,45 @@ import { Util } from "./Util";
      const response =   await ApiCommon.getReq(url,headers);
      return response
   },
+// CORRECTED sendFeedback function
 
+sendFeedback: async (subject, body) => {
+  try {
+    const user = await Common.getLoggedInUser();
 
+    const userObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no: user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId,
+    };
+
+    const params = {
+      "api-token": user.api_token,
+      "user-id": JSON.stringify(userObj),
+    };
+
+    const url = otherServices.appendParamsInUrl(
+      `${API_URL2}/sendFeedback`,
+      params
+    );
+
+    const headers = await Util.getCommonAuth();
+
+    const payload = {
+      emailSubject: subject,
+      emailBody: body,
+      user: userObj,
+    };
+
+    return await ApiCommon.postReq(url, payload, headers);
+
+  } catch (error) {
+    console.log("Send Feedback Error:", error);
+    throw error;
+  }
+},
     getMyAccounts: async () => {
     const user = await Common.getLoggedInUser()
     const params = {
@@ -31,6 +68,137 @@ import { Util } from "./Util";
      const response =   await ApiCommon.getReq(url,headers);
      return response
   },
+
+  getBillsByFlat: async () => {
+  try {
+    const user = await Common.getLoggedInUser();
+
+    const userObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no: user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId,
+    };
+
+    const encodedUser = encodeURIComponent(
+      JSON.stringify(userObj)
+    );
+
+    const url = `${API_URL2}/getBillsByFlat/${user.flat_no}?api-token=${user.api_token}&user-id=${encodedUser}`;
+
+    const headers = await Util.getCommonAuth();
+
+    return await ApiCommon.getReq(url, headers);
+
+  } catch (error) {
+    console.log("Get Bills By Flat Error:", error);
+    throw error;
+  }
+},
+getAmenities: async () => {
+  try {
+    const user = await Common.getLoggedInUser();
+
+    const userObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no: user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId,
+    };
+
+    const encodedUser = encodeURIComponent(
+      JSON.stringify(userObj)
+    );
+
+    const url = `${API_URL2}/${user.societyId}/locations?api-token=${user.api_token}&user-id=${encodedUser}&type=AMENITY`;
+
+    const headers = await Util.getCommonAuth();
+
+    const response = await ApiCommon.getReq(url, headers);
+
+    return response?.data || [];
+
+  } catch (error) {
+    console.log("Get Amenities Error:", error);
+    throw error;
+  }
+},
+
+bookAmenity: async (locationId, bookingFrom, bookingTo) => {
+  try {
+    const user = await Common.getLoggedInUser();
+
+    const userObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no: user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId,
+    };
+
+    const encodedUser = encodeURIComponent(
+      JSON.stringify(userObj)
+    );
+
+    // ✅ FIXED URL — societyId added
+    const url = `${API_URL2}/${user.societyId}/my/bookLocation?api-token=${user.api_token}&user-id=${encodedUser}`;
+
+    const headers = await Util.getCommonAuth();
+
+    const payload = {
+      location_id: locationId,
+      booking_from: bookingFrom,
+      booking_to: bookingTo,
+      data: {
+        date: new Date().toISOString(),
+        type: "AMENITY",
+        openModal: false,
+        pass_id: "",
+      },
+    };
+
+    console.log("BOOK URL:", url);
+    console.log("BOOK PAYLOAD:", payload);
+
+    return await ApiCommon.postReq(url, payload, headers);
+
+  } catch (error) {
+    console.log("Booking Error:", error);
+    throw error;
+  }
+},
+
+getMyAmenityBookings: async () => {
+  try {
+    const user = await Common.getLoggedInUser();
+
+    const userObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no: user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId,
+    };
+
+    const encodedUser = encodeURIComponent(
+      JSON.stringify(userObj)
+    );
+
+    const url = `${API_URL2}/${user.societyId}/my/bookLocation?api-token=${user.api_token}&user-id=${encodedUser}`;
+
+    const headers = await Util.getCommonAuth();
+
+    return await ApiCommon.getReq(url, headers);
+
+  } catch (error) {
+    console.log("Get My Bookings Error:", error);
+    throw error;
+  }
+},
+
+
 
 getStaffByCategory: async (category) => {
   try {
@@ -52,7 +220,7 @@ getStaffByCategory: async (category) => {
 
     // Build URL
     const url = otherServices.appendParamsInUrl(
-      `https://vms-api.isocietymanager.com/v1/society/${user.societyId}/staffbycategory`,
+      `${API_URL4}/v1/society/${user.societyId}/staffbycategory`,
       params
     );
 
@@ -85,7 +253,7 @@ getStaffCategories: async () => {
     };
 
     const url = otherServices.appendParamsInUrl(
-      `https://vms-api.isocietymanager.com/v1/society/${user.societyId}/allstaffcategory`,
+      `${API_URL4}/v1/society/${user.societyId}/allstaffcategory`,
       params
     );
 
@@ -273,6 +441,109 @@ toggleVehicleAccess: async (vehicleId, payload) => {
     throw error;
   }
 },
+getMyNotices: async (category = "") => {
+  try {
+    const user = await Common.getLoggedInUser();
+
+    const userObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no: user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId,
+    };
+
+    const params = {
+      "api-token": user.api_token,
+      "user-id": JSON.stringify(userObj),
+      category: category, // can be empty string
+    };
+
+    const url = otherServices.appendParamsInUrl(
+      `${API_URL2}/myNotices`,
+      params
+    );
+
+    const headers = await Util.getCommonAuth();
+
+    const response = await ApiCommon.getReq(url, headers);
+
+    return response;
+
+  } catch (error) {
+    console.log("Get My Notices Error:", error);
+    throw error;
+  }
+},
+
+getPanicContacts: async () => {
+  try {
+    const user = await Common.getLoggedInUser();
+
+    const userObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no: user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId,
+    };
+
+    const params = {
+      "api-token": user.api_token,
+      "user-id": JSON.stringify(userObj),
+    };
+
+    const url = otherServices.appendParamsInUrl(
+      `${API_URL2}/paniccontacts`,
+      params
+    );
+
+    const headers = await Util.getCommonAuth();
+
+    // Empty body because API expects {}
+    return await ApiCommon.postReq(url, {}, headers);
+
+  } catch (error) {
+    console.log("Get Panic Contacts Error:", error);
+    throw error;
+  }
+},
+
+sendPanicAlert: async (type) => {
+  try {
+    const user = await Common.getLoggedInUser();
+
+    const userObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no: user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId,
+    };
+
+    const params = {
+      "api-token": user.api_token,
+      "user-id": JSON.stringify(userObj),
+    };
+
+    const url = otherServices.appendParamsInUrl(
+      `${API_URL2}/panic`,
+      params
+    );
+
+    const headers = await Util.getCommonAuth();
+
+    const payload = {
+      type: type, // FIRE / THEFT / LIFT / EMERGENCY
+    };
+
+    return await ApiCommon.postReq(url, payload, headers);
+
+  } catch (error) {
+    console.log("Send Panic Error:", error);
+    throw error;
+  }
+},
 
 createOrUpdateVehicleTag: async (vehicleId, payload) => {
   try {
@@ -316,7 +587,7 @@ getAllStaffs: async () => {
       JSON.stringify(userObj)
     );
 
-    const url = `https://vms-api.isocietymanager.com/v1/society/${
+    const url = `${API_URL4}/v1/society/${
       user.societyId
     }/${encodedUser}/staffs?api-token=${user.api_token}&user-id=${encodedUser}`;
 
@@ -347,7 +618,7 @@ getStaffRatingById: async (staffId) => {
     };
 
     const url = otherServices.appendParamsInUrl(
-      `https://vms-api.isocietymanager.com/v1/society/${user.societyId}/getStaffRatingByStaffId`,
+      `${API_URL4}/v1/society/${user.societyId}/getStaffRatingByStaffId`,
       params
     );
 

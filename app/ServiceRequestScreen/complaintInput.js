@@ -531,7 +531,7 @@ const s = StyleSheet.create({
   section: {
     borderRadius: 12,
     padding: 14,
-    marginBottom: 7,
+    marginBottom: 0,
   },
   secLabel: {
     fontSize: 11,

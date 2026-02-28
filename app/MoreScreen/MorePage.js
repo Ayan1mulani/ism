@@ -2,15 +2,13 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
-  StatusBar,
-  ScrollView,
+  TouchableOpacity,
   Image,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePermissions } from '../../Utils/ConetextApi';
@@ -20,6 +18,12 @@ const ProfileScreen = () => {
   const { nightMode, setNightMode } = usePermissions();
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Dropdown States
+  const [unitOpen, setUnitOpen] = useState(true); // 👈 Open by default
+  const [meterOpen, setMeterOpen] = useState(false);
+  const [vehicleOpen, setVehicleOpen] = useState(false);
+
   const navigation = useNavigation();
 
   const theme = {
@@ -54,8 +58,7 @@ const ProfileScreen = () => {
         text: 'Logout',
         style: 'destructive',
         onPress: async () => {
-          await AsyncStorage.removeItem('userInfo');
-          await AsyncStorage.removeItem('userDetails');
+          await AsyncStorage.clear();
           navigation.reset({
             index: 0,
             routes: [{ name: 'Login' }],
@@ -84,65 +87,21 @@ const ProfileScreen = () => {
     </View>
   );
 
-  const SectionCard = ({ title, children }) => (
-    <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
-      <Text style={[styles.sectionTitle, { color: theme.textMain }]}>
-        {title}
-      </Text>
-      {children}
-    </View>
-  );
-
-  const ActionRow = ({ icon, title, onPress, danger }) => (
-    <TouchableOpacity style={styles.actionRow} onPress={onPress}>
-      <View style={styles.actionLeft}>
-        <Ionicons
-          name={icon}
-          size={20}
-          color={danger ? theme.danger : theme.textMain}
-        />
-        <Text
-          style={[
-            styles.actionText,
-            { color: danger ? theme.danger : theme.textMain },
-          ]}
-        >
-          {title}
-        </Text>
-      </View>
-      <Ionicons
-        name="chevron-forward"
-        size={18}
-        color={theme.textSub}
-      />
-    </TouchableOpacity>
-  );
-
   if (loading) {
     return (
-      <SafeAreaView
-        style={[
-          styles.container,
-          { backgroundColor: theme.background, justifyContent: 'center' },
-        ]}
-      >
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center' }]}>
         <ActivityIndicator size="large" color={theme.primary} />
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!userProfile) return null;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <StatusBar barStyle={nightMode ? 'light-content' : 'dark-content'} />
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 120 }}>
 
-      <ScrollView contentContainerStyle={{ padding: 16 ,
-            paddingBottom: 120, 
-
-      }}>
-
-        {/* Profile Header */}
+        {/* PROFILE HEADER */}
         <View style={[styles.profileCard, { backgroundColor: theme.cardBg }]}>
           <Image source={getAvatarUri()} style={styles.avatar} />
           <View style={{ marginLeft: 14, flex: 1 }}>
@@ -158,56 +117,124 @@ const ProfileScreen = () => {
           </View>
         </View>
 
-        {/* Unit Details */}
-        <SectionCard title="Unit Details">
-          <InfoRow label="Tower" value={userProfile.tower} />
-          <InfoRow label="Flat No" value={userProfile.flat_no} />
-          <InfoRow label="Area (Sq Ft)" value={userProfile.size_sf} />
-          <InfoRow label="Category" value={userProfile.fc_name} />
-        </SectionCard>
+        {/* UNIT DETAILS (OPEN BY DEFAULT) */}
+        <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
+          <TouchableOpacity
+            style={styles.dropdownHeader}
+            onPress={() => setUnitOpen(prev => !prev)}
+          >
+            <Text style={[styles.sectionTitle, { color: theme.textMain }]}>
+              Unit Details
+            </Text>
+            <Ionicons
+              name={unitOpen ? 'chevron-up-outline' : 'chevron-down-outline'}
+              size={20}
+              color={theme.textSub}
+            />
+          </TouchableOpacity>
 
-        {/* Owner Details */}
-        {/* <SectionCard title="Owner Details">
-          <InfoRow label="Owner Name" value={userProfile.name} />
-          <InfoRow label="Phone" value={userProfile.phone_no} />
-          <InfoRow label="Email" value={userProfile.email} />
-        </SectionCard> */}
+          {unitOpen && (
+            <View style={styles.dropdownContent}>
+              <InfoRow label="Tower" value={userProfile.tower} />
+              <InfoRow label="Flat No" value={userProfile.flat_no} />
+              <InfoRow label="Area (Sq Ft)" value={userProfile.size_sf} />
+              <InfoRow label="Category" value={userProfile.fc_name} />
+            </View>
+          )}
+        </View>
 
-        {/* Meter Details */}
-        <SectionCard title="Meter Details">
-          <InfoRow label="Grid Meter No" value={userProfile.grid_meter_no} />
-          <InfoRow label="DG Meter No" value={userProfile.dg_meter_no} />
-          <InfoRow label="Gas Meter No" value={userProfile.gas_meter_no} />
-        </SectionCard>
+        {/* METER DETAILS */}
+        <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
+          <TouchableOpacity
+            style={styles.dropdownHeader}
+            onPress={() => setMeterOpen(prev => !prev)}
+          >
+            <Text style={[styles.sectionTitle, { color: theme.textMain }]}>
+              Meter Details
+            </Text>
+            <Ionicons
+              name={meterOpen ? 'chevron-up-outline' : 'chevron-down-outline'}
+              size={20}
+              color={theme.textSub}
+            />
+          </TouchableOpacity>
 
-        {/* My Vehicles */}
-        <SectionCard title="My Vehicles">
-          <InfoRow label="Primary Vehicle" value={userProfile.vehicle_no} />
-          <InfoRow label="Alternate Vehicle" value={userProfile.alt_vehicle_no} />
-        </SectionCard>
+          {meterOpen && (
+            <View style={styles.dropdownContent}>
+              <InfoRow label="Grid Meter No" value={userProfile.grid_meter_no} />
+              <InfoRow label="DG Meter No" value={userProfile.dg_meter_no} />
+              <InfoRow label="Gas Meter No" value={userProfile.gas_meter_no} />
+            </View>
+          )}
+        </View>
 
-        {/* Settings */}
-        <SectionCard title="Settings">
-          <ActionRow
-            icon={nightMode ? 'sunny-outline' : 'moon-outline'}
-            title={nightMode ? 'Light Mode' : 'Dark Mode'}
+        {/* MY VEHICLES */}
+        <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
+          <TouchableOpacity
+            style={styles.dropdownHeader}
+            onPress={() => setVehicleOpen(prev => !prev)}
+          >
+            <Text style={[styles.sectionTitle, { color: theme.textMain }]}>
+              My Vehicles
+            </Text>
+            <Ionicons
+              name={vehicleOpen ? 'chevron-up-outline' : 'chevron-down-outline'}
+              size={20}
+              color={theme.textSub}
+            />
+          </TouchableOpacity>
+
+          {vehicleOpen && (
+            <View style={styles.dropdownContent}>
+              <InfoRow label="Primary Vehicle" value={userProfile.vehicle_no} />
+              <InfoRow label="Alternate Vehicle" value={userProfile.alt_vehicle_no} />
+            </View>
+          )}
+        </View>
+
+        {/* SETTINGS */}
+        <View style={[styles.card, { backgroundColor: theme.cardBg }]}>
+          <Text style={[styles.sectionTitle, { color: theme.textMain }]}>
+            Settings
+          </Text>
+
+          <TouchableOpacity
+            style={styles.actionRow}
             onPress={() => setNightMode(prev => !prev)}
-          />
-          <ActionRow
-            icon="swap-horizontal-outline"
-            title="Switch Account"
+          >
+            <Ionicons
+              name={nightMode ? 'sunny-outline' : 'moon-outline'}
+              size={20}
+              color={theme.textMain}
+            />
+            <Text style={[styles.actionText, { color: theme.textMain }]}>
+              {nightMode ? 'Light Mode' : 'Dark Mode'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionRow}
             onPress={() => navigation.navigate('SwitchAccount')}
-          />
-          <ActionRow
-            icon="log-out-outline"
-            title="Logout"
-            danger
+          >
+            <Ionicons name="swap-horizontal-outline" size={20} color={theme.textMain} />
+            <Text style={[styles.actionText, { color: theme.textMain }]}>
+              Switch Account
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionRow}
             onPress={handleLogout}
-          />
-        </SectionCard>
+          >
+            <Ionicons name="log-out-outline" size={20} color={theme.danger} />
+            <Text style={[styles.actionText, { color: theme.danger }]}>
+              Logout
+            </Text>
+          </TouchableOpacity>
+        </View>
 
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -219,8 +246,8 @@ const styles = StyleSheet.create({
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
+    padding: 18,
+    borderRadius: 18,
     marginBottom: 16,
   },
 
@@ -241,15 +268,15 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 18,
+    padding: 18,
     marginBottom: 16,
+    elevation: 0.2,
   },
 
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    marginBottom: 12,
   },
 
   infoRow: {
@@ -268,19 +295,25 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  actionRow: {
+  dropdownHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 14,
+    alignItems: 'center',
   },
 
-  actionLeft: {
+  dropdownContent: {
+    marginTop: 10,
+  },
+
+  actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    paddingVertical: 14,
   },
 
   actionText: {
     fontSize: 15,
+    marginLeft: 10,
   },
 });

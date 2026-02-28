@@ -281,17 +281,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  divider: {
-    height: 1,
-    width: '100%',
-    marginVertical: -10,
-  },
+ 
   emptyContainer: {
     paddingVertical: 20,
     alignItems: 'center',
   },
   scrollContent: {
-    paddingTop: 12,
     paddingBottom: 8,
     paddingRight: 20,
   },

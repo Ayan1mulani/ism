@@ -79,6 +79,12 @@ const NoticesSection = () => {
           icon: 'calendar-outline',
           gradient: ['#27AE60', '#229954'] 
         };
+      case 'NOTICE':
+        return { 
+          color: '#3498DB', 
+          icon: 'document-text-outline',
+          gradient: ['#3498DB', '#2980B9'] 
+        };
       default:
         return { 
           color: '#3498DB', 
@@ -139,11 +145,31 @@ const NoticesSection = () => {
     fetchNotices();
   }, []);
 
-  // Handle manual scroll
+  // Handle manual scroll - update current index and restart auto-scroll
   const onScrollEnd = (event) => {
     const contentOffset = event.nativeEvent.contentOffset;
     const viewSize = event.nativeEvent.layoutMeasurement;
     const pageNum = Math.floor(contentOffset.x / viewSize.width);
+    
+    setCurrentIndex(pageNum);
+    
+    // Restart auto-scroll after manual scroll
+    if (notices.length > 1) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      
+      intervalRef.current = setInterval(() => {
+        setCurrentIndex(prevIndex => {
+          const nextIndex = (prevIndex + 1) % notices.length;
+          flatListRef.current?.scrollToIndex({
+            index: nextIndex,
+            animated: true,
+          });
+          return nextIndex;
+        });
+      }, AUTO_SCROLL_INTERVAL);
+    }
   };
 
   // Open modal
@@ -151,6 +177,7 @@ const NoticesSection = () => {
     // Pause auto scroll when modal opens
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
     setSelectedNotice(notice);
     setModalVisible(true);
@@ -176,21 +203,8 @@ const NoticesSection = () => {
     }
   };
 
-  // Clean HTML content for preview
-  const cleanPreviewText = (html) => {
-    if (!html) return '';
-    return html
-      .replace(/<[^>]*>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .trim()
-      .substring(0, 80) + '...';
-  };
-
   // Render notice card with notice board styling
-  const renderNoticeCard = ({ item, index }) => {
+  const renderNoticeCard = ({ item }) => {
     const { color, icon, gradient } = getCategoryInfo(item.category);
     
     return (
@@ -231,7 +245,6 @@ const NoticesSection = () => {
             {item.subject}
           </Text>
         
-          
           <View style={styles.noticeFooter}>
             <View style={styles.dateContainer}>
               <Ionicons name="time-outline" size={14} color={currentTheme.dateColor} />
@@ -333,6 +346,13 @@ const NoticesSection = () => {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.carouselContainer}
             onMomentumScrollEnd={onScrollEnd}
+            onScrollBeginDrag={() => {
+              // Pause auto-scroll when user starts dragging
+              if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+              }
+            }}
             decelerationRate="fast"
             snapToInterval={CARD_WIDTH + 20}
             snapToAlignment="start"
@@ -441,7 +461,7 @@ const styles = StyleSheet.create({
   loadingContainer: {
     paddingVertical: 40,
     alignItems: 'center',
-    backgroundColor:'transparent'
+    backgroundColor: 'transparent'
   },
   loadingText: {
     marginTop: 8,
@@ -497,11 +517,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
     lineHeight: 22,
-  },
-  noticePreview: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 12,
   },
   noticeFooter: {
     flexDirection: 'row',

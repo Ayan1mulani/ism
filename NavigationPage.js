@@ -46,6 +46,16 @@ import StaffScreen from './app/StaffScreen/StaffScreen';
 import StaffDetailScreen from './app/StaffScreen/StaffDetailScreen';
 import MyStaffDetailScreen from './app/StaffScreen/MyStaffDetailScreen';
 import MyStaffAttendanceScreen from './app/StaffScreen/MyStaffAttendanceScreen';
+import ContactUsScreen from './app/Common/Feedback/ContactUsScreen';
+import AllServicesScreen from './app/AllServicesScreen/AllServicesScreen';
+import AddMemberScreen from './app/AllServicesScreen/AddMemberScreen';
+import MyNoticesScreen from './app/AllServicesScreen/MyNoticesScreen';
+import NoticeDetailScreen from './app/AllServicesScreen/NoticeDetailScreen';
+import SettingsScreen from './app/AllServicesScreen/SettingsScreen';
+import BillsPage from './app/AllServicesScreen/BillsPage';
+import AmenitiesListScreen from './app/AllServicesScreen/AmenitiesListScreen';
+import AmenityBookingScreen from './app/AllServicesScreen/AmenityBookingScreen';
+
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -302,6 +312,16 @@ const NavigationPage = () => {
           <Stack.Screen name="StaffDetailScreen" component={StaffDetailScreen} />
           <Stack.Screen name="MyStaffDetailScreen" component={MyStaffDetailScreen} />
           <Stack.Screen name="MyStaffAttendanceScreen" component={MyStaffAttendanceScreen} />
+          <Stack.Screen name="ContactUsScreen" component={ContactUsScreen} />
+          <Stack.Screen name="AllServicesScreen" component={AllServicesScreen} />
+          <Stack.Screen name="AddMember" component={AddMemberScreen} />
+          <Stack.Screen name="MyNoticesScreen" component={MyNoticesScreen} />
+          <Stack.Screen name="NoticeDetailScreen" component={NoticeDetailScreen} />
+          <Stack.Screen name="Visitors" component={VisitorsScreen} screenOptions={{ headerShown: true }} />
+          <Stack.Screen name="Settings" component={SettingsScreen}  />
+          <Stack.Screen name="bills" component={BillsPage}  />
+          <Stack.Screen name="AmenitiesListScreen" component={AmenitiesListScreen}  />
+           <Stack.Screen name="AmenityBooking" component={AmenityBookingScreen}  />
         </Stack.Navigator>
       </NavigationContainer>
     </PermissionsProvider>
