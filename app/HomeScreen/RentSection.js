@@ -5,20 +5,19 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { usePermissions } from "../../Utils/ConetextApi";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { ismServices } from "../../services/ismServices";
+import { otherServices } from "../../services/otherServices";
 
 const ResidentProfile = () => {
   const { nightMode } = usePermissions();
 
-  const [userDetails, setUserDetails] = useState();
-  const [bill, setBill] = useState();
+  const [userDetails, setUserDetails] = useState({});
+  const [outstanding, setOutstanding] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const colors = {
@@ -35,20 +34,13 @@ const ResidentProfile = () => {
   const loadData = async () => {
     try {
       const storedUser = await AsyncStorage.getItem("userInfo");
+      if (!storedUser) return;
 
-      if (!storedUser) {
-        console.log("No user found in storage");
-        return;
-      }
-
-      // ✅ Fetch full user details from API
       const detailsRes = await ismServices.getUserDetails();
-      setUserDetails(detailsRes);
+      setUserDetails(detailsRes || {});
 
-      // ✅ Fetch balance
-      const billRes = await ismServices.getMyBalance();
-      setBill(billRes.data);
-
+      const billRes = await otherServices.getOutStandings();
+      setOutstanding(billRes?.data || []);
     } catch (err) {
       console.log("Profile Load Error:", err);
     } finally {
@@ -60,22 +52,19 @@ const ResidentProfile = () => {
     loadData();
   }, []);
 
-
   if (loading) {
     return (
-      <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      </View>
+      <View style={[styles.safeArea, { backgroundColor: colors.background }]} />
     );
   }
 
-  return (
-    <View
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
+  const totalOutstanding = outstanding.reduce(
+    (sum, item) => sum + parseFloat(item?.data?.balance || '0'),
+    0
+  );
 
-    >
+  return (
+    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={styles.container}>
 
         {/* PROFILE CARD */}
@@ -85,7 +74,7 @@ const ResidentProfile = () => {
           end={{ x: 1, y: 1 }}
           style={styles.profileCard}
         >
-          <Text style={styles.greeting}>
+          <Text style={styles.greeting} numberOfLines={1}>
             Hi, {userDetails?.name || "Resident"}
           </Text>
 
@@ -107,21 +96,21 @@ const ResidentProfile = () => {
             <View style={styles.profileDetails}>
               <View style={styles.badge}>
                 <Ionicons name="business" size={12} color="#fff" />
-                <Text style={styles.badgeText}>
+                <Text style={styles.badgeText} numberOfLines={1}>
                   {userDetails?.tower || "N/A"}
                 </Text>
               </View>
 
               <View style={styles.badge}>
                 <Ionicons name="home" size={12} color="#fff" />
-                <Text style={styles.badgeText}>
+                <Text style={styles.badgeText} numberOfLines={1}>
                   {userDetails?.flat_no || "N/A"}
                 </Text>
               </View>
 
               <View style={styles.badge}>
                 <Ionicons name="calendar" size={12} color="#fff" />
-                <Text style={styles.badgeText}>
+                <Text style={styles.badgeText} numberOfLines={1}>
                   {userDetails?.fc_name || "N/A"}
                 </Text>
               </View>
@@ -140,18 +129,20 @@ const ResidentProfile = () => {
           ]}
         >
           <View style={styles.billHeader}>
-            <Ionicons
-              name="receipt-outline"
-              size={18}
-              color={colors.subText}
-            />
-            <Text style={[styles.billLabel, { color: colors.subText }]}>
-              {bill?.bill_type || " Bill"}
+            <Text
+              style={[styles.billLabel, { color: colors.subText }]}
+              numberOfLines={2}
+            >
+              Total Outstanding
             </Text>
           </View>
 
-          <Text style={[styles.billAmount, { color: colors.text }]}>
-            ₹{bill?.balance?.toLocaleString("en-IN") ?? "0"} 
+          <Text
+            style={[styles.billAmount, { color: colors.text }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            ₹{totalOutstanding.toLocaleString("en-IN")}
           </Text>
 
           <TouchableOpacity
@@ -170,41 +161,28 @@ const ResidentProfile = () => {
 export default ResidentProfile;
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1 ,
-     paddingHorizontal: 10,
+  safeArea: {
+    flex: 1,
+    paddingHorizontal: 10,
     paddingTop: 5,
     paddingBottom: 15,
+    marginTop: 5,
 
-    gap: 12,
-    marginTop:5
-   },
-
-  loaderContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
   },
 
   container: {
-    flex: 1,
     flexDirection: "row",
-    paddingHorizontal: 10,
-    paddingTop: 5,
-    paddingBottom: 50,
     gap: 12,
-    marginTop:5
+    marginBottom:50
+    
   },
 
   profileCard: {
-    flex: 6,
+    flex: 2,
     borderRadius: 20,
-    padding: 10,
+    padding: 12,
     elevation: 6,
-    justifyContent: "flex-start",
-    paddingLeft:15
-    
-
-    
+    overflow: "hidden",
   },
 
   greeting: {
@@ -215,12 +193,12 @@ const styles = StyleSheet.create({
 
   profileRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
     marginTop: 10,
   },
 
-  avatarWrapper: { position: "relative" },
+  avatarWrapper: {
+    marginRight: 10,
+  },
 
   avatar: {
     width: 70,
@@ -241,70 +219,70 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
   },
 
-  profileDetails: { gap: 5 },
+  profileDetails: {
+    flex: 1,
+    justifyContent: "center",
+    gap: 6,
+  },
 
-badge: {
-  flexDirection: "row",
-  alignItems: "center",
-  backgroundColor: "rgba(255,255,255,0.25)",
-  paddingHorizontal: 10,
-  paddingVertical: 3,
-  borderRadius: 10,
-  width: "100%",
-  alignSelf: "stretch",
-},
+  badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.25)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+
   badgeText: {
     color: "#fff",
     fontSize: 11.5,
     fontWeight: "600",
     marginLeft: 6,
+    flexShrink: 1,
   },
 
   billCard: {
-    flex: 3,
+    flex: 1,
     borderRadius: 18,
-  
     borderWidth: 1,
-    elevation: 4,
+    overflow: "hidden",
     justifyContent: "space-between",
   },
 
   billHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-      paddingTop: 10,
-    paddingLeft:15,
-    gap: 6,
+    paddingTop: 12,
+    paddingHorizontal: 12,
   },
 
   billLabel: {
     fontSize: 10,
-    fontWeight: "600",
+    fontWeight: "700",
     textTransform: "uppercase",
   },
 
   billAmount: {
     fontSize: 18,
     fontWeight: "800",
-    paddingLeft:15,
-    marginTop: 4,
+    paddingHorizontal: 12,
+    marginTop: 6,
+    flexShrink: 1,
   },
 
   payButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    width: "content",
-    padding: 10,
-    borderEndEndRadius: 18,
+    width: "100%",
+    padding: 12,
     borderBottomLeftRadius: 18,
-    marginBottom:-1
-  
+    borderBottomRightRadius: 18,
   },
 
   payButtonText: {
     color: "#fff",
     fontSize: 14,
     fontWeight: "700",
+    marginRight: 6,
   },
 });

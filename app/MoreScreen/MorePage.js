@@ -13,6 +13,12 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePermissions } from '../../Utils/ConetextApi';
 import { useNavigation } from '@react-navigation/native';
+import AccountSelectorModal from '../Login/SelectUserMode';
+import { LoginSrv } from '../../services/LoginSrv';
+import { CommonActions } from '@react-navigation/native';
+import { Modal } from 'react-native';
+import { TextInput } from 'react-native';
+import { ismServices } from '../../services/ismServices';
 
 const ProfileScreen = () => {
   const { nightMode, setNightMode } = usePermissions();
@@ -23,6 +29,13 @@ const ProfileScreen = () => {
   const [unitOpen, setUnitOpen] = useState(true); // 👈 Open by default
   const [meterOpen, setMeterOpen] = useState(false);
   const [vehicleOpen, setVehicleOpen] = useState(false);
+  const [accounts, setAccounts] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const [passwordModal, setPasswordModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [password, setPassword] = useState('');
+  const [isSwitching, setIsSwitching] = useState(false);
 
   const navigation = useNavigation();
 
@@ -40,32 +53,153 @@ const ProfileScreen = () => {
     loadUserProfile();
   }, []);
 
-  const loadUserProfile = async () => {
-    try {
-      const data = await AsyncStorage.getItem('userDetails');
-      if (data) setUserProfile(JSON.parse(data));
-    } catch (error) {
-      console.error('Error loading profile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+ const loadUserProfile = async () => {
+  try {
+    setLoading(true);
 
-  const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: async () => {
-          await AsyncStorage.clear();
+    const storedUser = await AsyncStorage.getItem('userInfo');
+
+    if (!storedUser) {
+      console.log("No user found");
+      setUserProfile(null);
+      return;
+    }
+
+    // ✅ Always fetch fresh user details from API
+    const detailsRes = await ismServices.getUserDetails();
+
+    setUserProfile(detailsRes);
+
+    // Optional: store it
+    await AsyncStorage.setItem(
+      'userDetails',
+      JSON.stringify(detailsRes)
+    );
+
+  } catch (error) {
+    console.error('Error loading profile:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+const handleLogout = () => {
+  Alert.alert('Logout', 'Are you sure you want to logout?', [
+    { text: 'Cancel', style: 'cancel' },
+    {
+      text: 'Logout',
+      style: 'destructive',
+      onPress: async () => {
+        try {
+          // Remove only auth related data
+          await AsyncStorage.multiRemove([
+            'userInfo',
+            'accessToken',
+            'refreshToken'
+          ]);
+
           navigation.reset({
             index: 0,
             routes: [{ name: 'Login' }],
           });
-        },
+
+        } catch (error) {
+          console.log('Logout error:', error);
+        }
       },
-    ]);
+    },
+  ]);
+};
+  const handleSwitchAccount = async () => {
+    try {
+      const userInfo = await AsyncStorage.getItem('userInfo');
+      if (!userInfo) return;
+
+      const parsedUser = JSON.parse(userInfo);
+
+      const payload = {
+        identity: parsedUser.email,
+        password: '',
+        tenant: 0,
+        user_id: null,
+      };
+
+      const response = await LoginSrv.login(payload);
+
+  if (response.status === 'multipleLogin') {
+
+  const userInfo = await AsyncStorage.getItem('userInfo');
+  const currentUser = JSON.parse(userInfo);
+
+  // Filter out currently logged in account
+  const filteredAccounts = response.data.filter(
+    acc => acc.user_id !== currentUser.user_id
+  );
+
+  if (filteredAccounts.length === 0) {
+    Alert.alert('No Other Accounts Available');
+    return;
+  }
+
+  setAccounts(filteredAccounts);
+  setModalVisible(true);
+}
+
+    } catch (error) {
+      console.log('Switch error:', error);
+    }
+  };
+
+  const handleAccountSelect = (selectedUser) => {
+    setModalVisible(false);
+    setSelectedUserId(selectedUser.user_id);
+    setPassword('');
+    setPasswordModal(true);
+  };
+
+  const confirmSwitchLogin = async () => {
+    if (!password.trim()) {
+      Alert.alert('Enter Password');
+      return;
+    }
+
+    try {
+      setIsSwitching(true);
+
+      const userInfo = await AsyncStorage.getItem('userInfo');
+      const parsedUser = JSON.parse(userInfo);
+
+      const payload = {
+        identity: parsedUser.email,
+        password: password,
+        tenant: 0,
+        user_id: selectedUserId,
+      };
+
+      const response = await LoginSrv.login(payload);
+
+      if (response.status === 'success') {
+        await AsyncStorage.setItem(
+          'userInfo',
+          JSON.stringify(response.data)
+        );
+
+        setPasswordModal(false);
+
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'MainApp' }],
+          })
+        );
+      } else {
+        Alert.alert('Wrong Password');
+      }
+
+    } catch (error) {
+      console.log('Final switch error:', error);
+    } finally {
+      setIsSwitching(false);
+    }
   };
 
   const getAvatarUri = () => {
@@ -214,7 +348,7 @@ const ProfileScreen = () => {
 
           <TouchableOpacity
             style={styles.actionRow}
-            onPress={() => navigation.navigate('SwitchAccount')}
+            onPress={handleSwitchAccount}
           >
             <Ionicons name="swap-horizontal-outline" size={20} color={theme.textMain} />
             <Text style={[styles.actionText, { color: theme.textMain }]}>
@@ -234,6 +368,68 @@ const ProfileScreen = () => {
         </View>
 
       </ScrollView>
+      <AccountSelectorModal
+        visible={modalVisible}
+        accounts={accounts}
+        onSelect={handleAccountSelect}
+        onClose={() => setModalVisible(false)}
+      />
+
+      <Modal visible={passwordModal} transparent animationType="fade">
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <View style={{
+            backgroundColor: '#fff',
+            width: '85%',
+            padding: 20,
+            borderRadius: 16
+          }}>
+            <Text style={{ fontWeight: 'bold', marginBottom: 10 }}>
+              Enter Password
+            </Text>
+
+            <TextInput
+              placeholder="Password"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+              style={{
+                borderWidth: 1,
+                borderColor: '#ccc',
+                borderRadius: 10,
+                padding: 12,
+                marginBottom: 15
+              }}
+            />
+
+            <TouchableOpacity
+              style={{
+                backgroundColor: '#3B82F6',
+                padding: 14,
+                borderRadius: 10,
+                alignItems: 'center'
+              }}
+              onPress={confirmSwitchLogin}
+            >
+              <Text style={{ color: '#fff' }}>
+                {isSwitching ? 'Switching...' : 'Confirm'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{ marginTop: 10, alignItems: 'center' }}
+              onPress={() => setPasswordModal(false)}
+            >
+              <Text style={{ color: 'red' }}>Cancel</Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

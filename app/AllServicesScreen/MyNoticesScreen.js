@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import AppHeader from "../components/AppHeader";
 import { usePermissions } from "../../Utils/ConetextApi";
 import { otherServices } from "../../services/otherServices";
@@ -20,32 +21,40 @@ const MyNoticesScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
 
   const theme = {
-    background: nightMode ? "#1A1A1A" : "#F3F4F6",
-    card: nightMode ? "#2A2A2A" : "#FFFFFF",
-    title: nightMode ? "#FFFFFF" : "#111827",
-    preview: nightMode ? "#CFCFCF" : "#6B7280",
+    background: nightMode ? "#0F172A" : "#F3F4F6",
+    card: nightMode ? "#1E293B" : "#FFFFFF",
+    title: nightMode ? "#F1F5F9" : "#111827",
+    preview: nightMode ? "#CBD5E1" : "#6B7280",
     category: "#1565A9",
     date: "#9CA3AF",
     calendarHeader: "#1565A9",
-    calendarBody: nightMode ? "#1F1F1F" : "#FFFFFF",
+    calendarBody: nightMode ? "#334155" : "#FFFFFF",
+    emptyText: nightMode ? "#F1F5F9" : "#111827",
+    emptySubText: nightMode ? "#CBD5E1" : "#9CA3AF",
   };
+const stripHtml = (html) => {
+  if (!html) return "";
 
-  const stripHtml = (html) => {
-    if (!html) return "";
-    return html.replace(/<[^>]*>?/gm, "");
-  };
+  return html
+    .replace(/<[^>]*>?/gm, "")     // remove tags
+    .replace(/&nbsp;/g, " ")       // remove &nbsp
+    .replace(/\s+/g, " ")          // remove extra spaces
+    .trim();                       // remove starting/ending spaces
+};
 
   const fetchNotices = async () => {
     try {
       const res = await otherServices.getMyNotices("");
-
+      console.log(res)
       if (res?.status === "success") {
         setNotices(res.data || []);
+
       } else {
         setNotices([]);
       }
     } catch (error) {
       console.log("Fetch Notices Error:", error);
+      setNotices([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -61,75 +70,124 @@ const MyNoticesScreen = ({ navigation }) => {
     fetchNotices();
   }, []);
 
-  const renderItem = ({ item }) => {
-    const preview = stripHtml(item.notice).slice(0, 80);
+ const renderItem = ({ item }) => {
+  const preview = stripHtml(item.notice)?.slice(0, 100);
 
-    const dateObj = new Date(item.published_at);
-    const day = dateObj.getDate();
-    const month = dateObj.toLocaleDateString("en-US", { month: "short" });
+  const dateObj = new Date(item.published_at);
+  const day = dateObj.getDate();
+  const month = dateObj.toLocaleDateString("en-US", { month: "short" });
 
-    return (
-      <TouchableOpacity
-        style={[styles.card, { backgroundColor: theme.card }]}
-        activeOpacity={0.9}
-        onPress={() =>
-          navigation.navigate("NoticeDetailScreen", { notice: item })
-        }
-      >
-        {/* 🔵 LEFT CALENDAR */}
-        <View style={styles.calendarContainer}>
-          <View
-            style={[
-              styles.calendarHeader,
-              { backgroundColor: theme.calendarHeader },
-            ]}
-          >
-            <Text style={styles.calendarMonth}>{month}</Text>
-          </View>
-
-          <View
-            style={[
-              styles.calendarBody,
-              { backgroundColor: theme.calendarBody },
-            ]}
-          >
-            <Text style={[styles.calendarDay, { color: theme.title }]}>
-              {day}
-            </Text>
-          </View>
+  return (
+    <TouchableOpacity
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.card,
+          shadowColor: nightMode ? "#000" : "#999",
+        },
+      ]}
+      activeOpacity={0.9}
+      onPress={() =>
+        navigation.navigate("NoticeDetailScreen", { notice: item })
+      }
+    >
+      {/* LEFT CALENDAR */}
+      <View style={styles.calendarContainer}>
+        <View
+          style={[
+            styles.calendarHeader,
+            { backgroundColor: theme.calendarHeader },
+          ]}
+        >
+          <Text style={styles.calendarMonth}>{month}</Text>
         </View>
 
-        {/* 🔹 RIGHT CONTENT */}
-        <View style={styles.rightContent}>
+        <View
+          style={[
+            styles.calendarBody,
+            { backgroundColor: theme.calendarBody },
+          ]}
+        >
+          <Text style={[styles.calendarDay, { color: theme.title }]}>
+            {day}
+          </Text>
+        </View>
+      </View>
+
+      {/* RIGHT CONTENT */}
+<View style={styles.rightContent}>
+  <View style={styles.contentBlock}>    
+        {/* CATEGORY + DOT only if category exists */}
+        {item.category ? (
           <View style={styles.topRow}>
             <Text style={[styles.category, { color: theme.category }]}>
               {item.category}
             </Text>
 
-            {!item.is_read && <View style={styles.unreadDot} />}
-          </View>
+                   {/* DATE only if exists */}
+        {item.published_at ? (
+          <Text style={[styles.date, { color: theme.date }]}>
+            {dateObj.toLocaleDateString("en-GB")}
 
-          <Text
-            style={[styles.title, { color: theme.title }]}
-            numberOfLines={2}
-          >
-            {item.subject}
           </Text>
+        ) : null}
+          </View>
+        ) : null}
+     
 
+        {/* SUBJECT always */}
+        <Text
+          style={[styles.title, { color: theme.title }]}
+          numberOfLines={2}
+        >
+          {item.subject}
+        </Text>
+
+        {/* PREVIEW only if exists */}
+        {preview ? (
           <Text
             style={[styles.preview, { color: theme.preview }]}
-            numberOfLines={2}
+            numberOfLines={1}
           >
             {preview}
           </Text>
+        ) : null}
+        
+          </View>
 
-          <Text style={[styles.date, { color: theme.date }]}>
-            {dateObj.toLocaleDateString("en-GB")}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+    
+      </View>
+       {/* {!item.is_read && <View style={styles.unreadDot} />} */}
+
+    </TouchableOpacity>
+  );
+};
+
+  const renderEmptyComponent = () => (
+    <View style={styles.emptyContainer}>
+      <Ionicons
+        name="document-outline"
+        size={56}
+        color={theme.preview}
+      />
+      <Text
+        style={[
+          styles.emptyTitle,
+          { color: theme.emptyText },
+        ]}
+      >
+        No Notices Found
+      </Text>
+      <Text
+        style={[
+          styles.emptySubtitle,
+          { color: theme.emptySubText },
+        ]}
+      >
+        You're all caught up 🎉
+      </Text>
+    </View>
+  );
 
   return (
     <SafeAreaView
@@ -139,21 +197,24 @@ const MyNoticesScreen = ({ navigation }) => {
 
       {loading ? (
         <View style={styles.loader}>
-          <ActivityIndicator size="large" color="#1565A9" />
+          <ActivityIndicator size="large" color={theme.category} />
         </View>
+      ) : notices.length === 0 ? (
+        renderEmptyComponent()
       ) : (
         <FlatList
           data={notices}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderItem}
-          contentContainerStyle={{ padding: 16 }}
+          contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={["#1565A9"]}
+              colors={[theme.category]}
             />
           }
+          showsVerticalScrollIndicator={false}
         />
       )}
     </SafeAreaView>
@@ -173,39 +234,54 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  card: {
-    flexDirection: "row", // 🔥 IMPORTANT FOR CALENDAR
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 16,
+  listContent: {
+    padding: 16,
+    paddingBottom: 32,
   },
 
-  /* 🔵 Calendar Styles */
+  card: {
+    flexDirection: "row",
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  /* Calendar */
   calendarContainer: {
-    width: 60,
-    height: 70,
-    borderRadius: 12,
+    width: 50,
+    height:80,
+   
+    borderTopLeftRadius:12,
+    borderTopRightRadius:12,
     overflow: "hidden",
-    marginRight: 16,
-    elevation: 3,
+    marginRight: 14,
+    borderWidth: 1,
+    borderColor: "#1564a95d",
   },
 
   calendarHeader: {
-    height: 28,
+    height: 26,
     justifyContent: "center",
     alignItems: "center",
   },
 
+  contentBlock: {
+  marginBottom: 6,
+},
   calendarMonth: {
     color: "#FFFFFF",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
   },
 
   calendarBody: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "center",    
   },
 
   calendarDay: {
@@ -213,7 +289,6 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
 
-  /* Right Content */
   rightContent: {
     flex: 1,
   },
@@ -222,34 +297,65 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 4,
   },
 
   category: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: "700",
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
   },
 
-  unreadDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#FF3B30",
-  },
+  // unreadDot: {
+    
+  //   width: 8,
+  //   height: 8,
+  //   left:10,
+  //   top:7,
+  //   borderRadius: 4,
+  //   backgroundColor: "#FF3B30",
+   
+
+  // },
 
   title: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: "700",
-    marginTop: 6,
+    marginBottom: 4,
+    lineHeight: 20,
   },
 
   preview: {
-    fontSize: 15,
-    marginTop: 4,
+    fontSize: 13,
+    marginBottom: 6,
+    lineHeight: 18,
   },
 
-  date: {
-    marginTop: 10,
+date: {
+  fontSize: 12,
+  fontWeight: "500",
+  marginTop: 4,
+  textAlign: "right",
+},
+  /* EMPTY STATE */
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 32,
+  },
+
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginTop: 16,
+    textAlign: "center",
+  },
+
+  emptySubtitle: {
+    marginTop: 8,
     fontSize: 14,
+    textAlign: "center",
   },
 });

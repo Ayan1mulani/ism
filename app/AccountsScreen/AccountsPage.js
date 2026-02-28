@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   ScrollView,
   TouchableOpacity,
@@ -18,6 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 import { usePermissions } from '../../Utils/ConetextApi';
 import { otherServices } from '../../services/otherServices';
 import AppHeader from '../components/AppHeader';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const THEME = {
   primary: '#1996D3',
@@ -59,20 +59,34 @@ export default function AccountsScreen() {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const outstandingResp = await otherServices.getOutStandings();
-      setOutstanding(outstandingResp.data || []);
-      const accountsResp = await otherServices.getMyAccounts();
-      setAccounts(accountsResp.data || accountsResp || []);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to load accounts');
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchData = async () => {
+  try {
+    setLoading(true);
 
+    const outstandingResp = await otherServices.getOutStandings();
+    const accountsResp = await otherServices.getMyAccounts();
+
+    // 🔒 Safe normalize function
+    const normalizeArray = (res) => {
+      if (!res) return [];
+
+      if (Array.isArray(res)) return res;
+      if (Array.isArray(res.data)) return res.data;
+      if (Array.isArray(res.result)) return res.result;
+      if (Array.isArray(res.items)) return res.items;
+
+      return [];
+    };
+
+    setOutstanding(normalizeArray(outstandingResp));
+    setAccounts(normalizeArray(accountsResp));
+
+  } catch (error) {
+    Alert.alert('Error', 'Failed to load accounts');
+  } finally {
+    setLoading(false);
+  }
+};
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchData();

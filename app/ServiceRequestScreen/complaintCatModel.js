@@ -7,7 +7,6 @@ import {
   StyleSheet,
   ScrollView,
   StatusBar,
-  TextInput,
   ActivityIndicator,
   Dimensions,
 } from 'react-native';

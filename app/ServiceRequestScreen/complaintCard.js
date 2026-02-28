@@ -108,24 +108,6 @@ const formatDate = (dateString) => {
   }
 };
 
-const getTimeAgo = (dateString) => {
-  try {
-    const diffTime   = Math.abs(new Date() - new Date(dateString));
-    const diffMins   = Math.floor(diffTime / 60000);
-    const diffHours  = Math.floor(diffMins  / 60);
-    const diffDays   = Math.floor(diffHours / 24);
-    const diffMonths = Math.floor(diffDays  / 30);
-    const diffYears  = Math.floor(diffDays  / 365);
-
-    if (diffMins   <  60) return diffMins  === 0 ? 'Just now' : `${diffMins}m ago`;
-    if (diffHours  <  24) return `${diffHours}h ago`;
-    if (diffDays   <  30) return `${diffDays}d ago`;
-    if (diffMonths <  12) return `${diffMonths}mo ago`;
-    return `${diffYears}y ago`;
-  } catch {
-    return '';
-  }
-};
 
 // ─── Icon renderer ────────────────────────────────────────────────────────────
 const AppIcon = ({ name, library, color, size = 16 }) => {

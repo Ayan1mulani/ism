@@ -55,6 +55,8 @@ import SettingsScreen from './app/AllServicesScreen/SettingsScreen';
 import BillsPage from './app/AllServicesScreen/BillsPage';
 import AmenitiesListScreen from './app/AllServicesScreen/AmenitiesListScreen';
 import AmenityBookingScreen from './app/AllServicesScreen/AmenityBookingScreen';
+import MyBookingsScreen from './app/AllServicesScreen/MyBookingsScreen';
+import OtpLoginScreen from './app/Login/OtpLoginScreen';
 
 
 const Tab = createBottomTabNavigator();
@@ -288,6 +290,10 @@ const NavigationPage = () => {
           cardOverlayEnabled: false,
           cardShadowEnabled: false,
           headerShown: false,
+          animation: "simple_push"
+
+
+
         }} initialRouteName="Login">
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="MainApp" component={NavigationTabs} />
@@ -318,10 +324,13 @@ const NavigationPage = () => {
           <Stack.Screen name="MyNoticesScreen" component={MyNoticesScreen} />
           <Stack.Screen name="NoticeDetailScreen" component={NoticeDetailScreen} />
           <Stack.Screen name="Visitors" component={VisitorsScreen} screenOptions={{ headerShown: true }} />
-          <Stack.Screen name="Settings" component={SettingsScreen}  />
-          <Stack.Screen name="bills" component={BillsPage}  />
-          <Stack.Screen name="AmenitiesListScreen" component={AmenitiesListScreen}  />
-           <Stack.Screen name="AmenityBooking" component={AmenityBookingScreen}  />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="bills" component={BillsPage} />
+          <Stack.Screen name="AmenitiesListScreen" component={AmenitiesListScreen} />
+          <Stack.Screen name="AmenityBooking" component={AmenityBookingScreen} />
+          <Stack.Screen name="MyBookings" component={MyBookingsScreen} />
+          <Stack.Screen  name="OtpLoginScreen" component={OtpLoginScreen}/>
+
         </Stack.Navigator>
       </NavigationContainer>
     </PermissionsProvider>

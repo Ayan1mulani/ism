@@ -12,24 +12,26 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { usePermissions } from "../../Utils/ConetextApi";
-import AppHeader from "../components/AppHeader";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { otherServices } from "../../services/otherServices";
 import { useNavigation } from "@react-navigation/native";
+import AppHeader from "../components/AppHeader";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 
 const { width } = Dimensions.get("window");
 
 const AmenitiesListScreen = () => {
   const { nightMode } = usePermissions();
   const navigation = useNavigation();
-
+  const [todayBookings, setTodayBookings] = useState({});
   const [loading, setLoading] = useState(true);
   const [amenities, setAmenities] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState({});
 
   const theme = {
-    background: nightMode ? "#0F172A" : "#F9FAFB",
+    background: nightMode ? "#0F172A" : "#F3F4F6",
     card: nightMode ? "#1E293B" : "#FFFFFF",
     text: nightMode ? "#F1F5F9" : "#111827",
     subText: nightMode ? "#CBD5E1" : "#6B7280",
@@ -37,312 +39,234 @@ const AmenitiesListScreen = () => {
     primary: "#1996D3",
     success: "#10B981",
   };
-
-  useEffect(() => {
+useFocusEffect(
+  useCallback(() => {
+     setLoading(true); 
     fetchAmenities();
-  }, []);
+  }, [])
+);
 
-  const fetchAmenities = async () => {
-    try {
-      const response = await otherServices.getAmenities();
+const fetchAmenities = async () => {
+  try {
+    const response = await otherServices.getAmenities();
+    const data = Array.isArray(response) ? response : [];
 
-      // Depending on your ApiCommon structure
-      const data = response?.data || response || [];
+    await fetchTodayBookings(data);   // 👈 await here
+    setAmenities(data);
 
-      setAmenities(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.log("Amenity Error:", err);
-      setAmenities([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (err) {
+    console.log("Amenity Error:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+const fetchTodayBookings = async (amenityList) => {
+  const today = new Date().toISOString().split("T")[0];
+
+  const counts = {}; 
+
+  await Promise.all(
+    amenityList.map(async (item) => {
+      try {
+        const res = await otherServices.getAmenityBookingsById(item.id);
+
+        const bookings = res?.data || [];
+
+        const todayCount = bookings.filter(b =>
+          b.booking_from?.startsWith(today)
+        ).length;
+
+        counts[item.id] = todayCount;
+
+      } catch {
+        counts[item.id] = 0;
+      }
+    })
+  );
+
+  setTodayBookings(counts);
+};
 
   const onImageScroll = (event, itemId) => {
     const contentOffset = event.nativeEvent.contentOffset;
     const index = Math.round(contentOffset.x / (width - 32));
-
-    setCurrentImageIndex((prev) => ({
-      ...prev,
-      [itemId]: index,
-    }));
+    setCurrentImageIndex((prev) => ({ ...prev, [itemId]: index }));
   };
 
   const renderAmenity = ({ item }) => {
     const isExpanded = expandedId === item.id;
     const imageIndex = currentImageIndex[item.id] || 0;
     const hasImages = item.image && item.image.length > 0;
+    const isActive = item.is_booking === 1;
+let rules = {};
+try {
+  rules = JSON.parse(item.rules || "{}");
+} catch {
+  rules = {};
+
+
+}
+let parsedSlot = {};
+try {
+  const temp = JSON.parse(item.slot || "{}");
+  parsedSlot = temp && typeof temp === "object" ? temp : {};
+} catch {
+  parsedSlot = {};
+}
+const maxPerDay = rules?.max_per_day || 0;
+const todayCount = todayBookings[item.id] || 0;
+const isFull = todayCount >= maxPerDay;
+
+    const weekDays = ["S", "M", "T", "W", "T", "F", "S"];
 
     return (
       <View
         style={[
           styles.card,
-          {
-            backgroundColor: theme.card,
-            borderColor: theme.border,
-          },
+          { backgroundColor: theme.card, borderColor: theme.border },
         ]}
       >
-        {/* IMAGE CAROUSEL */}
-        {hasImages ? (
-          <>
-            <ScrollView
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onScroll={(e) => onImageScroll(e, item.id)}
-              scrollEventThrottle={16}
-            >
-              {item.image.map((img, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: img }}
-                  style={styles.image}
-                  resizeMode="cover"
-                />
-              ))}
-            </ScrollView>
-
-            {item.image.length > 1 && (
-              <View style={styles.indicators}>
-                {item.image.map((_, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.indicator,
-                      {
-                        backgroundColor:
-                          index === imageIndex
-                            ? theme.primary
-                            : theme.border,
-                      },
-                    ]}
-                  />
+        {/* IMAGE SECTION */}
+        <View style={styles.imageWrapper}>
+          {hasImages ? (
+            <>
+              <ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onScroll={(e) => onImageScroll(e, item.id)}
+                scrollEventThrottle={16}
+              >
+                {item.image.map((img, index) => (
+                  <Image key={index} source={{ uri: img }} style={styles.image} />
                 ))}
-              </View>
-            )}
-          </>
-        ) : (
-          <View
-            style={[
-              styles.noImageContainer,
-              { backgroundColor: theme.border },
-            ]}
-          >
-            <Ionicons
-              name="image-outline"
-              size={40}
-              color={theme.subText}
-            />
-            <Text
-              style={[
-                styles.noImageText,
-                { color: theme.subText },
-              ]}
-            >
-              No images available
-            </Text>
-          </View>
-        )}
+              </ScrollView>
+
+              {item.image.length > 1 && (
+                <View style={styles.indicators}>
+                  {item.image.map((_, index) => (
+                    <View
+                      key={index}
+                      style={[
+                        styles.indicator,
+                        {
+                          backgroundColor:
+                            index === imageIndex ? theme.primary : theme.border,
+                        },
+                      ]}
+                    />
+                  ))}
+                </View>
+              )}
+            </>
+          ) : (
+            <View style={[styles.noImageContainer, { backgroundColor: theme.border }]}>
+              <Ionicons name="image-outline" size={36} color={theme.subText} />
+              <Text style={[styles.noImageText, { color: theme.subText }]}>
+                No images available
+              </Text>
+            </View>
+          )}
+
+
+        </View>
 
         {/* CONTENT */}
         <View style={styles.content}>
-          {/* HEADER */}
-          <View style={styles.headerRow}>
-            <View style={{ flex: 1 }}>
-              <Text
-                style={[styles.title, { color: theme.text }]}
-              >
-                {item.name}
-              </Text>
-            </View>
-
-            {item.is_booking === 1 && (
-              <View
-                style={[
-                  styles.bookingBadge,
-                  { backgroundColor: theme.success },
-                ]}
-              >
-                <Ionicons
-                  name="checkmark-circle"
-                  size={14}
-                  color="#fff"
-                />
-                <Text style={styles.bookingText}>
-                  Bookable
-                </Text>
-              </View>
-            )}
+          {/* TITLE */}
+          <Text style={[styles.title, { color: theme.text }]}>{item.name}</Text>
+          <View style={{ marginTop: 4 }}>
+  <Text
+    style={{
+      fontSize: 12,
+      fontWeight: "600",
+      color: isFull ? "#EF4444" : "#10B981",
+    }}
+  >
+    TODAY {todayCount} / {maxPerDay}
+  </Text>
+</View>
+          {/* STATUS BADGE — top right corner over image */}
+          <View
+            style={[
+              styles.badge,
+              { backgroundColor: isActive ? "#10B981" : "#6B7280" },
+            ]}
+          >
+            <Text style={styles.badgeText}>
+              {isActive ? "Open" : "Closed"}
+            </Text>
           </View>
 
           {/* DESCRIPTION */}
           {item.description && (
-            <View style={styles.descriptionSection}>
+            <View style={{ marginTop: 4 }}>
               <Text
                 numberOfLines={isExpanded ? undefined : 2}
-                style={[
-                  styles.description,
-                  { color: theme.subText },
-                ]}
+                style={[styles.description, { color: theme.subText }]}
               >
                 {item.description}
               </Text>
 
+            </View>
+          )}
+
+          {/* DAYS ROW + BOOK BUTTON */}
+          <View style={styles.bottomRow}>
+            {/* S M T W T F S */}
+            <View style={styles.daysRow}>
+              {weekDays.map((day, index) => {
+                const isAvailable = parsedSlot[index]?.avl === true;
+                return (
+                  <Text
+                    key={index}
+                    style={[
+                      styles.dayLabel,
+                      { color: isAvailable ? "#10B981" : theme.subText },
+                    ]}
+                  >
+                    {day}
+                  </Text>
+                );
+              })}
+            </View>
+
+            {/* BOOK BUTTON */}
+            {isActive && (
               <TouchableOpacity
+                style={[styles.bookBtn, { backgroundColor: theme.primary }]}
                 onPress={() =>
-                  setExpandedId(isExpanded ? null : item.id)
+                  navigation.navigate("AmenityBooking", { amenity: item })
                 }
-                style={styles.readMoreBtn}
               >
-                <Text
-                  style={{
-                    color: theme.primary,
-                    fontSize: 13,
-                    fontWeight: "600",
-                  }}
-                >
-                  {isExpanded
-                    ? "Show Less"
-                    : "Read More"}
-                </Text>
-                <Ionicons
-                  name={
-                    isExpanded
-                      ? "chevron-up"
-                      : "chevron-down"
-                  }
-                  size={16}
-                  color={theme.primary}
-                />
+                <Ionicons name="calendar-outline" size={14} color="#fff" />
+                <Text style={styles.bookText}>Book Now</Text>
               </TouchableOpacity>
-            </View>
-          )}
-
-          {/* ADDRESS */}
-          {item.address && (
-            <View style={styles.addressRow}>
-              <Ionicons
-                name="location-sharp"
-                size={16}
-                color={theme.primary}
-              />
-              <Text
-                style={[
-                  styles.smallText,
-                  { color: theme.subText },
-                ]}
-              >
-                {item.address}
-              </Text>
-            </View>
-          )}
-
-          {/* BOOK BUTTON */}
-          {item.is_booking === 1 && (
-            <TouchableOpacity
-              style={[
-                styles.bookBtn,
-                { backgroundColor: theme.primary },
-              ]}
-              activeOpacity={0.8}
-              onPress={() =>
-                navigation.navigate("AmenityBooking", {
-                  amenity: item,
-                })
-              }
-            >
-              <Ionicons
-                name="calendar-outline"
-                size={18}
-                color="#fff"
-              />
-              <Text style={styles.bookText}>
-                Book Now
-              </Text>
-            </TouchableOpacity>
-          )}
+            )}
+          </View>
         </View>
       </View>
     );
   };
 
-  if (loading) {
-    return (
-      <SafeAreaView
-        style={[
-          styles.container,
-          { backgroundColor: theme.background },
-        ]}
-      >
-        <AppHeader title="Amenities" />
-        <View style={styles.center}>
-          <ActivityIndicator
-            size="large"
-            color={theme.primary}
-          />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (!amenities.length) {
-    return (
-      <SafeAreaView
-        style={[
-          styles.container,
-          { backgroundColor: theme.background },
-        ]}
-      >
-        <AppHeader title="Amenities" />
-        <View style={styles.emptyContainer}>
-          <Ionicons
-            name="folder-open-outline"
-            size={60}
-            color={theme.subText}
-          />
-          <Text
-            style={[
-              styles.emptyText,
-              { color: theme.text },
-            ]}
-          >
-            No Amenities Available
-          </Text>
-          <Text
-            style={[
-              styles.emptySubText,
-              { color: theme.subText },
-            ]}
-          >
-            Check back later for available amenities
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
-    <SafeAreaView
-      style={[
-        styles.container,
-        { backgroundColor: theme.background },
-      ]}
-    >
-      <AppHeader title="Amenities" />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <AppHeader title={"Ameneties"} />
 
-      <FlatList
-        data={amenities}
-        keyExtractor={(item) =>
-          item.id.toString()
-        }
-        renderItem={renderAmenity}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        initialNumToRender={5}
-        windowSize={5}
-        removeClippedSubviews
-      />
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={theme.primary} />
+        </View>
+      ) : (
+
+        <FlatList
+          data={amenities}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderAmenity}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -350,9 +274,7 @@ const AmenitiesListScreen = () => {
 export default AmenitiesListScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
 
   center: {
     flex: 1,
@@ -361,46 +283,48 @@ const styles = StyleSheet.create({
   },
 
   listContent: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: 12,
+    paddingBottom: 30,
+    gap: 12,
   },
 
   card: {
-    borderRadius: 16,
-    marginBottom: 16,
+    borderRadius: 14,
     overflow: "hidden",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
     borderWidth: 1,
   },
 
+  imageWrapper: {
+    position: "relative",
+  },
+
   image: {
-    width: width - 32,
-    height: 200,
+    width: width - 24,
+    height: 180,
+    resizeMode: "cover",
   },
 
   noImageContainer: {
-    width: width - 32,
-    height: 200,
+    width: "100%",
+    height: 180,
     justifyContent: "center",
     alignItems: "center",
   },
 
   noImageText: {
-    fontSize: 14,
-    marginTop: 8,
+    fontSize: 13,
+    marginTop: 6,
     fontWeight: "500",
   },
 
   indicators: {
+    position: "absolute",
+    bottom: 8,
+    left: 0,
+    right: 0,
     flexDirection: "row",
     justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 8,
-    gap: 6,
+    gap: 5,
   },
 
   indicator: {
@@ -409,108 +333,65 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
 
-  content: {
-    padding: 16,
+  badge: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 7,
   },
 
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 8,
-    gap: 8,
+  badgeText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+
+  content: {
+    padding: 12,
   },
 
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
-    lineHeight: 24,
-  },
-
-  bookingBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-
-  bookingText: {
-    color: "#fff",
-    fontSize: 11,
-    fontWeight: "600",
-  },
-
-  descriptionSection: {
-    marginBottom: 12,
+    marginBottom: 2,
   },
 
   description: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 4,
+    fontSize: 13,
+    lineHeight: 19,
   },
 
-  readMoreBtn: {
+  bottomRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingVertical: 4,
+    justifyContent: "space-between",
+    marginTop: 10,
   },
 
-  addressRow: {
+  daysRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 12,
-    gap: 8,
+    gap: 5,
   },
 
-  smallText: {
-    fontSize: 13,
-    lineHeight: 18,
-    flex: 1,
+  dayLabel: {
+    fontSize: 11,
+    fontWeight: "700",
   },
 
   bookBtn: {
-    marginTop: 4,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
     borderRadius: 10,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    gap: 5,
   },
 
   bookText: {
     color: "#fff",
     fontWeight: "700",
-    fontSize: 15,
-  },
-
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 32,
-  },
-
-  emptyText: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginTop: 16,
-    textAlign: "center",
-  },
-
-  emptySubText: {
-    fontSize: 14,
-    marginTop: 8,
-    textAlign: "center",
+    fontSize: 13,
   },
 });

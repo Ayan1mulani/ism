@@ -47,6 +47,7 @@ const AllServicesScreen = () => {
     { title: "Add new member", icon: "person-add-outline", route: "AddMember" },
     { title: "Add vehicle", icon: "car-outline", route: "AddVehicleScreen" },
     { title: "Bills", icon: "receipt-outline", route: "bills" },
+    { title: "My Bookings", icon: "bookmark-outline", route: "MyBookings" },
   ];
 
   // Auto focus when screen is focused

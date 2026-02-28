@@ -17,7 +17,62 @@ import { Util } from "./Util";
      const response =   await ApiCommon.getReq(url,headers);
      return response
   },
+
+  getAmenityBookingsById: async (amenityId) => {
+  try {
+    const user = await Common.getLoggedInUser();
+
+    const userObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no: user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId,
+    };
+
+    const encodedUser = encodeURIComponent(
+      JSON.stringify(userObj)
+    );
+
+    const url = `${API_URL2}/${user.societyId}/${amenityId}/bookings?api-token=${user.api_token}&user-id=${encodedUser}`;
+
+    const headers = await Util.getCommonAuth();
+
+    return await ApiCommon.getReq(url, headers);
+
+  } catch (error) {
+    console.log("Get Amenity Bookings Error:", error);
+    throw error;
+  }
+},
 // CORRECTED sendFeedback function
+getAmenityBookingsByDate: async (locationId, date) => {
+  try {
+    const user = await Common.getLoggedInUser();
+
+    const userObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no: user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId,
+    };
+
+    const encodedUser = encodeURIComponent(
+      JSON.stringify(userObj)
+    );
+
+    const url = `${API_URL2}/${user.societyId}/${locationId}/bookings/${date}?api-token=${user.api_token}&user-id=${encodedUser}`;
+
+    const headers = await Util.getCommonAuth();
+
+    return await ApiCommon.getReq(url, headers);
+
+  } catch (error) {
+    console.log("Get bookings by date error:", error);
+    throw error;
+  }
+},
 
 sendFeedback: async (subject, body) => {
   try {
@@ -182,22 +237,20 @@ getMyAmenityBookings: async () => {
       society_id: user.societyId,
     };
 
-    const encodedUser = encodeURIComponent(
+    const url = `${API_URL2}/my/bookings?api-token=${
+      user.api_token
+    }&user-id=${encodeURIComponent(
       JSON.stringify(userObj)
-    );
-
-    const url = `${API_URL2}/${user.societyId}/my/bookLocation?api-token=${user.api_token}&user-id=${encodedUser}`;
+    )}&location=1&page=1`;
 
     const headers = await Util.getCommonAuth();
 
     return await ApiCommon.getReq(url, headers);
-
   } catch (error) {
     console.log("Get My Bookings Error:", error);
     throw error;
   }
 },
-
 
 
 getStaffByCategory: async (category) => {

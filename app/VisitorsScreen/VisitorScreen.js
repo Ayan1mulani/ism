@@ -134,6 +134,7 @@ const VisitorScreen = () => {
         barStyle={nightMode ? 'light-content' : 'dark-content'}
         backgroundColor={theme.background}
       />
+      
 
       {/* ✅ Sliding Tabs */}
       <SlidingTabs
