@@ -106,8 +106,10 @@ export default SlidingTabs;
 const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 6,
     paddingBottom: 8,
+    backgroundColor:'#fff'
+
   },
   container: {
     flexDirection: "row",
@@ -117,10 +119,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: "center",
   },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
+label: {
+  fontSize: 13,
+  fontWeight: "600",
+  textAlign: "center",
+  lineHeight: 18,
+},
   activeLabel: {
     fontWeight: "700",
   },

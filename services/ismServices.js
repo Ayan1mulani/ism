@@ -73,15 +73,41 @@ const ismServices = {
 
 
 
-  getMyNotices: async () => {
-    const url = await ismServices.appendParamsInUrl(
-      `${API_URL2}/myNotices`,
-      { cache: 0 }
-    )
+getMyNotices: async (category = "COMMON") => {
+  const user = await Common.getLoggedInUser();
 
-    const headers = await Util.getCommonAuth()
-    return ApiCommon.getReq(url, headers)
-  },
+  const uObj = {
+    user_id: user.unit_id,
+    group_id: user.role_id,
+    flat_no: user.flat_no,
+    unit_id: user.unit_id,
+    society_id: user.societyId
+  };
+
+  const url =
+    `${API_URL2}/myNotices` +
+    `?api-token=${user.api_token}` +
+    `&user-id=${encodeURIComponent(JSON.stringify(uObj))}` +
+    `&category=${category}`;
+
+  const headers = await Util.getCommonAuth();
+  return ApiCommon.getReq(url, headers);
+},
+
+
+  getFacilityStaffCategory: async () => {
+  const user = await Common.getLoggedInUser();
+
+  const url = await ismServices.appendParamsInUrl(
+    `${API_URL2}/society/${user.societyId}/constant`,
+    {
+      type: "FACILITY_STAFF_CATEGORY"
+    }
+  );
+
+  const headers = await Util.getCommonAuth();
+  return ApiCommon.getReq(url, headers);
+},
 
   // 🔥 Common param handler
   appendParamsInUrl: async (url, extraParams = {}) => {

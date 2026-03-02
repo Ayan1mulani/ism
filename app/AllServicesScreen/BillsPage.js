@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
-  RefreshControl,
   TouchableOpacity,
   Linking,
   Modal,
@@ -15,7 +14,7 @@ import { usePermissions } from '../../Utils/ConetextApi';
 import { otherServices } from '../../services/otherServices';
 import AppHeader from '../components/AppHeader';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { RefreshControl } from 'react-native';
 const BillsPage = () => {
   const { nightMode } = usePermissions();
 
@@ -53,7 +52,17 @@ const BillsPage = () => {
   const fetchBills = async () => {
     try {
       const response = await otherServices.getBillsByFlat();
-      setBills(response || []);
+
+      if (Array.isArray(response)) {
+        setBills(response);
+      }
+      else if (Array.isArray(response?.data)) {
+        setBills(response.data);
+      }
+      else {
+        setBills([]);
+      }
+
     } catch (error) {
       console.log('Bills Fetch Error:', error);
       setBills([]);
@@ -67,11 +76,10 @@ const BillsPage = () => {
     fetchBills();
   }, []);
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    fetchBills();
+    await fetchBills();
   }, []);
-
   const downloadBill = () => {
     if (selectedBill?.url) {
       Linking.openURL(selectedBill.url);
@@ -249,16 +257,14 @@ const BillsPage = () => {
 
       <FlatList
         data={bills}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={currentTheme.accent}
-          />
+        keyExtractor={(item, index) =>
+          item?.id ? item.id.toString() : index.toString()
         }
+        renderItem={renderItem}
+        contentContainerStyle={[
+          styles.listContent,
+          bills.length === 0 && { flex: 1 }
+        ]}
         ListEmptyComponent={
           <View style={styles.centerContainer}>
             <Ionicons
@@ -276,13 +282,21 @@ const BillsPage = () => {
             </Text>
           </View>
         }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={currentTheme.accent}
+            colors={[currentTheme.accent]}
+          />
+        }
       />
 
       {/* BOTTOM SHEET MODAL */}
       <Modal
         transparent
         visible={menuVisible}
-        animationType="slide"
+        animationType="none"
         onRequestClose={() => setMenuVisible(false)}
       >
         <TouchableOpacity

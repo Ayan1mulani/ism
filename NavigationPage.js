@@ -57,6 +57,8 @@ import AmenitiesListScreen from './app/AllServicesScreen/AmenitiesListScreen';
 import AmenityBookingScreen from './app/AllServicesScreen/AmenityBookingScreen';
 import MyBookingsScreen from './app/AllServicesScreen/MyBookingsScreen';
 import OtpLoginScreen from './app/Login/OtpLoginScreen';
+import MyComplexScreen from './app/MyComplex/MyComplexScreen';
+import myNoticeDetailScreen from './app/MyComplex/MyNoticeDetailScreen';
 
 
 const Tab = createBottomTabNavigator();
@@ -330,6 +332,9 @@ const NavigationPage = () => {
           <Stack.Screen name="AmenityBooking" component={AmenityBookingScreen} />
           <Stack.Screen name="MyBookings" component={MyBookingsScreen} />
           <Stack.Screen  name="OtpLoginScreen" component={OtpLoginScreen}/>
+          <Stack.Screen name="Notices" component={MyComplexScreen} />
+         <Stack.Screen name="NoticeDetail" component={myNoticeDetailScreen} />
+
 
         </Stack.Navigator>
       </NavigationContainer>

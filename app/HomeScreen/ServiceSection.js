@@ -71,20 +71,32 @@ const ServicesSection = () => {
     }
   };
 
-  const fetchContacts = async () => {
-    try {
-      setLoadingContacts(true);
-      const res = await otherServices.getPanicContacts();
+const fetchContacts = async () => {
+  try {
+    setLoadingContacts(true);
+    const res = await otherServices.getPanicContacts();
 
-      if (res?.status === "success") {
-        setContacts(res.data?.phone_nos || []);
+    if (res?.status === "success") {
+      const phoneData = res.data?.phone_nos;
+
+      if (!phoneData) {
+        setContacts([]);
+      } 
+      else if (Array.isArray(phoneData)) {
+        setContacts(phoneData);
+      } 
+      else {
+        // if single number comes as string
+        setContacts([phoneData]);
       }
-    } catch (error) {
-      console.log("Panic Contact Fetch Error:", error);
-    } finally {
-      setLoadingContacts(false);
     }
-  };
+  } catch (error) {
+    console.log("Panic Contact Fetch Error:", error);
+    setContacts([]);
+  } finally {
+    setLoadingContacts(false);
+  }
+};
 
   const callNumber = (number) => {
     Linking.openURL(`tel:${number}`);
@@ -179,13 +191,20 @@ const ServicesSection = () => {
             
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Panic Alert</Text>
-              <TouchableOpacity onPress={() => setPanicVisible(false)}>
-                <Ionicons name="close" size={22} color="#fff" />
-              </TouchableOpacity>
+             <TouchableOpacity
+  onPress={() => {
+    setPanicVisible(false);
+    setSelectedReason(null);
+    setNote('');
+  }}
+>
+  <Ionicons name="close" size={22} color="#fff" />
+</TouchableOpacity>
             </View>
 
             <Text style={styles.modalDesc}>
               This feature sends PANIC ALERT to security.
+
             </Text>
 
             <View style={styles.reasonGrid}>
@@ -235,9 +254,9 @@ const ServicesSection = () => {
             {loadingContacts ? (
               <ActivityIndicator size="small" color="#EF4444" />
             ) : (
-              contacts.map((number) => (
+              contacts.map((number,index) => (
                 <TouchableOpacity
-                  key={number}
+                 key={`${number}-${index}`}
                   style={styles.contactBtn}
                   onPress={() => callNumber(number)}
                 >
@@ -314,7 +333,7 @@ sectionTitle: {
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: 'rgba(0, 0, 0, 0.79)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -411,7 +430,7 @@ sectionTitle: {
   /* SUCCESS */
   successOverlay: {
     flex: 1,
-    backgroundColor: '#000',
+       backgroundColor: 'rgba(0, 0, 0, 0.79)',
     justifyContent: 'center',
     alignItems: 'center',
   },
