@@ -35,15 +35,16 @@ const ServicesSection = () => {
     { id: '2', title: 'Staff', icon: 'checkmark-circle-outline', route: 'StaffScreen' },
     { id: '3', title: 'Visitors', icon: 'people-outline', route: 'Visitors' },
     { id: '4', title: 'SOS', icon: 'alert-circle', isPanic: true },
+    { id: '5', title: "Add member", icon: "person-add-outline", route: "AddMember" },
     { id: '6', title: 'Contact Us', icon: 'mail-outline', route: 'ContactUsScreen' },
     { id: '7', title: 'Setting', icon: 'settings-outline', route: 'Settings' },
-       { id: '8', title: 'Visitors', icon: 'people-outline', route: 'Visitors' },
-           { id: '9', title: 'Visitors', icon: 'people-outline', route: 'Visitors' },
-
-    { id: '10', title: 'Contact Us', icon: 'mail-outline', route: 'ContactUsScreen' },
-    { id: '11', title: 'Setting', icon: 'settings-outline', route: 'Settings' },
-    
+    { id: '8', title: "Bookings", icon: "bookmark-outline", route: "MyBookings" },
+    { id: '9', title: "Bills", icon: "receipt-outline", route: "bills" },
+    { id: '10', title: "Add vehicle", icon: "car-outline", route: "AddVehicleScreen" },
+    { id: '11', title: "Ameneties", icon: "bookmarks-outline", route: "AmenitiesListScreen" },
     { id: '12', title: 'More', icon: 'ellipsis-horizontal-outline', route: 'AllServicesScreen' },
+
+
   ];
 
   const panicReasons = [
@@ -71,32 +72,32 @@ const ServicesSection = () => {
     }
   };
 
-const fetchContacts = async () => {
-  try {
-    setLoadingContacts(true);
-    const res = await otherServices.getPanicContacts();
+  const fetchContacts = async () => {
+    try {
+      setLoadingContacts(true);
+      const res = await otherServices.getPanicContacts();
 
-    if (res?.status === "success") {
-      const phoneData = res.data?.phone_nos;
+      if (res?.status === "success") {
+        const phoneData = res.data?.phone_nos;
 
-      if (!phoneData) {
-        setContacts([]);
-      } 
-      else if (Array.isArray(phoneData)) {
-        setContacts(phoneData);
-      } 
-      else {
-        // if single number comes as string
-        setContacts([phoneData]);
+        if (!phoneData) {
+          setContacts([]);
+        }
+        else if (Array.isArray(phoneData)) {
+          setContacts(phoneData);
+        }
+        else {
+          // if single number comes as string
+          setContacts([phoneData]);
+        }
       }
+    } catch (error) {
+      console.log("Panic Contact Fetch Error:", error);
+      setContacts([]);
+    } finally {
+      setLoadingContacts(false);
     }
-  } catch (error) {
-    console.log("Panic Contact Fetch Error:", error);
-    setContacts([]);
-  } finally {
-    setLoadingContacts(false);
-  }
-};
+  };
 
   const callNumber = (number) => {
     Linking.openURL(`tel:${number}`);
@@ -135,17 +136,17 @@ const fetchContacts = async () => {
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
-  <Ionicons 
-   name="construct"
-     size={20} 
-    color={nightMode ? "#D1D5DB" : "#374151"} 
-    style={{ marginRight: 8 }}
-  />
-  <Text style={[styles.sectionTitle, { color: theme.textColor }]}>
-    Services
-  </Text>
-</View>
-      
+        <Ionicons
+          name="construct"
+          size={20}
+          color={nightMode ? "#D1D5DB" : "#374151"}
+          style={{ marginRight: 8 }}
+        />
+        <Text style={[styles.sectionTitle, { color: theme.textColor }]}>
+          Services
+        </Text>
+      </View>
+
       {/* Services Grid */}
       <View style={styles.servicesGrid}>
         {allServices.map((service) => (
@@ -188,18 +189,18 @@ const fetchContacts = async () => {
       <Modal visible={panicVisible} transparent animationType="fade" statusBarTranslucent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            
+
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Panic Alert</Text>
-             <TouchableOpacity
-  onPress={() => {
-    setPanicVisible(false);
-    setSelectedReason(null);
-    setNote('');
-  }}
->
-  <Ionicons name="close" size={22} color="#fff" />
-</TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  setPanicVisible(false);
+                  setSelectedReason(null);
+                  setNote('');
+                }}
+              >
+                <Ionicons name="close" size={22} color="#fff" />
+              </TouchableOpacity>
             </View>
 
             <Text style={styles.modalDesc}>
@@ -254,9 +255,9 @@ const fetchContacts = async () => {
             {loadingContacts ? (
               <ActivityIndicator size="small" color="#EF4444" />
             ) : (
-              contacts.map((number,index) => (
+              contacts.map((number, index) => (
                 <TouchableOpacity
-                 key={`${number}-${index}`}
+                  key={`${number}-${index}`}
                   style={styles.contactBtn}
                   onPress={() => callNumber(number)}
                 >
@@ -307,16 +308,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-sectionHeader: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  marginBottom: 16,
-},
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
 
-sectionTitle: {
-  fontSize: 16,
-  fontWeight: '700',
-},
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
   iconContainer: {
     width: 48,
     height: 48,
@@ -430,7 +431,7 @@ sectionTitle: {
   /* SUCCESS */
   successOverlay: {
     flex: 1,
-       backgroundColor: 'rgba(0, 0, 0, 0.79)',
+    backgroundColor: 'rgba(0, 0, 0, 0.79)',
     justifyContent: 'center',
     alignItems: 'center',
   },

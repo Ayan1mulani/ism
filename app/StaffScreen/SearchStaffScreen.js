@@ -9,7 +9,6 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { otherServices } from "../../services/otherServices";
 import { useNavigation } from "@react-navigation/native";
 import AppCard from "../components/AppCard";
@@ -236,7 +235,7 @@ const SearchStaffScreen = ({ nightMode, categories, categoriesLoading }) => {
   );
 
   return (
-    <SafeAreaView
+    <View
       style={{ flex: 1, backgroundColor: theme.background }}
       edges={["top", "left", "right"]}
     >
@@ -317,7 +316,7 @@ const SearchStaffScreen = ({ nightMode, categories, categoriesLoading }) => {
           nestedScrollEnabled={true}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 

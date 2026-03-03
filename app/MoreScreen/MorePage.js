@@ -53,64 +53,67 @@ const ProfileScreen = () => {
     loadUserProfile();
   }, []);
 
- const loadUserProfile = async () => {
-  try {
-    setLoading(true);
+  const loadUserProfile = async () => {
+    try {
+      setLoading(true);
 
-    const storedUser = await AsyncStorage.getItem('userInfo');
+      const storedUser = await AsyncStorage.getItem('userInfo');
 
-    if (!storedUser) {
-      console.log("No user found");
-      setUserProfile(null);
-      return;
+      if (!storedUser) {
+        console.log("No user found");
+        setUserProfile(null);
+        return;
+      }
+
+      // ✅ Always fetch fresh user details from API
+      const detailsRes = await ismServices.getUserDetails();
+
+      setUserProfile(detailsRes);
+
+      // Optional: store it
+      await AsyncStorage.setItem(
+        'userDetails',
+        JSON.stringify(detailsRes)
+      );
+
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    } finally {
+      setLoading(false);
     }
+  };
+  const handleLogout = () => {
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            // Remove only auth related data
+            await AsyncStorage.multiRemove([
+              'userInfo',
+              'accessToken',
+              'refreshToken'
+            ]);
 
-    // ✅ Always fetch fresh user details from API
-    const detailsRes = await ismServices.getUserDetails();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
 
-    setUserProfile(detailsRes);
-
-    // Optional: store it
-    await AsyncStorage.setItem(
-      'userDetails',
-      JSON.stringify(detailsRes)
-    );
-
-  } catch (error) {
-    console.error('Error loading profile:', error);
-  } finally {
-    setLoading(false);
-  }
-};
-const handleLogout = () => {
-  Alert.alert('Logout', 'Are you sure you want to logout?', [
-    { text: 'Cancel', style: 'cancel' },
-    {
-      text: 'Logout',
-      style: 'destructive',
-      onPress: async () => {
-        try {
-          // Remove only auth related data
-          await AsyncStorage.multiRemove([
-            'userInfo',
-            'accessToken',
-            'refreshToken'
-          ]);
-
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Login' }],
-          });
-
-        } catch (error) {
-          console.log('Logout error:', error);
-        }
+          } catch (error) {
+            console.log('Logout error:', error);
+          }
+        },
       },
-    },
-  ]);
-};
+    ]);
+  };
+
   const handleSwitchAccount = async () => {
     try {
+      setIsSwitching(true); // 🔥 start loader
+
       const userInfo = await AsyncStorage.getItem('userInfo');
       if (!userInfo) return;
 
@@ -125,27 +128,27 @@ const handleLogout = () => {
 
       const response = await LoginSrv.login(payload);
 
-  if (response.status === 'multipleLogin') {
+      if (response.status === 'multipleLogin') {
 
-  const userInfo = await AsyncStorage.getItem('userInfo');
-  const currentUser = JSON.parse(userInfo);
+        const currentUser = parsedUser;
 
-  // Filter out currently logged in account
-  const filteredAccounts = response.data.filter(
-    acc => acc.user_id !== currentUser.user_id
-  );
+        const filteredAccounts = response.data.filter(
+          acc => acc.user_id !== currentUser.user_id
+        );
 
-  if (filteredAccounts.length === 0) {
-    Alert.alert('No Other Accounts Available');
-    return;
-  }
+        if (filteredAccounts.length === 0) {
+          Alert.alert('No Other Accounts Available');
+          return;
+        }
 
-  setAccounts(filteredAccounts);
-  setModalVisible(true);
-}
+        setAccounts(filteredAccounts);
+        setModalVisible(true);
+      }
 
     } catch (error) {
       console.log('Switch error:', error);
+    } finally {
+      setIsSwitching(false); // 🔥 stop loader
     }
   };
 
@@ -349,10 +352,16 @@ const handleLogout = () => {
           <TouchableOpacity
             style={styles.actionRow}
             onPress={handleSwitchAccount}
+            disabled={isSwitching}
           >
-            <Ionicons name="swap-horizontal-outline" size={20} color={theme.textMain} />
+            {isSwitching ? (
+              <ActivityIndicator size="small" color={theme.primary} />
+            ) : (
+              <Ionicons name="swap-horizontal-outline" size={20} color={theme.textMain} />
+            )}
+
             <Text style={[styles.actionText, { color: theme.textMain }]}>
-              Switch Account
+              {isSwitching ? 'Loading Accounts...' : 'Switch Account'}
             </Text>
           </TouchableOpacity>
 

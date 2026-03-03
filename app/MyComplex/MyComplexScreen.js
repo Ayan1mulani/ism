@@ -11,6 +11,8 @@ import GuidelinesTab from "./GuidelinesTab";
 import AppHeader from "../components/AppHeader";
 import MgtTab from "./FacilityTab";
 
+import { SafeAreaView } from "react-native-safe-area-context";
+import FormsScreen from "./FormsTab";
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const TABS = [
@@ -34,7 +36,7 @@ const MyComplexScreen = () => {
       case 1:
         return <MgtTab />;
       case 2:
-        return <View style={{ flex: 1 }} />;
+        return <FormsScreen/>;
       default:
         return null;
     }
@@ -65,7 +67,7 @@ const MyComplexScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <AppHeader  title={"My Complex"}/>
       <Animated.View
         style={[
@@ -114,7 +116,7 @@ const MyComplexScreen = () => {
           </View>
         ))}
       </Animated.ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

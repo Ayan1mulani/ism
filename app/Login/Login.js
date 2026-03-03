@@ -54,7 +54,6 @@ const getUserDetails = async () => {
     const userInfo = await AsyncStorage.getItem("userInfo");
     
     if (!userInfo) {
-      console.log("No user info found, user not logged in");
       return; // Exit early, don't try to fetch
     }
 
@@ -74,8 +73,6 @@ const getUserDetails = async () => {
       );   
     } 
   } catch (error) {
-    console.error("Error getting user details:", error);
-    // Don't navigate on error, let user login manually
   }
 };
 

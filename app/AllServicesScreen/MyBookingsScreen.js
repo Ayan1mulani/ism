@@ -36,14 +36,14 @@ const fetchBookings = async () => {
 
     const response = await otherServices.getMyAmenityBookings();
 
-    console.log("Full response:", response);
-
     if (response?.status === "success") {
       const allBookings = response.data || [];
 
- 
+      const sortedBookings = [...allBookings].sort((a, b) => {
+        return new Date(b.booking_from) - new Date(a.booking_from);
+      });
 
-      setBookings(allBookings);
+      setBookings(sortedBookings);
     } else {
       setBookings([]);
     }

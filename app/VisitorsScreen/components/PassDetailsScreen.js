@@ -42,26 +42,30 @@ const PassDetailsScreen = ({ route }) => {
     if (String(pass.status) === "1") {
       return { label: "ACTIVE", color: "#34C759" };
     }
+
     if (String(pass.status) === "0") {
       return { label: "INACTIVE", color: "#FF3B30" };
     }
     return { label: "PENDING", color: "#FF9500" };
   };
 
-  const getLogo = () => {
-    if (pass.purpose?.toLowerCase() === 'guest') {
-      return DEFAULT_GUEST_IMAGE;
-    }
+ const getLogo = () => {
+  if (!pass) return DEFAULT_GUEST_IMAGE;
 
-    if (pass.company_name) {
-      const fileName = pass.company_name
-        .toLowerCase()
-        .replace(/\s+/g, '-');
-      return `${BASE_URL}${fileName}.png`;
-    }
-
+  if (pass.purpose?.toLowerCase() === 'guest') {
     return DEFAULT_GUEST_IMAGE;
-  };
+  }
+
+  if (typeof pass.company_name === "string") {
+    const fileName = pass.company_name
+      .toLowerCase()
+      .replace(/\s+/g, '-');
+
+    return `${BASE_URL}${fileName}.png`;
+  }
+
+  return DEFAULT_GUEST_IMAGE;
+};
 
   const handleDelete = () => {
     Alert.alert(
@@ -75,8 +79,8 @@ const PassDetailsScreen = ({ route }) => {
           onPress: async () => {
             try {
               setDeleting(true);
-              
-            const res = await visitorServices.cancelPass(pass.id);
+
+              const res = await visitorServices.cancelPass(pass.id);
 
               if (res?.status === "success") {
                 navigation.goBack({ refresh: true });
@@ -97,10 +101,12 @@ const PassDetailsScreen = ({ route }) => {
   const status = getStatus();
   const isCab = pass.purpose?.toLowerCase() === "cab";
   const isGuest = pass.purpose?.toLowerCase() === "guest";
+
   const validMobile =
-    pass.mobile &&
-    pass.mobile !== 0 &&
-    pass.mobile !== "0";
+  !!pass.mobile &&
+  pass.mobile !== 0 &&
+  pass.mobile !== "0";
+
 
   return (
     <SafeAreaView
@@ -178,7 +184,7 @@ const PassDetailsScreen = ({ route }) => {
               Visit Date
             </Text>
             <Text style={[styles.value, { color: theme.text }]}>
-              {formatDate(pass.date_time) || "-"}
+              {pass?.date_time ? formatDate(pass.date_time) : "-"}
             </Text>
           </View>
 
@@ -199,7 +205,7 @@ const PassDetailsScreen = ({ route }) => {
 
           <View style={[styles.footer, { borderTopColor: theme.border }]}>
             <Text style={[styles.footerText, { color: theme.subText }]}>
-              Created at {formatDate(pass.created_at) || "-"}
+              Created at {pass?.created_at ? formatDate(pass.created_at) : "-"}
             </Text>
           </View>
 

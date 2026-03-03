@@ -143,6 +143,7 @@ export default SettingsScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#FFFFFF", // pure
   },
 
 
@@ -163,6 +164,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 15,
     borderRadius: 16,
     paddingVertical: 0,
+    elevation:0.1,
+    shadowColor: "#000",
+    borderWidth:1,
+    borderColor:'#7eabe645',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 0.1,
 
   },
  

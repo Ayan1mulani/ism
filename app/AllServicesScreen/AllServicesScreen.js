@@ -42,7 +42,7 @@ const AllServicesScreen = () => {
     { title: "Surveys", icon: "clipboard-outline" },
     { title: "Profile", icon: "person-outline" },
     { title: "My Complex", icon: "notifications-outline", route: "Notices" },
-    { title: "Settings", icon: "settings-outline" },
+    { title: "Settings", icon: "settings-outline", route:'Settings'},
     { title: "My vehicles", icon: "car-outline", route: "MyVehiclesScreen" },
     { title: "Visitors", icon: "walk-outline", route: "Visitors" },
     { title: "Add new member", icon: "person-add-outline", route: "AddMember" },
@@ -188,6 +188,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "500",
     paddingVertical: 4,
+    letterSpacing: 1
   },
   row: {
     flexDirection: "row",

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -11,19 +11,24 @@ import { Ionicons } from "@expo/vector-icons";
 
 const StatusModal = ({
   visible,
-  type = "loading",
+  type = "loading", // loading | success | error
   title,
   subtitle,
   onClose,
+  autoClose = true,
 }) => {
+  const [internalVisible, setInternalVisible] = useState(visible);
+
   const opacity = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(0.7)).current;
+  const scale = useRef(new Animated.Value(0.8)).current;
   const rotation = useRef(new Animated.Value(0)).current;
   const rotationAnim = useRef(null);
-  
 
   useEffect(() => {
     if (visible) {
+      setInternalVisible(true);
+
+      // Open animation
       Animated.parallel([
         Animated.timing(opacity, {
           toValue: 1,
@@ -38,43 +43,71 @@ const StatusModal = ({
         }),
       ]).start();
 
+      // Start rotation for loading
       if (type === "loading") {
         rotation.setValue(0);
         rotationAnim.current = Animated.loop(
           Animated.timing(rotation, {
             toValue: 1,
-            duration: 1500,
+            duration: 1200,
             useNativeDriver: true,
           })
         );
         rotationAnim.current.start();
       }
+
+      // Auto close success
+      if (type === "success" && autoClose) {
+        setTimeout(() => {
+          handleClose();
+        }, 1500);
+      }
     } else {
-      opacity.setValue(0);
-      scale.setValue(0.7);
-      rotation.setValue(0);
-      if (rotationAnim.current) rotationAnim.current.stop();
+      handleClose();
     }
 
     return () => {
       if (rotationAnim.current) rotationAnim.current.stop();
+      rotation.stopAnimation();
     };
   }, [visible, type]);
 
-  if (!visible) return null;
+  const handleClose = () => {
+    if (rotationAnim.current) rotationAnim.current.stop();
+
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scale, {
+        toValue: 0.8,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setInternalVisible(false);
+      if (onClose) onClose();
+    });
+  };
 
   const spin = rotation.interpolate({
     inputRange: [0, 1],
     outputRange: ["0deg", "360deg"],
   });
 
-
-
-  const getIcon = () => {
+  const renderIcon = () => {
     if (type === "success")
-      return <Ionicons name="checkmark-circle" size={60} color="#22C55E" />;
+      return (
+        <Ionicons name="checkmark-circle" size={60} color="#22C55E" />
+      );
+
     if (type === "error")
-      return <Ionicons name="close-circle" size={60} color="#EF4444" />;
+      return (
+        <Ionicons name="close-circle" size={60} color="#EF4444" />
+      );
+
     return (
       <Animated.View style={{ transform: [{ rotate: spin }] }}>
         <Ionicons name="sync" size={50} color="#1996D3" />
@@ -82,13 +115,23 @@ const StatusModal = ({
     );
   };
 
-  return (
-    <Modal transparent visible={visible} animationType="none">
-      <View style={styles.overlay}>
-        <Animated.View style={[styles.box, { transform: [{ scale }] }]}>
-          {getIcon()}
+  if (!internalVisible) return null;
 
-          <Text style={styles.title}>{title}</Text>
+  return (
+    <Modal transparent visible={internalVisible} animationType="none">
+      <View style={styles.overlay}>
+        <Animated.View
+          style={[
+            styles.box,
+            {
+              opacity,
+              transform: [{ scale }],
+            },
+          ]}
+        >
+          {renderIcon()}
+
+          {title && <Text style={styles.title}>{title}</Text>}
 
           {subtitle && (
             <Text style={styles.subtitle}>{subtitle}</Text>
@@ -97,7 +140,7 @@ const StatusModal = ({
           {type === "error" && (
             <TouchableOpacity
               style={styles.closeBtn}
-              onPress={onClose}
+              onPress={handleClose}
             >
               <Text style={styles.closeText}>Close</Text>
             </TouchableOpacity>
@@ -113,7 +156,7 @@ export default StatusModal;
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0, 0, 0, 0.55)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -123,16 +166,19 @@ const styles = StyleSheet.create({
     padding: 24,
     borderRadius: 18,
     alignItems: "center",
+    elevation: 6,
   },
   title: {
     fontSize: 18,
     fontWeight: "700",
-    marginTop: 10,
+    marginTop: 12,
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 13,
     marginTop: 6,
     textAlign: "center",
+    color: "#6B7280",
   },
   closeBtn: {
     marginTop: 20,

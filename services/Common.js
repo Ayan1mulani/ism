@@ -6,7 +6,7 @@ const Common = {
             const userInfo = await AsyncStorage.getItem('userInfo');
             
             if (!userInfo) {
-                throw new Error("User info not found");
+                return null;
             }
 
             const parsedUserInfo = JSON.parse(userInfo);
@@ -14,7 +14,7 @@ const Common = {
 
         } catch (e) {
             console.error("Error in getLoggedInUser", e)
-            throw e; // ✅ Re-throw so caller knows it failed
+            throw e;
         }
     },
 
@@ -23,10 +23,9 @@ const Common = {
             // ✅ Use 'userInfo' instead of 'userDetails'
             const userInfo = await AsyncStorage.getItem('userInfo');
             
-            if (!userInfo) {
-                throw new Error("User info not found");
-            }
-
+          if (!userInfo) {
+            return null;
+}
             const parsedUserInfo = JSON.parse(userInfo);
             return parsedUserInfo;
 
