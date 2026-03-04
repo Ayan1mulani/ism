@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  StatusBar,
   Image,
   TouchableOpacity,
   ScrollView,
@@ -90,7 +89,6 @@ const VisitDetailScreen = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }}>
-      <StatusBar barStyle={nightMode ? "light-content" : "dark-content"} />
 
       <AppHeader
         title="Visit Detail"

@@ -13,8 +13,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { ismServices } from "../../services/ismServices";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AppHeader from "./AppHeader";
+import BRAND from '../config'
 
-const PRIMARY = "#1996D3";
+const PRIMARY = BRAND.COLORS.icon;
 
 /* ───────── Helpers ───────── */
 
@@ -51,6 +52,9 @@ const humanizeMessage = (raw) => {
 
   let text = stripHtml(raw);
 
+  // 🔥 Remove OTP from main text
+  text = text.replace(/\bOTP[:\s]+\d{4,6}\b/i, "");
+
   const match = text.match(
     /(.*?BOOKED\s+Timing\s+)(\d{2}-\d{2}-\d{4})\s+(\d{2}:\d{2})\s+(\d{2}-\d{2}-\d{4})\s+(\d{2}:\d{2})/i
   );
@@ -64,7 +68,7 @@ const humanizeMessage = (raw) => {
     };
   }
 
-  return { before: text, date: null, time: null, rest: "" };
+  return { before: text.trim(), date: null, time: null, rest: "" };
 };
 
 const formatDateTime = (dateString) => {
@@ -258,7 +262,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: "#E0F2FE",
+    backgroundColor: BRAND.COLORS.iconbg,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -281,16 +285,16 @@ const styles = StyleSheet.create({
   },
 
   inlineTime: {
-    color: "#0EA5E9",
+    color: BRAND.COLORS.primaryDark,
     fontWeight: "700",
   },
 
-  inlineOtp: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#C2410C",
-    letterSpacing: 2,
-  },
+inlineOtp: {
+  fontSize: 16,
+  fontWeight: "700",
+  color: "#C2410C",
+  letterSpacing: 4,
+},
 
   footerRow: {
     flexDirection: "row",

@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import BRAND from '../../config'
 
 const BASE_URL = "https://ism-vms.s3.amazonaws.com/company-logo/";
 
@@ -197,7 +198,7 @@ const cabCompanies = [
                   <Ionicons
                     name="layers-outline"
                     size={26}
-                    color={theme.primaryBlue}
+                    color={BRAND.COLORS.icon}
                   />
                 ) : (
                   <Image

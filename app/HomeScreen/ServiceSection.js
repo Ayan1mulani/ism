@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePermissions } from '../../Utils/ConetextApi';
 import { useNavigation } from '@react-navigation/native';
 import { otherServices } from '../../services/otherServices';
+import BRAND from '../config'
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -163,7 +164,7 @@ const ServicesSection = () => {
                   backgroundColor:
                     service.isPanic
                       ? '#FEE2E2'
-                      : theme.iconBgUnselected,
+                      : BRAND.COLORS.iconbg,
                 },
               ]}
             >

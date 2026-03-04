@@ -9,13 +9,15 @@ import {
 } from "react-native";
 
 const screenWidth = Dimensions.get("window").width;
+import BRAND from "../config"; // adjust path if needed
+const COLORS = BRAND.COLORS;
 
 const SlidingTabs = ({
   tabs = [],
   activeIndex = 0,
   onTabPress,
-  primaryColor = "#1996D3",
-  inactiveColor = "#6B7280",
+  primaryColor = COLORS.primary,
+  inactiveColor = COLORS.secondaryText,
   containerStyle,
   scrollX,
 }) => {
@@ -60,7 +62,7 @@ const SlidingTabs = ({
               <Text
                 style={[
                   styles.label,
-                  { color: isActive ? primaryColor : inactiveColor },
+                  { color: isActive ? COLORS.primaryColor : inactiveColor },
                   isActive && styles.activeLabel,
                 ]}
               >

@@ -11,8 +11,8 @@ import ProviderSelector from "../components/ProviderSelector";
 import CalendarSelector from "../components/Calender";
 import StatusModal from "../../components/StatusModal";
 import { visitorServices } from "../../../services/visitorServices";
-import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import SubmitButton from "../../components/SubmitButton";
 
 const SingleCabForm = ({ theme }) => {
   const navigation = useNavigation();
@@ -20,7 +20,7 @@ const SingleCabForm = ({ theme }) => {
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [visitDate, setVisitDate] = useState(null);
   const [vehicleNo, setVehicleNo] = useState("");
-  const [entriesPerDay, setEntriesPerDay] = useState(1);
+  // const [entriesPerDay, setEntriesPerDay] = useState(1);
   const [errors, setErrors] = useState({});
   const [modalType, setModalType] = useState(null);
 
@@ -69,7 +69,6 @@ const SingleCabForm = ({ theme }) => {
       type: "cab",
     };
 
-    console.log("📦 Payload 👉", payload);
 
     setModalType("loading");
 
@@ -191,16 +190,11 @@ const SingleCabForm = ({ theme }) => {
       </ScrollView>
 
       {/* Sticky Button */}
-      <TouchableOpacity
-        style={[
-          styles.submitButton,
-          { backgroundColor: theme.primaryBlue },
-        ]}
-        onPress={handleSubmit}
-        disabled={modalType === "loading"}
-      >
-        <Text style={styles.submitText}>Schedule Cab</Text>
-      </TouchableOpacity>
+  <SubmitButton
+  title="Schedule Cab"
+  onPress={handleSubmit}
+  loading={modalType === "loading"}
+/>
 
       {/* Reusable Modal */}
       <StatusModal
@@ -269,21 +263,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  submitButton: {
-    position: "absolute",
-    bottom: 20,
-    left: 16,
-    right: 16,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-
-  submitText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 16,
-  },
   errorText: {
   color: "#EF4444",
   fontSize: 12,

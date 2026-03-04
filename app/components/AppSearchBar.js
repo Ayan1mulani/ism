@@ -1,6 +1,7 @@
 import React from "react";
 import { View, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import BRAND from '../config'
 
 const AppSearchBar = ({
   value,
@@ -56,7 +57,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 45,
     borderWidth: 1,
-    borderColor: "#D0EEFA",
+    borderColor: BRAND.COLORS.border,
   },
   input: {
     flex: 1,

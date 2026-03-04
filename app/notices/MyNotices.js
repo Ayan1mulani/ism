@@ -8,7 +8,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  StatusBar,
+ 
   Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -110,7 +110,6 @@ export default function NoticesScreen() {
   if (loading) {
     return (
       <SafeAreaView style={[styles.center, { backgroundColor: theme.bg }]}>
-        <StatusBar barStyle={nightMode ? 'light-content' : 'dark-content'} />
         <ActivityIndicator size="large" color={THEME.primary} />
       </SafeAreaView>
     );
@@ -118,7 +117,6 @@ export default function NoticesScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
-      <StatusBar barStyle={nightMode ? 'light-content' : 'dark-content'} />
 
       <FlatList
         data={notices}

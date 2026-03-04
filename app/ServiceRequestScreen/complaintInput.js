@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, StatusBar, TextInput, Alert,
+  ScrollView, TextInput, Alert,
   Image, Modal, Dimensions,
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -303,7 +303,6 @@ if (!isASAP) {
 
   return (
     <SafeAreaView style={[s.root, { backgroundColor: t.bg }]} edges={['top']}>
-      <StatusBar barStyle={nightMode ? 'light-content' : 'dark-content'} backgroundColor={t.bg} />
 
       {/* ── Header ── */}
       <View style={s.header}>

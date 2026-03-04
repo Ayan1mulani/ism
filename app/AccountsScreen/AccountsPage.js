@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  StatusBar,
   ScrollView,
   TouchableOpacity,
   RefreshControl,
@@ -18,9 +17,10 @@ import { usePermissions } from '../../Utils/ConetextApi';
 import { otherServices } from '../../services/otherServices';
 import AppHeader from '../components/AppHeader';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import BRAND from "../config";
 
 const THEME = {
-  primary: '#1996D3',
+  primary: BRAND.COLORS.primary,
   primaryLight: '#E8F5FD',
   primaryDark: '#1279AD',
   success: '#10B981',
@@ -37,6 +37,7 @@ const THEME = {
 export default function AccountsScreen() {
   const navigation = useNavigation();
   const { nightMode } = usePermissions();
+  
 
   const [outstanding, setOutstanding] = useState([]);
   const [accounts, setAccounts] = useState([]);
@@ -138,7 +139,6 @@ const fetchData = async () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }}>
-      <StatusBar barStyle={nightMode ? 'light-content' : 'dark-content'} />
 
       <AppHeader
         title="Accounts"

@@ -13,6 +13,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
+import BRAND from "./app/config";
+
+
 
 
 import HomeScreen from './app/HomeScreen/HomeScreen';
@@ -91,8 +94,9 @@ const ServiceRequestsStack = () => {
 // --- Modern Custom Tab Bar with Sliding Animation ---
 const CustomTabBar = ({ state, descriptors, navigation }) => {
   const { nightMode } = usePermissions();
+const COLORS = BRAND.COLORS;
 
-  const PRIMARY_COLOR = nightMode ? "#2A2A2Aee" : "#1996D3ee";
+  const PRIMARY_COLOR = nightMode ? "#2A2A2Aee" : COLORS.bottomNavBackground;
   const SECONDARY_COLOR = nightMode ? "#4A90E2" : "#FFFFFF";
   const ICON_COLOR_INACTIVE = nightMode ? "#B0B0B0" : "#E0E0E0";
 
@@ -288,14 +292,11 @@ const NavigationPage = () => {
     <PermissionsProvider>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{
-          cardStyle: { backgroundColor: "#F4F6F9" },       // match your screen bg
+          cardStyle: { backgroundColor: "#ffffff" },
           cardOverlayEnabled: false,
           cardShadowEnabled: false,
           headerShown: false,
           animation: "simple_push"
-
-
-
         }} initialRouteName="Login">
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="MainApp" component={NavigationTabs} />
@@ -331,9 +332,9 @@ const NavigationPage = () => {
           <Stack.Screen name="AmenitiesListScreen" component={AmenitiesListScreen} />
           <Stack.Screen name="AmenityBooking" component={AmenityBookingScreen} />
           <Stack.Screen name="MyBookings" component={MyBookingsScreen} />
-          <Stack.Screen  name="OtpLoginScreen" component={OtpLoginScreen}/>
+          <Stack.Screen name="OtpLoginScreen" component={OtpLoginScreen} />
           <Stack.Screen name="Notices" component={MyComplexScreen} />
-         <Stack.Screen name="NoticeDetail" component={myNoticeDetailScreen} />
+          <Stack.Screen name="NoticeDetail" component={myNoticeDetailScreen} />
 
 
         </Stack.Navigator>

@@ -21,10 +21,12 @@ import AccountSelectorModal from './SelectUserMode';
 import ErrorPopupModal from '../PopUps/MessagePop';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ismServices } from '../../services/ismServices';
+import BRAND from '../config';
+import { KeyboardAvoidingView, Platform } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
-const backgroundImage = { uri: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=80&w=2064&auto=format&fit=crop&ixlib=rb-4.0.3' };
+const backgroundImage = { uri: '' };
 
 const Wave = () => (
   <View style={{ backgroundColor: 'transparent', height: 100 }}>
@@ -33,14 +35,13 @@ const Wave = () => (
     </Svg>
   </View>
 );
-
 const NewLoginScreen = () => {
   const [email, setEmail] = useState("sahilmulanioneplus@gmail.com");
   const [password, setPassword] = useState("123456");
   const navigation = useNavigation();
   const [modalVisible, setModalVisible] = useState(false);
   const [accounts, setAccounts] = useState([]);
-  
+
   // Error popup states
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -48,48 +49,48 @@ const NewLoginScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
 
 
-const getUserDetails = async () => {
-  try {
-    // ✅ Check if user is already logged in
-    const userInfo = await AsyncStorage.getItem("userInfo");
-    
-    if (!userInfo) {
-      return; // Exit early, don't try to fetch
+  const getUserDetails = async () => {
+    try {
+      // ✅ Check if user is already logged in
+      const userInfo = await AsyncStorage.getItem("userInfo");
+
+      if (!userInfo) {
+        return; // Exit early, don't try to fetch
+      }
+
+      // ✅ Only fetch if user exists
+      await ismServices.getUserDetails();
+
+      // ✅ Double-check the data is valid
+      const updatedUserInfo = await AsyncStorage.getItem("userInfo");
+      if (updatedUserInfo) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'MainApp' }],
+          })
+        );
+      }
+    } catch (error) {
     }
+  };
 
-    // ✅ Only fetch if user exists
-    await ismServices.getUserDetails();
-
-    // ✅ Double-check the data is valid
-    const updatedUserInfo = await AsyncStorage.getItem("userInfo");
-    if (updatedUserInfo) {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'MainApp' }],
-        })
-      );   
-    } 
-  } catch (error) {
-  }
-};
-
-useEffect(() => {
-  getUserDetails(); // Only checks for existing session
-}, []);
+  useEffect(() => {
+    getUserDetails(); // Only checks for existing session
+  }, []);
 
   const handleLogin = async (userid) => {
     setIsLoading(true);
-    
+
     const payload = {
       identity: email,
       password: password,
       tenant: 0,
       user_id: userid?.user_id || null,
     };
-    
+
     try {
       const response = await LoginSrv.login(payload);
       if (response.status === 'multipleLogin') {
@@ -102,14 +103,14 @@ useEffect(() => {
         setShowError(true);
       } else if (response.status === 'success') {
         // Handle successful login
-        await AsyncStorage.setItem('userInfo',JSON.stringify(response.data))
-             navigation.dispatch(
-               CommonActions.reset({
-                 index: 0,
-                 routes: [{ name: 'MainApp' }],
-               })
-             );   
-               }
+        await AsyncStorage.setItem('userInfo', JSON.stringify(response.data))
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'MainApp' }],
+          })
+        );
+      }
     } catch (error) {
       console.error('Login failed:', error);
       // Show generic error message
@@ -133,16 +134,16 @@ useEffect(() => {
       setShowError(true);
       return false;
     }
-    
+
     if (!password.trim()) {
       setErrorTitle('Validation Error');
       setErrorMessage('Please enter your password.');
       setShowError(true);
       return false;
     }
-    
- 
-    
+
+
+
     return true;
   };
 
@@ -153,77 +154,91 @@ useEffect(() => {
   };
 
   return (
+
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" />
-      <ImageBackground source={backgroundImage} resizeMode="cover" style={styles.imageBackground}>
-        <ScrollView contentContainerStyle={styles.scrollViewContent}>
-          <View style={styles.container}>
-            <View style={styles.headerContainer}>
-              <View style={styles.logoContainer}>
-                <Image source={{ uri: 'https://factech.co.in/fronts/images/Final_Logo_grey.png' }} style={styles.logo} resizeMode="contain" />
+      <StatusBar
+        barStyle="dark-content"
+      />
+
+      <View style={styles.overlay}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scrollViewContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.container}>
+              <View style={styles.headerContainer}>
+                <View style={styles.logoContainer}>
+                  <Image source={BRAND.LOGO} style={styles.logo} resizeMode="contain" />     
+                           </View>
+                <Text style={styles.welcomeMessage}>Welcome Back</Text>
+                <Text style={styles.subWelcomeMessage}>Please sign in to continue</Text>
               </View>
-              <Text style={styles.welcomeMessage}>Welcome Back</Text>
-              <Text style={styles.subWelcomeMessage}>Please sign in to continue</Text>
-            </View>
 
-            <View style={styles.formContainer}>
-              <Wave />
-              <View style={styles.formInputsWrapper}>
-                <View style={styles.inputContainer}>
-                  <View style={styles.icon}>
-                    <Icon name="email" size={20} color="#9e9e9e" />
+              <View style={styles.formContainer}>
+                <Wave />
+                <View style={styles.formInputsWrapper}>
+                  <View style={styles.inputContainer}>
+                    <View style={styles.icon}>
+                      <Icon name="email" size={20} color="#9e9e9e" />
+                    </View>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Email"
+                      placeholderTextColor="#9e9e9e"
+                      keyboardType="email-address"
+                      value={email}
+                      onChangeText={setEmail}
+                      autoCapitalize="none"
+                      editable={!isLoading}
+                    />
                   </View>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Email"
-                    placeholderTextColor="#9e9e9e"
-                    keyboardType="email-address"
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize="none"
-                    editable={!isLoading}
-                  />
-                </View>
 
-                <View style={styles.inputContainer}>
-                  <View style={styles.icon}>
-                    <Icon name="lock" size={20} color="#9e9e9e" />
+                  <View style={styles.inputContainer}>
+                    <View style={styles.icon}>
+                      <Icon name="lock" size={20} color="#9e9e9e" />
+                    </View>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Password"
+                      placeholderTextColor="#9e9e9e"
+                      secureTextEntry
+                      value={password}
+                      onChangeText={setPassword}
+                      editable={!isLoading}
+                    />
                   </View>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Password"
-                    placeholderTextColor="#9e9e9e"
-                    secureTextEntry
-                    value={password}
-                    onChangeText={setPassword}
-                    editable={!isLoading}
-                  />
-                </View>
 
-                <TouchableOpacity style={styles.forgotPasswordButton}>
-                  <Text style={styles.forgotPasswordText}>OTP LOGIN</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  onPress={handleLoginPress} 
-                  style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
-                  disabled={isLoading}
-                >
-                  <Text style={styles.loginButtonText}>
-                    {isLoading ? 'Signing in...' : 'Sign in'}
-                  </Text>
-                </TouchableOpacity>
-
-                <View style={styles.signUpContainer}>
-                  <Text style={styles.signUpText}>Don't have an account? </Text>
-                  <TouchableOpacity>
-                    <Text style={styles.signUpLink}>Sign up</Text>
+                  <TouchableOpacity style={styles.forgotPasswordButton}>
+                    <Text style={styles.forgotPasswordText}>OTP LOGIN</Text>
                   </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={handleLoginPress}
+                    style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+                    disabled={isLoading}
+                  >
+                    <Text style={styles.loginButtonText}>
+                      {isLoading ? 'Signing in...' : 'Sign in'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.signUpContainer}>
+                    <Text style={styles.signUpText}>Don't have an account? </Text>
+                    <TouchableOpacity>
+                      <Text style={styles.signUpLink}>Sign up</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
             </View>
-          </View>
-        </ScrollView>
+
+          </ScrollView>
+        </KeyboardAvoidingView>
+
 
         {/* Account Selector Modal */}
         <AccountSelectorModal
@@ -242,26 +257,27 @@ useEffect(() => {
           type="error"
           buttonText="Try Again"
         />
-      </ImageBackground>
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+
   safeArea: {
     flex: 1,
-    backgroundColor: '#074B7C',
   },
+
   imageBackground: {
     flex: 1,
   },
   scrollViewContent: {
     flexGrow: 1,
-    justifyContent: 'flex-end',
   },
   container: {
     flex: 1,
     justifyContent: 'flex-end',
+    backgroundColor:BRAND.PRIMARY_COLOR
   },
   headerContainer: {
     alignItems: 'center',
@@ -270,22 +286,21 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   logoContainer: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 5,
-    marginBottom: 30,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
+    width: '60%',
+    alignSelf: 'center',
+    justifyContent: 'center'
   },
   logo: {
-    width: 120,
-    height: 30,
+    width: 300,
+    height: 60,
+    justifyContent: 'center',
+    alignSelf: 'center'
+
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
   welcomeMessage: {
     fontSize: 36,
@@ -345,7 +360,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   loginButton: {
-    backgroundColor: '#1996D3',
+    backgroundColor: BRAND.COLORS.button,
     paddingVertical: 18,
     borderRadius: 12,
     alignItems: 'center',
@@ -385,6 +400,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#074B7C',
     fontWeight: 'bold',
+  },
+  brandName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 5,
+    letterSpacing: 1,
   },
 });
 

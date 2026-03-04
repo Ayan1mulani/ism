@@ -9,7 +9,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
-  StatusBar,
   Alert,
   Modal,
 } from "react-native";
@@ -102,7 +101,6 @@ const AddVehicleScreen = ({ navigation, route }) => {
   };
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1668A5" />
 
       {/* Header */}
       <View style={styles.header}>

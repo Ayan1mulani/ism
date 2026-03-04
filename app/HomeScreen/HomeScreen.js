@@ -3,8 +3,7 @@ import {
   View,
   FlatList,
   RefreshControl,
-  ActivityIndicator,
-  StatusBar
+  Text,
 } from 'react-native';
 import ProfileRentCard from './RentSection';
 import VisitorSection from './VisitorSection';
@@ -14,23 +13,41 @@ import ImportantContacts from './ContactSection';
 import { usePermissions } from '../../Utils/ConetextApi';
 import Action from './Action';
 import QuickActionsScreen from './QuickActionsScreen';
+import BRAND from '../../app/config';
 
+const theme = BRAND.COLORS;
+
+const commonStyles = {
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.background,
+  },
+  center: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bodyText: {
+    color: theme.text,
+    fontSize: 16,
+  },
+};
 
 
 const HomeScreen = () => {
-  
   const { nightMode } = usePermissions();
 
   // ✅ Check if context is ready
   if (nightMode === undefined) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ fontSize: 16, color: '#666' }}>Loading...</Text>
-      </SafeAreaView>
+      <View style={[commonStyles.safeArea, commonStyles.center]}>
+        <Text style={commonStyles.bodyText}>Loading...</Text>
+      </View>
     );
   }
-
-  const backgroundColor = nightMode ? '#000000' : '#F8FAFC';
 
   const [refreshing, setRefreshing] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -48,8 +65,7 @@ const HomeScreen = () => {
   };
 
   return (
-    <View style={{ flex: 1 , backgroundColor }}>
-            <StatusBar barStyle={nightMode ? 'light-content' : 'dark-content'} />
+    <View style={commonStyles.container}>
 
       <FlatList
         data={[1]}
@@ -60,7 +76,7 @@ const HomeScreen = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#1996D3"
+            tintColor={theme.primary}   
           />
         }
         ListHeaderComponent={

@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  StatusBar,
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
@@ -115,11 +114,7 @@ const CategorySelectionScreen = () => {
       style={{ flex: 1, backgroundColor: theme.background }}
       edges={['top']}
     >
-      <StatusBar
-        barStyle={nightMode ? 'light-content' : 'dark-content'}
-        backgroundColor={theme.background}
-      />
-
+ 
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity

@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -101,7 +100,6 @@ const BookParkingScreen = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }}>
-      <StatusBar barStyle={nightMode ? "light-content" : "dark-content"} />
 
       <AppHeader
         title="Book Parking"

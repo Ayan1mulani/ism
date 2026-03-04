@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  StatusBar,
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { usePermissions } from '../../Utils/ConetextApi';
@@ -53,10 +52,7 @@ const SubCategorySelectionScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: theme.bg }]} edges={['top']}>
-      <StatusBar
-        barStyle={nightMode ? 'light-content' : 'dark-content'}
-        backgroundColor={theme.bg}
-      />
+  
 
       {/* Header */}
       <View style={styles.header}>

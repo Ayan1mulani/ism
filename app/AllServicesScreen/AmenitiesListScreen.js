@@ -18,6 +18,7 @@ import { useNavigation } from "@react-navigation/native";
 import AppHeader from "../components/AppHeader";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
+import SubmitButton from "../components/SubmitButton";
 
 const { width } = Dimensions.get("window");
 
@@ -39,53 +40,53 @@ const AmenitiesListScreen = () => {
     primary: "#1996D3",
     success: "#10B981",
   };
-useFocusEffect(
-  useCallback(() => {
-     setLoading(true); 
-    fetchAmenities();
-  }, [])
-);
-
-const fetchAmenities = async () => {
-  try {
-    const response = await otherServices.getAmenities();
-    const data = Array.isArray(response) ? response : [];
-
-    await fetchTodayBookings(data);   // 👈 await here
-    setAmenities(data);
-
-  } catch (err) {
-    console.log("Amenity Error:", err);
-  } finally {
-    setLoading(false);
-  }
-};
-const fetchTodayBookings = async (amenityList) => {
-  const today = new Date().toISOString().split("T")[0];
-
-  const counts = {}; 
-
-  await Promise.all(
-    amenityList.map(async (item) => {
-      try {
-        const res = await otherServices.getAmenityBookingsById(item.id);
-
-        const bookings = res?.data || [];
-
-        const todayCount = bookings.filter(b =>
-          b.booking_from?.startsWith(today)
-        ).length;
-
-        counts[item.id] = todayCount;
-
-      } catch {
-        counts[item.id] = 0;
-      }
-    })
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      fetchAmenities();
+    }, [])
   );
 
-  setTodayBookings(counts);
-};
+  const fetchAmenities = async () => {
+    try {
+      const response = await otherServices.getAmenities();
+      const data = Array.isArray(response) ? response : [];
+
+      await fetchTodayBookings(data);   // 👈 await here
+      setAmenities(data);
+
+    } catch (err) {
+      console.log("Amenity Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const fetchTodayBookings = async (amenityList) => {
+    const today = new Date().toISOString().split("T")[0];
+
+    const counts = {};
+
+    await Promise.all(
+      amenityList.map(async (item) => {
+        try {
+          const res = await otherServices.getAmenityBookingsById(item.id);
+
+          const bookings = res?.data || [];
+
+          const todayCount = bookings.filter(b =>
+            b.booking_from?.startsWith(today)
+          ).length;
+
+          counts[item.id] = todayCount;
+
+        } catch {
+          counts[item.id] = 0;
+        }
+      })
+    );
+
+    setTodayBookings(counts);
+  };
 
   const onImageScroll = (event, itemId) => {
     const contentOffset = event.nativeEvent.contentOffset;
@@ -98,24 +99,24 @@ const fetchTodayBookings = async (amenityList) => {
     const imageIndex = currentImageIndex[item.id] || 0;
     const hasImages = item.image && item.image.length > 0;
     const isActive = item.is_booking === 1;
-let rules = {};
-try {
-  rules = JSON.parse(item.rules || "{}");
-} catch {
-  rules = {};
+    let rules = {};
+    try {
+      rules = JSON.parse(item.rules || "{}");
+    } catch {
+      rules = {};
 
 
-}
-let parsedSlot = {};
-try {
-  const temp = JSON.parse(item.slot || "{}");
-  parsedSlot = temp && typeof temp === "object" ? temp : {};
-} catch {
-  parsedSlot = {};
-}
-const maxPerDay = rules?.max_per_day || 0;
-const todayCount = todayBookings[item.id] || 0;
-const isFull = todayCount >= maxPerDay;
+    }
+    let parsedSlot = {};
+    try {
+      const temp = JSON.parse(item.slot || "{}");
+      parsedSlot = temp && typeof temp === "object" ? temp : {};
+    } catch {
+      parsedSlot = {};
+    }
+    const maxPerDay = rules?.max_per_day || 0;
+    const todayCount = todayBookings[item.id] || 0;
+    const isFull = todayCount >= maxPerDay;
 
     const weekDays = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -176,16 +177,16 @@ const isFull = todayCount >= maxPerDay;
           {/* TITLE */}
           <Text style={[styles.title, { color: theme.text }]}>{item.name}</Text>
           <View style={{ marginTop: 4 }}>
-  <Text
-    style={{
-      fontSize: 12,
-      fontWeight: "600",
-      color: isFull ? "#EF4444" : "#10B981",
-    }}
-  >
-    TODAY {todayCount} / {maxPerDay}
-  </Text>
-</View>
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: "600",
+                color: isFull ? "#EF4444" : "#10B981",
+              }}
+            >
+              TODAY {todayCount} / {maxPerDay}
+            </Text>
+          </View>
           {/* STATUS BADGE — top right corner over image */}
           <View
             style={[
@@ -233,15 +234,13 @@ const isFull = todayCount >= maxPerDay;
 
             {/* BOOK BUTTON */}
             {isActive && (
-              <TouchableOpacity
-                style={[styles.bookBtn, { backgroundColor: theme.primary }]}
+              <SubmitButton
+                title="Book Now"
+                style={{ minWidth: 110 }}
                 onPress={() =>
                   navigation.navigate("AmenityBooking", { amenity: item })
                 }
-              >
-                <Ionicons name="calendar-outline" size={14} color="#fff" />
-                <Text style={styles.bookText}>Book Now</Text>
-              </TouchableOpacity>
+              />
             )}
           </View>
         </View>

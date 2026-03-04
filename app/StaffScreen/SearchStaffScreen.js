@@ -13,10 +13,11 @@ import { otherServices } from "../../services/otherServices";
 import { useNavigation } from "@react-navigation/native";
 import AppCard from "../components/AppCard";
 import AppSearchBar from "../components/AppSearchBar";
+import BRAND from '../config'
 
 const myFlatNo = "CL1-T112";
 const COLORS = {
-  primary: "#1996D3",
+  primary: BRAND.COLORS.primary,
   light: {
     background: "#FFFFFF",
     surface: "#ffffff",

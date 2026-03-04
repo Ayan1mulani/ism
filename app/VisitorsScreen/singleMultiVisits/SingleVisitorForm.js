@@ -11,6 +11,9 @@ import { useNavigation } from "@react-navigation/native";
 import CalendarSelector from "../components/Calender";
 import { visitorServices } from "../../../services/visitorServices";
 import StatusModal from "../../components/StatusModal";
+import SubmitButton from "../../components/SubmitButton";
+import BRAND from "./../../config";
+
 
 const SingleVisitorForm = () => {
   const navigation = useNavigation();
@@ -34,31 +37,31 @@ const SingleVisitorForm = () => {
 
 
   const formatParkingDateRange = (from, to) => {
-  if (!from || !to) return "";
+    if (!from || !to) return "";
 
-  const start = new Date(from);
-  const end = new Date(to);
-  const today = new Date();
+    const start = new Date(from);
+    const end = new Date(to);
+    const today = new Date();
 
-  const isSameDay =
-    start.toDateString() === end.toDateString();
+    const isSameDay =
+      start.toDateString() === end.toDateString();
 
-  const isToday =
-    start.toDateString() === today.toDateString() &&
-    end.toDateString() === today.toDateString();
+    const isToday =
+      start.toDateString() === today.toDateString() &&
+      end.toDateString() === today.toDateString();
 
-  const formatDate = (date) =>
-    date.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-    });
+    const formatDate = (date) =>
+      date.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+      });
 
-  if (isToday) return "Today";
+    if (isToday) return "Today";
 
-  if (isSameDay) return formatDate(start);
+    if (isSameDay) return formatDate(start);
 
-  return `${formatDate(start)} - ${formatDate(end)}`;
-};
+    return `${formatDate(start)} - ${formatDate(end)}`;
+  };
 
   const handleSubmit = async () => {
     if (!visitorName || !mobileNumber || !visitDate) return;
@@ -180,41 +183,40 @@ const SingleVisitorForm = () => {
             styles.selectButton,
             { backgroundColor: theme.inputBg, borderColor: theme.border },
           ]}
-         
-          onPress={() => {
-  if (!visitDate) {
-    alert("Please select visit date first");
-    return;
-  }
 
-  navigation.navigate("BookParking", {
-    visitDate,
-    onSelectParking: (data) => {
-      setSelectedParking(data);
-    },
-  });
-}}
+          onPress={() => {
+            if (!visitDate) {
+              alert("Please select visit date first");
+              return;
+            }
+
+            navigation.navigate("BookParking", {
+              visitDate,
+              onSelectParking: (data) => {
+                setSelectedParking(data);
+              },
+            });
+          }}
         >
-          <Ionicons name="car" size={20} color={theme.primaryBlue} />
- <Text style={[styles.selectButtonText, { color: theme.textSecondary }]}>
-  {selectedParking?.booking_from && selectedParking?.booking_to
-    ? formatParkingDateRange(
-        selectedParking.booking_from,
-        selectedParking.booking_to
-      )
-    : "Select Parking"}
-</Text>
+          <Ionicons name="car" size={20} color={BRAND.COLORS.icon} />
+          <Text style={[styles.selectButtonText, { color: theme.textSecondary }]}>
+            {selectedParking?.booking_from && selectedParking?.booking_to
+              ? formatParkingDateRange(
+                selectedParking.booking_from,
+                selectedParking.booking_to
+              )
+              : "Select Parking"}
+          </Text>
           <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
         </TouchableOpacity>
       </View>
 
       {/* Submit */}
-      <TouchableOpacity
-        style={[styles.submitBtn, { backgroundColor: theme.primaryBlue }]}
+      <SubmitButton
+        title="Add Visitor"
         onPress={handleSubmit}
-      >
-        <Text style={styles.submitText}>Add Visitor</Text>
-      </TouchableOpacity>
+        loading={modalType === "loading"}
+      />
 
       <StatusModal visible={!!modalType} type={modalType} />
     </>
@@ -227,7 +229,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
     padding: 16,
-    marginBottom:-10
+    marginBottom: -10
   },
   label: {
     fontSize: 14,
@@ -257,17 +259,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
   },
-  submitBtn: {
-    height: 52,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 16,
-    marginBottom: 30,
-  },
-  submitText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "700",
-  },
+
+
 });

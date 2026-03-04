@@ -11,6 +11,8 @@ import CalendarSelector from "../components/Calender";
 import StatusModal from "../../components/StatusModal";
 import { visitorServices } from "../../../services/visitorServices";
 import { useNavigation } from "@react-navigation/native";
+import BRAND from "../../config";
+import SubmitButton from "../../components/SubmitButton";
 
 const SingleDeliveryForm = ({ theme }) => {
   const [selectedProvider, setSelectedProvider] = useState(null);
@@ -52,10 +54,10 @@ const SingleDeliveryForm = ({ theme }) => {
       const res = await visitorServices.addMyVisitor(payload);
       if (res) {
         setModalType("success");
-       setTimeout(() => {
-    setModalType(null);
-    navigation.goBack();
-  }, 1400);
+        setTimeout(() => {
+          setModalType(null);
+          navigation.goBack();
+        }, 1400);
       } else {
         setModalType("error");
         setTimeout(() => setModalType(null), 2000);
@@ -104,16 +106,11 @@ const SingleDeliveryForm = ({ theme }) => {
         </View>
 
         {/* Submit */}
-        <TouchableOpacity
-          style={[
-            styles.submitButton,
-            { backgroundColor: theme.primaryBlue },
-          ]}
+        <SubmitButton
+          title="Schedule Delivery"
           onPress={handleSubmit}
-          disabled={modalType === "loading"}
-        >
-          <Text style={styles.submitText}>Schedule Delivery</Text>
-        </TouchableOpacity>
+          loading={modalType === "loading"}
+        />
       </ScrollView>
 
       {/* Reusable Modal */}
@@ -124,15 +121,15 @@ const SingleDeliveryForm = ({ theme }) => {
           modalType === "loading"
             ? "Scheduling..."
             : modalType === "success"
-            ? "Delivery Scheduled"
-            : "Failed!"
+              ? "Delivery Scheduled"
+              : "Failed!"
         }
         subtitle={
           modalType === "loading"
             ? "Please wait"
             : modalType === "success"
-            ? "Delivery pass created"
-            : "Please try again"
+              ? "Delivery pass created"
+              : "Please try again"
         }
       />
     </>
@@ -154,11 +151,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   errorText: {
-  color: "#EF4444",
-  fontSize: 12,
-  marginTop: 4,
-  marginLeft: 16,
-},
+    color: "#EF4444",
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 16,
+  },
 
   input: {
     height: 48,
@@ -219,7 +216,8 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     position: "relative",
     bottom: 0,
-    marginHorizontal: '3%'
+    marginHorizontal: '3%',
+    backgroundColor: BRAND.COLORS.button
   },
 
   submitText: {

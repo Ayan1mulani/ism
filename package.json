@@ -3,10 +3,16 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "expo start --dev-client",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web"
+    "start:jaypee": "cross-env APP_BRAND=jaypee expo start",
+    "start:isociety": "cross-env APP_BRAND=isociety expo start",
+    "start:enviro": "cross-env APP_BRAND=enviro expo start",
+    "start:max-estates": "cross-env APP_BRAND=max estates expo start",
+
+    "build:jaypee": "cross-env APP_BRAND=jaypee eas build -p android --profile production",
+    "build:isociety": "cross-env APP_BRAND=isociety eas build -p android --profile production",
+    "build:enviro": "cross-env APP_BRAND=enviro eas build -p android --profile production",
+    "build:max estates": "cross-env APP_BRAND=max estates expo start"
+
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -16,6 +22,7 @@
     "@react-navigation/native": "^7.1.13",
     "@react-navigation/native-stack": "^7.3.18",
     "babel-preset-expo": "~54.0.9",
+    "cross-env": "^10.1.0",
     "expo": "~54.0.30",
     "expo-blur": "~15.0.8",
     "expo-font": "~14.0.10",

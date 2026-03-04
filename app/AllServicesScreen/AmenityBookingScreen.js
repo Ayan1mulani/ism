@@ -14,6 +14,8 @@ import StatusModal from "../../app/components/StatusModal";
 import { usePermissions } from "../../Utils/ConetextApi";
 import { otherServices } from "../../services/otherServices";
 import { Ionicons } from "@expo/vector-icons";
+import SubmitButton from "../components/SubmitButton";
+import BRAND from "../config";
 
 const { width } = Dimensions.get("window");
 
@@ -26,12 +28,14 @@ const MONTHS = [
 const AmenityBookingScreen = ({ route, navigation }) => {
   const { amenity } = route.params;
   const { nightMode } = usePermissions();
+const COLORS = BRAND.COLORS;
+
 
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [screenLoading, setScreenLoading] = useState(true);
-const [slotLoading, setSlotLoading] = useState(false);
+  const [slotLoading, setSlotLoading] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -55,38 +59,38 @@ const [slotLoading, setSlotLoading] = useState(false);
     fetchBookings();
   }, []);
   useEffect(() => {
-  if (selectedDate) {
-    fetchBookingsForDate(selectedDate);
-  }
-}, [selectedDate]);
+    if (selectedDate) {
+      fetchBookingsForDate(selectedDate);
+    }
+  }, [selectedDate]);
 
-const fetchBookings = async () => {
-  try {
-    const res = await otherServices.getAmenityBookingsById(amenity.id);
-    setBookings(res?.data || []);
-  } catch (err) {
-    console.log("Booking fetch error:", err);
-  } finally {
-    setScreenLoading(false);
-  }
-};
-const fetchBookingsForDate = async (date) => {
-  try {
-    setSlotLoading(true);
+  const fetchBookings = async () => {
+    try {
+      const res = await otherServices.getAmenityBookingsById(amenity.id);
+      setBookings(res?.data || []);
+    } catch (err) {
+      console.log("Booking fetch error:", err);
+    } finally {
+      setScreenLoading(false);
+    }
+  };
+  const fetchBookingsForDate = async (date) => {
+    try {
+      setSlotLoading(true);
 
-    const res = await otherServices.getAmenityBookingsByDate(
-      amenity.id,
-      date
-    );
+      const res = await otherServices.getAmenityBookingsByDate(
+        amenity.id,
+        date
+      );
 
-    setBookings(res?.data || []);
+      setBookings(res?.data || []);
 
-  } catch (err) {
-    console.log("Date booking fetch error:", err);
-  } finally {
-    setSlotLoading(false);
-  }
-};
+    } catch (err) {
+      console.log("Date booking fetch error:", err);
+    } finally {
+      setSlotLoading(false);
+    }
+  };
   const parsedSlot = useMemo(() => {
     try { return JSON.parse(amenity.slot || "{}"); } catch { return {}; }
   }, [amenity]);
@@ -127,19 +131,19 @@ const fetchBookingsForDate = async (date) => {
     return true;
   };
 
-const isSlotBooked = (slot) => {
-  if (!selectedDate) return false;
+  const isSlotBooked = (slot) => {
+    if (!selectedDate) return false;
 
-  return bookings.some((b) => {
-    const bookingStart = b.booking_from.split(" ")[1]; // HH:mm:ss
-    const bookingEnd = b.booking_to.split(" ")[1];
+    return bookings.some((b) => {
+      const bookingStart = b.booking_from.split(" ")[1]; // HH:mm:ss
+      const bookingEnd = b.booking_to.split(" ")[1];
 
-    const slotStart = `${slot.from}:00`;
-    const slotEnd = `${slot.to}:00`;
+      const slotStart = `${slot.from}:00`;
+      const slotEnd = `${slot.to}:00`;
 
-    return bookingStart === slotStart && bookingEnd === slotEnd;
-  });
-};
+      return bookingStart === slotStart && bookingEnd === slotEnd;
+    });
+  };
 
   /* ---- CALENDAR HELPERS ---- */
 
@@ -164,18 +168,18 @@ const isSlotBooked = (slot) => {
     setCalendarMonth(d);
   };
 
- const isSlotPassed = (slot) => {
-  if (!selectedDate) return false;
+  const isSlotPassed = (slot) => {
+    if (!selectedDate) return false;
 
-  const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toISOString().split("T")[0];
 
-  if (selectedDate !== today) return false;
+    if (selectedDate !== today) return false;
 
-  const now = new Date();
-  const slotStart = new Date(`${selectedDate} ${slot.from}:00`);
+    const now = new Date();
+    const slotStart = new Date(`${selectedDate} ${slot.from}:00`);
 
-  return slotStart <= now;
-};
+    return slotStart <= now;
+  };
 
   const goToNextMonth = () => {
     const d = new Date(calendarMonth);
@@ -210,7 +214,7 @@ const isSlotBooked = (slot) => {
       setModalVisible(true);
 
       const bookingFrom = `${selectedDate} ${selectedSlot.from}:00`;
-const bookingTo = `${selectedDate} ${selectedSlot.to}:00`;
+      const bookingTo = `${selectedDate} ${selectedSlot.to}:00`;
       const res = await otherServices.bookAmenity(amenity.id, bookingFrom, bookingTo);
       console.log("BOOK RESPONSE:", res);
 
@@ -235,7 +239,7 @@ const bookingTo = `${selectedDate} ${selectedSlot.to}:00`;
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <AppHeader title={`Book ${amenity.name}`} />
 
-    {screenLoading ? (
+      {screenLoading ? (
         <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 40 }} />
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
@@ -245,13 +249,13 @@ const bookingTo = `${selectedDate} ${selectedSlot.to}:00`;
             {/* Month Nav */}
             <View style={styles.monthNav}>
               <TouchableOpacity onPress={goToPrevMonth} style={styles.navBtn}>
-                <Ionicons name="chevron-back" size={20} color={theme.primary} />
+                <Ionicons name="chevron-back" size={20} color={BRAND.COLORS.icon} />
               </TouchableOpacity>
               <Text style={[styles.monthTitle, { color: theme.text }]}>
                 {MONTHS[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}
               </Text>
               <TouchableOpacity onPress={goToNextMonth} style={styles.navBtn}>
-                <Ionicons name="chevron-forward" size={20} color={theme.primary} />
+                <Ionicons name="chevron-forward" size={20} color={BRAND.COLORS.icon} />
               </TouchableOpacity>
             </View>
 
@@ -342,130 +346,125 @@ const bookingTo = `${selectedDate} ${selectedSlot.to}:00`;
           </View>
 
           {/* ── TIME SLOTS (shown only after date selected) ── */}
-       {selectedDate && (
-  <View style={{ marginTop: 20 }}>
-    <Text style={[styles.sectionTitle, { color: theme.text }]}>
-      Time Slots —{" "}
-      <Text style={{ color: theme.primary }}>
-        {new Date(selectedDate).toLocaleDateString("en-GB", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        })}
-      </Text>
-    </Text>
+          {selectedDate && (
+            <View style={{ marginTop: 20 }}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                Time Slots —{" "}
+                <Text style={{ color: theme.primary }}>
+                  {new Date(selectedDate).toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </Text>
+              </Text>
 
-    {/* 🔥 SLOT LOADING HERE */}
-    {slotLoading ? (
-      <ActivityIndicator
-        size="small"
-        color={theme.primary}
-        style={{ marginTop: 20 }}
-      />
-    ) : availableSlots.length === 0 ? (
-      <View
-        style={[
-          styles.emptySlots,
-          { backgroundColor: theme.card, borderColor: theme.border },
-        ]}
-      >
-        <Ionicons
-          name="time-outline"
-          size={28}
-          color={theme.subText}
-        />
-        <Text
-          style={[
-            styles.emptyText,
-            { color: theme.subText },
-          ]}
-        >
-          No slots available
-        </Text>
-      </View>
-    ) : (
-      <View style={styles.slotsGrid}>
-      {availableSlots.map((slot, i) => {
-  const booked = isSlotBooked(slot);
-  const passed = isSlotPassed(slot);
-  const isSelected = selectedSlot === slot;
+              {/* 🔥 SLOT LOADING HERE */}
+              {slotLoading ? (
+                <ActivityIndicator
+                  size="small"
+                  color={BRAND.COLORS.icon}
+                  style={{ marginTop: 20 }}
+                />
+              ) : availableSlots.length === 0 ? (
+                <View
+                  style={[
+                    styles.emptySlots,
+                    { backgroundColor: theme.card, borderColor: theme.border },
+                  ]}
+                >
+                  <Ionicons
+                    name="time-outline"
+                    size={28}
+                    color={theme.subText}
+                  />
+                  <Text
+                    style={[
+                      styles.emptyText,
+                      { color: theme.subText },
+                    ]}
+                  >
+                    No slots available
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.slotsGrid}>
+                  {availableSlots.map((slot, i) => {
+                    const booked = isSlotBooked(slot);
+                    const passed = isSlotPassed(slot);
+                    const isSelected = selectedSlot === slot;
 
-  return (
-    <TouchableOpacity
-      key={i}
-      disabled={booked || passed}
-      onPress={() => setSelectedSlot(slot)}
-      style={[
-        styles.slotChip,
-        {
-          backgroundColor: isSelected
-            ? theme.primary
-            : theme.card,
-          borderColor: theme.border,
-          opacity: booked || passed ? 0.5 : 1,
-        },
-      ]}
-    >
-      <Ionicons
-        name="time-outline"
-        size={13}
-        color={
-          isSelected
-            ? "#fff"
-            : booked || passed
-            ? theme.subText
-            : theme.primary
-        }
-      />
+                    return (
+                      <TouchableOpacity
+                        key={i}
+                        disabled={booked || passed}
+                        onPress={() => setSelectedSlot(slot)}
+                        style={[
+                          styles.slotChip,
+                          {
+                            backgroundColor: isSelected
+                              ? theme.primary
+                              : theme.card,
+                            borderColor: theme.border,
+                            opacity: booked || passed ? 0.5 : 1,
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name="time-outline"
+                          size={13}
+                          color={
+                            isSelected
+                              ? "#fff"
+                              : booked || passed
+                                ? theme.subText
+                                : theme.primary
+                          }
+                        />
 
-      <Text
-        style={{
-          fontSize: 12,
-          fontWeight: "600",
-          marginLeft: 4,
-          color: isSelected
-            ? "#fff"
-            : booked || passed
-            ? theme.subText
-            : theme.text,
-        }}
-      >
-        {slot.from} - {slot.to}
-      </Text>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            fontWeight: "600",
+                            marginLeft: 4,
+                            color: isSelected
+                              ? "#fff"
+                              : booked || passed
+                                ? theme.subText
+                                : theme.text,
+                          }}
+                        >
+                          {slot.from} - {slot.to}
+                        </Text>
 
-      {/* 🔴 Booked label */}
-      {booked && (
-        <Text style={{ fontSize: 10, color: theme.danger, marginLeft: 4 }}>
-          Booked
-        </Text>
-      )}
+                        {/* 🔴 Booked label */}
+                        {booked && (
+                          <Text style={{ fontSize: 10, color: theme.danger, marginLeft: 4 }}>
+                            Booked
+                          </Text>
+                        )}
 
-      {/* ⚫ Passed label */}
-      {passed && (
-        <Text style={{ fontSize: 10, color: theme.danger, marginLeft: 4 }}>
-          Passed
-        </Text>
-      )}
-    </TouchableOpacity>
-  );
-})}
-      </View>
-    )}
-  </View>
-)}
+                        {/* ⚫ Passed label */}
+                        {passed && (
+                          <Text style={{ fontSize: 10, color: theme.danger, marginLeft: 4 }}>
+                            Passed
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          )}
 
           {/* CONFIRM BUTTON */}
-          <TouchableOpacity
-            style={[
-              styles.bookBtn,
-              { backgroundColor: selectedSlot ? theme.primary : theme.disabled },
-            ]}
-            disabled={!selectedSlot}
+          <SubmitButton
+            title="Confirm Booking"
             onPress={handleBooking}
-          >
-            <Ionicons name="checkmark-circle-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
-            <Text style={styles.bookText}>Confirm Booking</Text>
-          </TouchableOpacity>
+            loading={false}
+            disabled={!selectedSlot}
+          />
         </ScrollView>
       )}
 

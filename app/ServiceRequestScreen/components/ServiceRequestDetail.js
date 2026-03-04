@@ -2,7 +2,7 @@
 import React from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, StatusBar,
+  TouchableOpacity, 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePermissions } from '../../../Utils/ConetextApi';
@@ -97,7 +97,6 @@ const ServiceRequestDetailScreen = () => {
 
   return (
     <SafeAreaView style={[s.root, { backgroundColor: t.bg }]} edges={['top']}>
-      <StatusBar barStyle={nightMode ? 'light-content' : 'dark-content'} backgroundColor={t.bg} />
 
       {/* ── Top bar ── */}
       <View style={[s.topBar, { backgroundColor: t.surface, borderBottomColor: t.border }]}>

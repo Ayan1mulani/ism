@@ -184,7 +184,7 @@ const getParkingBooking = (pass) => {
         style={[styles.card, {
           backgroundColor: '#ffff',
         }]}
-        onPress={() => navigation.navigate('PassDetails', { pass }, console.log(pass))}
+        onPress={() => navigation.navigate('PassDetails', { pass })}
 
         activeOpacity={0.7}
       >

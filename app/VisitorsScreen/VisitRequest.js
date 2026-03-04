@@ -29,6 +29,7 @@ const VisitsPage = ({ visitorData, loading, onRefresh, nightMode }) => {
     textSecondary: nightMode ? '#9E9E9E' : '#6B7280',
     primary: '#2E8BC0',
     danger: '#EF4444',
+    surface: '#F8F9FA',
     success: '#10B981',
     warning: '#F59E0B',
     grey: '#6B7280',
@@ -152,7 +153,7 @@ const VisitsPage = ({ visitorData, loading, onRefresh, nightMode }) => {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* SEARCH BAR */}
       <View style={styles.searchContainer}>
-        <View style={[styles.searchBar, { backgroundColor: theme.searchBg }]}>
+        <View style={[styles.searchBar, { backgroundColor: theme.surface }]}>
           <Ionicons name="search-outline" size={20} color={theme.textSecondary} />
           <TextInput
             style={[styles.searchInput, { color: theme.text }]}
@@ -182,7 +183,7 @@ const VisitsPage = ({ visitorData, loading, onRefresh, nightMode }) => {
         data={filteredVisits}
         renderItem={renderCard}
         keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 180 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

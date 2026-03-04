@@ -12,6 +12,7 @@ import { useNavigation } from "@react-navigation/native";
 import AppHeader from "../components/AppHeader";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Platform } from "react-native";
+import SubmitButton from "../components/SubmitButton";
 
 
 const SettingsScreen = () => {
@@ -26,7 +27,7 @@ const SettingsScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
 
-     <AppHeader title="Settings" />
+      <AppHeader title="Settings" />
 
       <ScrollView showsVerticalScrollIndicator={false}>
 
@@ -104,12 +105,18 @@ const SettingsScreen = () => {
                 </TouchableOpacity>
               ))}
 
-              <TouchableOpacity style={styles.saveButton}>
-                <Text style={styles.saveText}>Save Changes</Text>
-              </TouchableOpacity>
+             
+
             </>
+            
           )}
+        
         </View>
+
+        <SubmitButton
+  title="Save Changes"
+  style={{ marginHorizontal: 15, marginTop: 16 }}
+/>
 
         {/* NOTE */}
         <Text style={styles.noteTitle}>Important Note</Text>
@@ -147,7 +154,7 @@ const styles = StyleSheet.create({
   },
 
 
-  
+
   sectionTitle: {
     marginTop: 10,
     marginBottom: 10,
@@ -164,25 +171,25 @@ const styles = StyleSheet.create({
     marginHorizontal: 15,
     borderRadius: 16,
     paddingVertical: 0,
-    elevation:0.1,
+    elevation: 0.1,
     shadowColor: "#000",
-    borderWidth:1,
-    borderColor:'#7eabe645',
+    borderWidth: 1,
+    borderColor: '#7eabe645',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 0.1,
 
   },
- 
- row: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  paddingHorizontal: 20,
-  paddingVertical: Platform.OS === "ios" ? 10 : 0, 
-  minHeight: Platform.OS === "ios" ? 50 : 40,
-},
+
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: Platform.OS === "ios" ? 10 : 0,
+    minHeight: Platform.OS === "ios" ? 50 : 40,
+  },
   label: {
     fontSize: 14,
     fontWeight: "500",
@@ -200,6 +207,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     padding: 10,
     paddingLeft: 20,
+    marginBottom:20
   },
 
   optionText: {
@@ -225,7 +233,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     fontWeight: "600",
     color: "#111827",
-          textAlign: "center",   // 👈 important
+    textAlign: "center",   // 👈 important
 
   },
 
@@ -233,7 +241,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginTop: 6,
     color: "#4B5563",
-          textAlign: "center",   // 👈 important
+    textAlign: "center",   // 👈 important
 
   },
 
@@ -242,15 +250,15 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 12,
     color: "#9CA3AF",
-      textAlign: "center",   // 👈 important
+    textAlign: "center",   // 👈 important
 
-   
+
   },
-  row2:{
+  row2: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingLeft:20,
-    paddingVertical:18
+    paddingLeft: 20,
+    paddingVertical: 18
   }
 });

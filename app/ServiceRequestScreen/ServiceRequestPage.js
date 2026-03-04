@@ -1,8 +1,7 @@
 import React from 'react';
-import { StyleSheet, FlatList, Text, View, ActivityIndicator, StatusBar } from 'react-native';
+import { StyleSheet, FlatList, Text, View, ActivityIndicator } from 'react-native';
 import ComplaintCard from './complaintCard';
 import { usePermissions } from '../../Utils/ConetextApi';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 
 const THEME_COLORS = {
@@ -49,11 +48,8 @@ const ComplaintListScreen = ({
 
   // ── List ──
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar
-        barStyle={currentNightMode ? 'light-content' : 'dark-content'}
-        backgroundColor={currentTheme.backgroundColor}
-      />
+    <View style={styles.container}>
+  
       <FlatList
         data={complaints}
         renderItem={({ item }) => (
@@ -82,7 +78,7 @@ const ComplaintListScreen = ({
         refreshing={isLoading}
         onRefresh={onRefresh}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 

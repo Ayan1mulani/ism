@@ -3,7 +3,6 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   StyleSheet,
-  StatusBar,
   Dimensions,
   Animated,
   TouchableOpacity,
@@ -130,10 +129,7 @@ const VisitorScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <StatusBar
-        barStyle={nightMode ? 'light-content' : 'dark-content'}
-        backgroundColor={theme.background}
-      />
+   
       
 
       {/* ✅ Sliding Tabs */}

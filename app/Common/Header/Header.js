@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePermissions } from '../../../Utils/ConetextApi';
 import { Common } from '../../../services/Common';
 import { useNavigation } from '@react-navigation/native';
+import BRAND from '../../config';
 
 const ResidentHeader = () => {
   const navigation = useNavigation();
@@ -40,20 +41,16 @@ return (
       {/* LEFT SECTION */}
       <View style={styles.leftSection}>
         <View style={styles.iconContainer}>
-          <Image
-            source={{ uri: 'https://factech.ai/Final_Logo_white.png' }}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
+ <Image source={BRAND.LOGO} style={styles.logoImage} resizeMode="contain" />
         </View>
-
+   
         <View>
           <Text style={[styles.greetingText, { color: theme.text }]}>
-            {societyInfo?.name}
+            {BRAND.APP_NAME}
           </Text>
           <Text style={[styles.locationText, { color: theme.subText }]}>
-            {userDetails?.flat_no}
-          </Text>
+            {userDetails?.society_name}
+          </Text> 
         </View>
       </View>
 
@@ -113,16 +110,15 @@ iconBtn: {
   iconContainer: {
     width: 44,
     height: 44,
-    borderRadius: 22,
     overflow: 'hidden',
-    marginRight: 12,
-    backgroundColor: '#003366',
+    marginRight: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },
   logoImage: {
-    width: '85%',
-    height: '85%',
+    width: '100%',
+    height: '100%',
+    
   },
   greetingText: {
     fontSize: 16,

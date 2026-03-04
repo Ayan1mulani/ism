@@ -13,6 +13,7 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import AppHeader from "../components/AppHeader";
 import { usePermissions } from "../../Utils/ConetextApi";
 import { SafeAreaView } from "react-native-safe-area-context";
+import BRAND from '../config'
 
 const AllServicesScreen = () => {
   const navigation = useNavigation();
@@ -90,7 +91,7 @@ const AllServicesScreen = () => {
             },
           ]}
         >
-          <Ionicons name="search-outline" size={20} color={theme.textSecondary} />
+          <Ionicons name="search-outline" size={20} color={BRAND.COLORS.icon} />
           <TextInput
             ref={searchInputRef}
             style={[styles.searchInput, { color: theme.text }]}
@@ -102,7 +103,7 @@ const AllServicesScreen = () => {
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={clearSearch}>
-              <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
+              <Ionicons name="close-circle" size={20} color={BRAND.COLORS.icon} />
             </TouchableOpacity>
           )}
         </View>
@@ -112,7 +113,7 @@ const AllServicesScreen = () => {
       <ScrollView showsVerticalScrollIndicator={false}>
         {filteredServices.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="search-outline" size={48} color={theme.textSecondary} />
+            <Ionicons name="search-outline" size={48} color={BRAND.COLORS.icon} />
             <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
               No services found
             </Text>
@@ -141,10 +142,10 @@ const AllServicesScreen = () => {
                 <View
                   style={[
                     styles.iconCircle,
-                    { backgroundColor: "#1565A9" + "15" },
+                    { backgroundColor: BRAND.COLORS.icon + "15" },
                   ]}
                 >
-                  <Ionicons name={item.icon} size={20} color="#1565A9" />
+                  <Ionicons name={item.icon} size={20} color ={BRAND.COLORS.icon} />
                 </View>
                 <Text style={[styles.text, { color: theme.text }]}>
                   {item.title}
@@ -154,7 +155,7 @@ const AllServicesScreen = () => {
               <Ionicons
                 name="chevron-forward-outline"
                 size={18}
-                color={theme.textSecondary}
+                color={BRAND.COLORS.icon}
               />
             </TouchableOpacity>
           ))
@@ -221,6 +222,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 60,
+    backgroundColor:"#ffff"
   },
   emptyText: {
     textAlign: "center",

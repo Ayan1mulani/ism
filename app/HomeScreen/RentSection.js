@@ -12,25 +12,25 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { usePermissions } from "../../Utils/ConetextApi";
 import { ismServices } from "../../services/ismServices";
 import { otherServices } from "../../services/otherServices";
+import BRAND from "../config";
+
 
 const ResidentProfile = () => {
   const { nightMode } = usePermissions();
+  const COLORS = BRAND.COLORS;
 
   const [userDetails, setUserDetails] = useState({});
   const [outstanding, setOutstanding] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const colors = {
-    background: nightMode ? "#0b1220" : "#F8FAFC",
-    card: nightMode ? "#111827" : "#FFFFFF",
-    text: nightMode ? "#F9FAFB" : "#0F172A",
-    subText: nightMode ? "#9CA3AF" : "#64748B",
-    primary: "#0EA5E9",
-    primaryDark: "#0284C7",
-    online: "#22C55E",
-    border: nightMode ? "#1F2937" : "#E5E7EB",
-  };
-
+const colors = {
+  card: COLORS.card,
+  text: COLORS.text,
+  subText: COLORS.secondaryText,
+  primary: COLORS.primary,
+  primaryDark: COLORS.primaryDark,
+  online: COLORS.success,
+  border: COLORS.border,
+};
   const loadData = async () => {
     try {
       const storedUser = await AsyncStorage.getItem("userInfo");
