@@ -1,10 +1,10 @@
-import {API_URL4}   from "@env"
+import { API_URL4 } from "@env"
 import { ApiCommon } from "./ApiCommon"
 import { Common } from "./Common";
 import { Util } from "./Util";
 import { API_URL2 } from "@env";
 
- const visitorServices = {
+const visitorServices = {
 
   getMyVisitors: async () => {
     const user = await Common.getLoggedInUser()
@@ -12,249 +12,249 @@ import { API_URL2 } from "@env";
       "api-token": user.api_token,
       "user-id": user.id,
     };
-    const paylod ={
-        input: "",
-        residentId: user.id
+    const paylod = {
+      input: "",
+      residentId: user.id
     }
-    const url =  await visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/${user.societyId}/getVisitsForResident`);
+    const url = await visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/${user.societyId}/getVisitsForResident`);
     const headers = await Util.getCommonAuth()
-     const response =   await ApiCommon.postReq(url,paylod,headers);
-     return response
+    const response = await ApiCommon.postReq(url, paylod, headers);
+    return response
   },
 
-getParkingBookings: async () => {
-  const user = await Common.getLoggedInUser();
+  getParkingBookings: async () => {
+    const user = await Common.getLoggedInUser();
 
-  const url = await visitorServices.appendParamsInUrl(
-    `${API_URL2}/society/${user.societyId}/bookings`
-  );
+    const url = await visitorServices.appendParamsInUrl(
+      `${API_URL2}/society/${user.societyId}/bookings`
+    );
 
-  const headers = await Util.getCommonAuth();
+    const headers = await Util.getCommonAuth();
 
-  return ApiCommon.getReq(url, headers);
-},
+    return ApiCommon.getReq(url, headers);
+  },
   getMyPasses: async () => {
     const user = await Common.getLoggedInUser()
     const params = {
       "api-token": user.api_token,
       "user-id": user.id,
     };
-    const paylod ={
-        input: "",
-        residentId: user.id
+    const paylod = {
+      input: "",
+      residentId: user.id
     }
-    const url =  await visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/${user.societyId}/searchPass`);
+    const url = await visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/${user.societyId}/searchPass`);
     const headers = await Util.getCommonAuth()
-     const response =   await ApiCommon.postReq(url,paylod,headers);
-     return response
+    const response = await ApiCommon.postReq(url, paylod, headers);
+    return response
   },
 
-getParkingLocations: async () => {
-  const user = await Common.getLoggedInUser();
+  getParkingLocations: async () => {
+    const user = await Common.getLoggedInUser();
 
-  const url = await visitorServices.appendParamsInUrl(
-    `${API_URL2}/${user.societyId}/locations`,
-    { type: "PARKING" }
-  );
-
-
-  const headers = await Util.getCommonAuth();
-
-  return ApiCommon.getReq(url, headers);
-},
-
-getParkingFormFields: async () => {
-  const user = await Common.getLoggedInUser();
-
-  const url = await visitorServices.appendParamsInUrl(
-    `${API_URL2}/${user.society_id}/getfields?form_id=769`
-  );
+    const url = await visitorServices.appendParamsInUrl(
+      `${API_URL2}/${user.societyId}/locations`,
+      { type: "PARKING" }
+    );
 
 
-  const headers = await Util.getCommonAuth();
+    const headers = await Util.getCommonAuth();
 
-  const res = await ApiCommon.getReq(url, headers);
+    return ApiCommon.getReq(url, headers);
+  },
+
+  getParkingFormFields: async () => {
+    const user = await Common.getLoggedInUser();
+
+    const url = await visitorServices.appendParamsInUrl(
+      `${API_URL2}/${user.society_id}/getfields?form_id=769`
+    );
 
 
-  return res;
-},
+    const headers = await Util.getCommonAuth();
+
+    const res = await ApiCommon.getReq(url, headers);
+
+
+    return res;
+  },
 
 
   visitAttended: async (visitId, attendedValue) => {
-  const user = await Common.getLoggedInUser();
-   const uObj = {
+    const user = await Common.getLoggedInUser();
+    const uObj = {
       user_id: user.unit_id,
       group_id: user.role_id,
-      flat_no:  user.flat_no,
+      flat_no: user.flat_no,
       unit_id: user.unit_id,
       society_id: user.societyId
     };
 
 
-  const url = await visitorServices.appendParamsInUrl(
-    `${API_URL4}/v1/society/${uObj.society_id}/visitAttended`
-  );
+    const url = await visitorServices.appendParamsInUrl(
+      `${API_URL4}/v1/society/${uObj.society_id}/visitAttended`
+    );
 
-  const payload = {
-    attended: attendedValue,
-    visit_id: visitId,
-  };
+    const payload = {
+      attended: attendedValue,
+      visit_id: visitId,
+    };
 
-  const headers = await Util.getCommonAuth();
+    const headers = await Util.getCommonAuth();
 
-  return ApiCommon.postReq(url, payload, headers);
-},
+    return ApiCommon.postReq(url, payload, headers);
+  },
 
 
 
   bookParking: async (payload) => {
-  const user = await Common.getLoggedInUser();
+    const user = await Common.getLoggedInUser();
 
-  const url = await visitorServices.appendParamsInUrl(
-    `${API_URL2}/${user.societyId}/my/bookLocation`
-  );
+    const url = await visitorServices.appendParamsInUrl(
+      `${API_URL2}/${user.societyId}/my/bookLocation`
+    );
 
-  const headers = await Util.getCommonAuth();
+    const headers = await Util.getCommonAuth();
 
-  return ApiCommon.postReq(url, payload, headers);
-},
+    return ApiCommon.postReq(url, payload, headers);
+  },
 
 
 
 
   addMyVisitor: async (data) => {
-  const user = await Common.getLoggedInUser()
-  const url = await visitorServices.appendParamsInUrl(
-    `${API_URL4}/v2/society/${user.societyId}/createallpass`
-    
-  )
+    const user = await Common.getLoggedInUser()
+    const url = await visitorServices.appendParamsInUrl(
+      `${API_URL4}/v2/society/${user.societyId}/createallpass`
 
-  const headers = await Util.getCommonAuth()
+    )
 
-
-
-  return ApiCommon.postReq(url, data, headers)
-},
+    const headers = await Util.getCommonAuth()
 
 
 
-  
-    getStaffCategories: async () => {
+    return ApiCommon.postReq(url, data, headers)
+  },
+
+
+
+
+  getStaffCategories: async () => {
     const user = await Common.getLoggedInUser()
     const params = {
       "api-token": user.api_token,
       "user-id": user.id,
     };
-  
-    const url =  visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/${user.societyId}/allstaffcategory`,params);
+
+    const url = visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/${user.societyId}/allstaffcategory`, params);
     const headers = await Util.getCommonAuth()
-     const response =   await ApiCommon.getReq(url,headers);
-     return response
+    const response = await ApiCommon.getReq(url, headers);
+    return response
   },
 
   addFamilyMember: async (memberData) => {
-  try {
-    const user = await Common.getLoggedInUser();
+    try {
+      const user = await Common.getLoggedInUser();
 
-    // Build URL with common params
-    const url = await visitorServices.appendParamsInUrl(
-      `${API_URL2}/addFamilyMember`
-    );
+      // Build URL with common params
+      const url = await visitorServices.appendParamsInUrl(
+        `${API_URL2}/addFamilyMember`
+      );
 
-    const headers = await Util.getCommonAuth();
+      const headers = await Util.getCommonAuth();
 
-    // Payload exactly as backend expects
-    const payload = {
-      name: memberData.name,
-      phone_no: memberData.phone_no,
-      email: memberData.email,
-      relation: memberData.relation,
-      vehicle_no: memberData.vehicle_no,
-      image_src: memberData.image_src || null,
-    };
+      // Payload exactly as backend expects
+      const payload = {
+        name: memberData.name,
+        phone_no: memberData.phone_no,
+        email: memberData.email,
+        relation: memberData.relation,
+        vehicle_no: memberData.vehicle_no,
+        image_src: memberData.image_src || null,
+      };
 
-    const response = await ApiCommon.postReq(url, payload, headers);
+      const response = await ApiCommon.postReq(url, payload, headers);
 
-    return response;
-  } catch (error) {
-    console.log("Add Family Member Error:", error);
-    throw error;
-  }
-},
+      return response;
+    } catch (error) {
+      console.log("Add Family Member Error:", error);
+      throw error;
+    }
+  },
 
-    getMyStaffs: async (category) => {
+  getMyStaffs: async (category) => {
     const user = await Common.getLoggedInUser()
     const params = {
       "api-token": user.api_token,
       "user-id": user.id,
       "category": category || null,
     };
-  
-    const url =  visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/${user.societyId}/staffbycategory`,params);
+
+    const url = visitorServices.appendParamsInUrl(`${API_URL4}/v1/society/${user.societyId}/staffbycategory`, params);
     const headers = await Util.getCommonAuth()
-     const response =   await ApiCommon.getReq(url,headers);
-     return response
+    const response = await ApiCommon.getReq(url, headers);
+    return response
   },
 
   cancelPass: async (passId) => {
-  const user = await Common.getLoggedInUser();
+    const user = await Common.getLoggedInUser();
 
-  const url = await visitorServices.appendParamsInUrl(
-    `${API_URL4}/v2/society/${user.societyId}/cancelpass`
-  );
+    const url = await visitorServices.appendParamsInUrl(
+      `${API_URL4}/v2/society/${user.societyId}/cancelpass`
+    );
 
-  const headers = await Util.getCommonAuth();
+    const headers = await Util.getCommonAuth();
 
-  const payload = {
-    id: passId,
-  };
+    const payload = {
+      id: passId,
+    };
 
-  return ApiCommon.postReq(url, payload, headers);
-},
+    return ApiCommon.postReq(url, payload, headers);
+  },
 
 
 
-appendParamsInUrl: async (url, extraParams = {}) => {
-  const user = await Common.getLoggedInUser()
+  appendParamsInUrl: async (url, extraParams = {}) => {
+    const user = await Common.getLoggedInUser()
 
     const uObj = {
       user_id: user.unit_id,
       group_id: user.role_id,
-      flat_no:  user.flat_no,
+      flat_no: user.flat_no,
       unit_id: user.unit_id,
       society_id: user.societyId
     };
 
-  const u = JSON.stringify(uObj); // ✅ no encode
+    const u = JSON.stringify(uObj); // ✅ no encode
 
-  const commonParams = {
-    "api-token": user.api_token,
-    "user-id": u,
-    "group-id": 2265,
-    "app_id": "ism_resident"
-  };
+    const commonParams = {
+      "api-token": user.api_token,
+      "user-id": u,
+      "group-id": 2265,
+      "app_id": "ism_resident"
+    };
 
-  const finalParams = {
-    ...commonParams,
-    ...extraParams
-  };
+    const finalParams = {
+      ...commonParams,
+      ...extraParams
+    };
 
-  const queryParams = Object.keys(finalParams)
-    .filter(key => finalParams[key] !== null && finalParams[key] !== undefined)
-    .map(
-      key =>
-        `${encodeURIComponent(key)}=${encodeURIComponent(finalParams[key])}`
-    )
-    .join("&");
+    const queryParams = Object.keys(finalParams)
+      .filter(key => finalParams[key] !== null && finalParams[key] !== undefined)
+      .map(
+        key =>
+          `${encodeURIComponent(key)}=${encodeURIComponent(finalParams[key])}`
+      )
+      .join("&");
 
-  if (queryParams) {
-    url += url.includes("?") ? "&" : "?";
-    url += queryParams;
+    if (queryParams) {
+      url += url.includes("?") ? "&" : "?";
+      url += queryParams;
+    }
+
+    return url;
   }
 
-  return url;
 }
 
-}
-
-export {visitorServices}
+export { visitorServices }

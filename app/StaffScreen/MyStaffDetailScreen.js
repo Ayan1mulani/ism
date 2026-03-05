@@ -16,9 +16,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { otherServices } from "../../services/otherServices";
 import AppHeader from "../components/AppHeader";
+import BRAND from '../config';
 
 const COLORS = {
-  primary: "#1565A9",
+  primary: BRAND.COLORS.primary,
   background: "#F4F6F9",
   text: "#111827",
   subText: "#6B7280",

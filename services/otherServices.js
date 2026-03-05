@@ -181,7 +181,7 @@ getAmenities: async () => {
   }
 },
 
-bookAmenity: async (locationId, bookingFrom, bookingTo) => {
+bookAmenity: async (locationId, bookingFrom, bookingTo, type) => {
   try {
     const user = await Common.getLoggedInUser();
 
@@ -193,28 +193,45 @@ bookAmenity: async (locationId, bookingFrom, bookingTo) => {
       society_id: user.societyId,
     };
 
-    const encodedUser = encodeURIComponent(
-      JSON.stringify(userObj)
-    );
+    const encodedUser = encodeURIComponent(JSON.stringify(userObj));
 
-    // ✅ FIXED URL — societyId added
     const url = `${API_URL2}/${user.societyId}/my/bookLocation?api-token=${user.api_token}&user-id=${encodedUser}`;
 
     const headers = await Util.getCommonAuth();
 
-    const payload = {
-      location_id: locationId,
-      booking_from: bookingFrom,
-      booking_to: bookingTo,
-      data: {
-        date: new Date().toISOString(),
-        type: "AMENITY",
-        openModal: false,
-        pass_id: "",
-      },
-    };
+    let payload;
 
-    console.log("BOOK URL:", url);
+    if (type === "PARKING") {
+      payload = {
+        location_id: locationId,
+        booking_from: bookingFrom,
+        booking_to: bookingTo,
+        reference_id: 0,
+        status: 1,
+        data: {
+          name: user.name || "Resident",
+          phone_no: user.mobile || "",
+          vehicle_no: "",
+          date: bookingFrom.split(" ")[0],
+          type: "PARKING",
+          openModal: true,
+          pass_id: "",
+        },
+      };
+    } else {
+      payload = {
+        location_id: locationId,
+        booking_from: bookingFrom,
+        booking_to: bookingTo,
+        data: {
+          date: new Date().toISOString(),
+          type: "AMENITY",
+          openModal: false,
+          pass_id: "",
+        },
+      };
+    }
+
     console.log("BOOK PAYLOAD:", payload);
 
     return await ApiCommon.postReq(url, payload, headers);
@@ -224,7 +241,6 @@ bookAmenity: async (locationId, bookingFrom, bookingTo) => {
     throw error;
   }
 },
-
 getMyAmenityBookings: async () => {
   try {
     const user = await Common.getLoggedInUser();
@@ -248,6 +264,32 @@ getMyAmenityBookings: async () => {
     return await ApiCommon.getReq(url, headers);
   } catch (error) {
     console.log("Get My Bookings Error:", error);
+    throw error;
+  }
+},
+
+checkSlotAvailability: async (locationId, from, to) => {
+  try {
+    const user = await Common.getLoggedInUser();
+
+    const userObj = {
+      user_id: user.unit_id,
+      group_id: user.role_id,
+      flat_no: user.flat_no,
+      unit_id: user.unit_id,
+      society_id: user.societyId,
+    };
+
+    const encodedUser = encodeURIComponent(JSON.stringify(userObj));
+
+    const url = `${API_URL2}/${user.societyId}/${locationId}/bookedslots?api-token=${user.api_token}&user-id=${encodedUser}&from=${from}&to=${to}`;
+
+    const headers = await Util.getCommonAuth();
+
+    return await ApiCommon.getReq(url, headers);
+
+  } catch (error) {
+    console.log("Check Slot Availability Error:", error);
     throw error;
   }
 },

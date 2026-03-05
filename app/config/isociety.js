@@ -35,7 +35,7 @@ export default {
     buttonText: "#FFFFFF",
 
     /* Borders */
-    border: "#E5E7EB",
+    border: "#a2b8e3",
 
     /* Icons */
     icon: "#0169B2",

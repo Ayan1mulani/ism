@@ -26,14 +26,13 @@ const MONTHS = [
 ];
 
 const AmenityBookingScreen = ({ route, navigation }) => {
-  const { amenity } = route.params;
+  const { item: amenity, type } = route?.params || {};
   const { nightMode } = usePermissions();
-const COLORS = BRAND.COLORS;
-
 
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const [bookings, setBookings] = useState([]);
+  const [allBookings, setAllBookings] = useState([]);       // used for calendar day-count checks
+  const [dateBookings, setDateBookings] = useState([]);     // used for slot booked checks
   const [screenLoading, setScreenLoading] = useState(true);
   const [slotLoading, setSlotLoading] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date());
@@ -55,63 +54,107 @@ const COLORS = BRAND.COLORS;
     disabled: "#9CA3AF",
   };
 
+  // ─── EFFECTS ────────────────────────────────────────────────────────────────
+
   useEffect(() => {
     fetchBookings();
-  }, []);
+  }, [amenity?.id]);
+
   useEffect(() => {
     if (selectedDate) {
       fetchBookingsForDate(selectedDate);
     }
   }, [selectedDate]);
 
+  // ─── API CALLS ───────────────────────────────────────────────────────────────
+
   const fetchBookings = async () => {
     try {
+      if (!amenity?.id) return;
       const res = await otherServices.getAmenityBookingsById(amenity.id);
-      setBookings(res?.data || []);
+      setAllBookings(res?.data || []);
     } catch (err) {
       console.log("Booking fetch error:", err);
     } finally {
       setScreenLoading(false);
     }
   };
+
   const fetchBookingsForDate = async (date) => {
     try {
       setSlotLoading(true);
-
-      const res = await otherServices.getAmenityBookingsByDate(
-        amenity.id,
-        date
-      );
-
-      setBookings(res?.data || []);
-
+      const res = await otherServices.getAmenityBookingsByDate(amenity.id, date);
+      setDateBookings(res?.data || []);
     } catch (err) {
       console.log("Date booking fetch error:", err);
     } finally {
       setSlotLoading(false);
     }
   };
+
+  // ─── PARSED AMENITY DATA ─────────────────────────────────────────────────────
+
   const parsedSlot = useMemo(() => {
-    try { return JSON.parse(amenity.slot || "{}"); } catch { return {}; }
+    try {
+      return JSON.parse(amenity?.slot ?? "{}") ?? {};
+    } catch {
+      return {};
+    }
   }, [amenity]);
 
   const rules = useMemo(() => {
-    try { return JSON.parse(amenity.rules || "{}"); } catch { return {}; }
+    if (!amenity?.rules) return {};
+    try {
+      return JSON.parse(amenity.rules);
+    } catch {
+      return {};
+    }
   }, [amenity]);
 
   const blockedDates = useMemo(() => {
-    try { return JSON.parse(amenity.no_availability_days || "[]"); } catch { return []; }
+    if (!amenity?.no_availability_days) return [];
+    try {
+      return JSON.parse(amenity.no_availability_days);
+    } catch {
+      return [];
+    }
   }, [amenity]);
 
-  const formatDate = (dateObj) => dateObj.toISOString().split("T")[0];
+  // ─── DATE HELPERS ────────────────────────────────────────────────────────────
 
-  const getDayBookingCount = (date) =>
-    bookings.filter((b) => b.booking_from?.startsWith(date)).length;
+  // Always uses local time — avoids UTC midnight shift in UTC+ and UTC- timezones
+  const formatDate = (dateObj) => dateObj.toLocaleDateString("en-CA");
+
+  // Fix 4: Defensive time extraction — handles "YYYY-MM-DD HH:mm:ss",
+  // "YYYY-MM-DDTHH:mm:ss" and any unknown future format gracefully
+  const extractTime = (datetimeStr) => {
+    if (!datetimeStr) return null;
+    const normalized = datetimeStr.replace("T", " ");
+    const parts = normalized.split(" ");
+    return parts[1] ?? null; // returns "HH:mm:ss" or null if malformed
+  };
+
+  // Fix 2 & 3: Precompute booking count per date once using useMemo —
+  // avoids re-filtering the full array on every calendar cell render
+  const bookingCountMap = useMemo(() => {
+    const map = {};
+    allBookings.forEach((b) => {
+      const dateKey = b.booking_from?.replace("T", " ").split(" ")[0];
+      if (dateKey) {
+        map[dateKey] = (map[dateKey] || 0) + 1;
+      }
+    });
+    return map;
+  }, [allBookings]);
+
+  const getDayBookingCount = (date) => bookingCountMap[date] || 0;
 
   const isDateSelectable = (date) => {
     const today = new Date();
-    const selected = new Date(date);
     today.setHours(0, 0, 0, 0);
+
+    // Force local midnight to avoid UTC day-shift bug
+    const selected = new Date(`${date}T00:00:00`);
     if (selected < today) return false;
 
     if (rules.no_of_future_days) {
@@ -120,10 +163,11 @@ const COLORS = BRAND.COLORS;
       if (selected > future) return false;
     }
 
-    if (blockedDates.some((d) => d.d === date)) return false;
+    // Support both {d: "YYYY-MM-DD"} object format and plain "YYYY-MM-DD" string format
+    if (blockedDates.some((d) => d === date || d?.d === date)) return false;
 
     const dayIndex = selected.getDay();
-    if (!parsedSlot[dayIndex] || parsedSlot[dayIndex].avl !== true) return false;
+    if (!parsedSlot?.[dayIndex] || parsedSlot[dayIndex]?.avl !== true) return false;
 
     const max = rules?.max_per_day || 0;
     if (max && getDayBookingCount(date) >= max) return false;
@@ -131,21 +175,34 @@ const COLORS = BRAND.COLORS;
     return true;
   };
 
+  // ─── SLOT HELPERS ────────────────────────────────────────────────────────────
+
   const isSlotBooked = (slot) => {
     if (!selectedDate) return false;
-
-    return bookings.some((b) => {
-      const bookingStart = b.booking_from.split(" ")[1]; // HH:mm:ss
-      const bookingEnd = b.booking_to.split(" ")[1];
-
-      const slotStart = `${slot.from}:00`;
-      const slotEnd = `${slot.to}:00`;
-
-      return bookingStart === slotStart && bookingEnd === slotEnd;
+    return dateBookings.some((b) => {
+      // Fix 1: null-safe — skip malformed booking entries instead of crashing
+      const bookingStart = extractTime(b.booking_from);
+      const bookingEnd = extractTime(b.booking_to);
+      if (!bookingStart || !bookingEnd) return false;
+      return (
+        bookingStart === `${slot.from}:00` &&
+        bookingEnd === `${slot.to}:00`
+      );
     });
   };
 
-  /* ---- CALENDAR HELPERS ---- */
+  const isSlotPassed = (slot) => {
+    if (!selectedDate) return false;
+    const now = new Date();
+    const today = formatDate(now); // local date string e.g. "2024-01-15"
+    // Only mark as passed if the selected date IS today — future dates are never "passed"
+    if (selectedDate !== today) return false;
+    // T separator forces local time parsing — avoids UTC offset bug
+    const slotStart = new Date(`${selectedDate}T${slot.from}:00`);
+    return slotStart <= now;
+  };
+
+  // ─── CALENDAR ────────────────────────────────────────────────────────────────
 
   const calendarDays = useMemo(() => {
     const year = calendarMonth.getFullYear();
@@ -156,8 +213,9 @@ const COLORS = BRAND.COLORS;
     const cells = [];
     for (let i = 0; i < firstDay; i++) cells.push(null);
     for (let d = 1; d <= daysInMonth; d++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-      cells.push(dateStr);
+      cells.push(
+        `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`
+      );
     }
     return cells;
   }, [calendarMonth]);
@@ -166,57 +224,97 @@ const COLORS = BRAND.COLORS;
     const d = new Date(calendarMonth);
     d.setMonth(d.getMonth() - 1);
     setCalendarMonth(d);
-  };
-
-  const isSlotPassed = (slot) => {
-    if (!selectedDate) return false;
-
-    const today = new Date().toISOString().split("T")[0];
-
-    if (selectedDate !== today) return false;
-
-    const now = new Date();
-    const slotStart = new Date(`${selectedDate} ${slot.from}:00`);
-
-    return slotStart <= now;
+    // Fix 5: Clear stale selection when month changes to avoid confusing UI state
+    setSelectedDate(null);
+    setSelectedSlot(null);
   };
 
   const goToNextMonth = () => {
     const d = new Date(calendarMonth);
     d.setMonth(d.getMonth() + 1);
     setCalendarMonth(d);
+    // Fix 5: Clear stale selection when month changes to avoid confusing UI state
+    setSelectedDate(null);
+    setSelectedSlot(null);
   };
 
-  /* ---- SLOTS ---- */
+  // ─── SLOTS ───────────────────────────────────────────────────────────────────
 
   const availableSlots = useMemo(() => {
-    if (!selectedDate) return [];
-    const dayIndex = new Date(selectedDate).getDay();
-    const dayData = parsedSlot[dayIndex];
-    if (!dayData || dayData.avl !== true) return [];
-    return dayData.hrs || [];
+    if (!selectedDate || !parsedSlot) return [];
+    // T00:00:00 forces local time parsing — fixes wrong getDay() in UTC+/- timezones
+    const dayIndex = new Date(`${selectedDate}T00:00:00`).getDay();
+    const dayData = parsedSlot?.[dayIndex];
+    if (!dayData || dayData?.avl !== true) return [];
+    return dayData?.hrs || [];
   }, [selectedDate, parsedSlot]);
 
-  /* ---- BOOKING ---- */
+  // ─── BOOKING HANDLERS ────────────────────────────────────────────────────────
+
+  const handleSlotSelect = async (slot) => {
+    // Include :00 seconds to match the format handleBooking sends to the backend
+    const from = `${selectedDate} ${slot.from}:00`;
+    const to = `${selectedDate} ${slot.to}:00`;
+    try {
+      setSlotLoading(true); // Fix 6: slotLoading=true disables ALL slot buttons during check
+      const res = await otherServices.checkSlotAvailability(amenity.id, from, to);
+      if (res?.data?.length > 0) {
+        setModalType("error");
+        setModalTitle("Slot Already Booked");
+        setModalSubtitle("Please select another slot");
+        setModalVisible(true);
+        return;
+      }
+      setSelectedSlot(slot);
+    } catch (err) {
+      // Fix 7: Show modal on network failure instead of silently swallowing the error
+      console.log("Slot check error:", err);
+      setModalType("error");
+      setModalTitle("Availability Check Failed");
+      setModalSubtitle("Could not verify slot. Please check your connection and try again.");
+      setModalVisible(true);
+    } finally {
+      setSlotLoading(false);
+    }
+  };
 
   const handleBooking = async () => {
     if (!selectedDate || !selectedSlot) {
       setModalType("error");
       setModalTitle("Select Date & Slot");
-      setModalSubtitle("");
+      setModalSubtitle("Please choose a valid slot");
       setModalVisible(true);
       return;
     }
 
+    const bookingFrom = `${selectedDate} ${selectedSlot.from}:00`;
+    const bookingTo = `${selectedDate} ${selectedSlot.to}:00`;
+
+    if (type === "PARKING") {
+      // Navigate directly — no setTimeout race condition
+      navigation.navigate("AddVisitor", {
+        selectedParking: {
+          location_id: amenity.id,
+          booking_from: bookingFrom,
+          booking_to: bookingTo,
+          slot: `${selectedSlot.from} - ${selectedSlot.to}`,
+        },
+      });
+      return;
+    }
+
+    // AMENITY FLOW
     try {
       setModalType("loading");
       setModalTitle("Processing...");
       setModalVisible(true);
 
-      const bookingFrom = `${selectedDate} ${selectedSlot.from}:00`;
-      const bookingTo = `${selectedDate} ${selectedSlot.to}:00`;
-      const res = await otherServices.bookAmenity(amenity.id, bookingFrom, bookingTo);
-      console.log("BOOK RESPONSE:", res);
+      const res = await otherServices.bookAmenity(
+        amenity.id,
+        bookingFrom,
+        bookingTo,
+        type
+      );
 
       if (res?.status === "success") {
         setModalType("success");
@@ -224,20 +322,27 @@ const COLORS = BRAND.COLORS;
         setModalSubtitle(`${selectedDate}\n${selectedSlot.from} - ${selectedSlot.to}`);
         setTimeout(() => navigation.goBack(), 2000);
       } else {
-        throw new Error();
+        setModalType("error");
+        setModalTitle("Booking Failed");
+        setModalSubtitle(
+          res?.message || res?.data?.message || "Unable to complete booking"
+        );
       }
-    } catch {
+    } catch (err) {
+      console.log("Booking Error:", err);
       setModalType("error");
-      setModalTitle("Booking Failed");
-      setModalSubtitle("");
+      setModalTitle("Network Error");
+      setModalSubtitle("Please check your internet connection");
     }
   };
+
+  // ─── RENDER ──────────────────────────────────────────────────────────────────
 
   const cellSize = Math.floor((width - 32 - 32) / 7);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <AppHeader title={`Book ${amenity.name}`} />
+      <AppHeader title={`Book ${amenity?.name || ""}`} />
 
       {screenLoading ? (
         <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 40 }} />
@@ -246,6 +351,7 @@ const COLORS = BRAND.COLORS;
 
           {/* ── CALENDAR ── */}
           <View style={[styles.calendarCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+
             {/* Month Nav */}
             <View style={styles.monthNav}>
               <TouchableOpacity onPress={goToPrevMonth} style={styles.navBtn}>
@@ -278,9 +384,7 @@ const COLORS = BRAND.COLORS;
                 const selectable = isDateSelectable(date);
                 const isSelected = selectedDate === date;
                 const dayNum = parseInt(date.split("-")[2], 10);
-
-                const today = formatDate(new Date());
-                const isToday = date === today;
+                const isToday = date === formatDate(new Date());
 
                 return (
                   <TouchableOpacity
@@ -312,14 +416,11 @@ const COLORS = BRAND.COLORS;
                           ? "#fff"
                           : !selectable
                             ? theme.disabled
-                            : selectable
-                              ? theme.text
-                              : theme.subText,
+                            : theme.text,
                       }}
                     >
                       {dayNum}
                     </Text>
-                    {/* green dot for available */}
                     {selectable && !isSelected && (
                       <View style={[styles.availDot, { backgroundColor: theme.success }]} />
                     )}
@@ -345,13 +446,14 @@ const COLORS = BRAND.COLORS;
             </View>
           </View>
 
-          {/* ── TIME SLOTS (shown only after date selected) ── */}
+          {/* ── TIME SLOTS ── */}
           {selectedDate && (
             <View style={{ marginTop: 20 }}>
               <Text style={[styles.sectionTitle, { color: theme.text }]}>
                 Time Slots —{" "}
                 <Text style={{ color: theme.primary }}>
-                  {new Date(selectedDate).toLocaleDateString("en-GB", {
+                  {/* T00:00:00 prevents UTC day-shift in display */}
+                  {new Date(`${selectedDate}T00:00:00`).toLocaleDateString("en-GB", {
                     day: "numeric",
                     month: "short",
                     year: "numeric",
@@ -359,52 +461,32 @@ const COLORS = BRAND.COLORS;
                 </Text>
               </Text>
 
-              {/* 🔥 SLOT LOADING HERE */}
               {slotLoading ? (
-                <ActivityIndicator
-                  size="small"
-                  color={BRAND.COLORS.icon}
-                  style={{ marginTop: 20 }}
-                />
+                <ActivityIndicator size="small" color={BRAND.COLORS.icon} style={{ marginTop: 20 }} />
               ) : availableSlots.length === 0 ? (
-                <View
-                  style={[
-                    styles.emptySlots,
-                    { backgroundColor: theme.card, borderColor: theme.border },
-                  ]}
-                >
-                  <Ionicons
-                    name="time-outline"
-                    size={28}
-                    color={theme.subText}
-                  />
-                  <Text
-                    style={[
-                      styles.emptyText,
-                      { color: theme.subText },
-                    ]}
-                  >
-                    No slots available
-                  </Text>
+                <View style={[styles.emptySlots, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                  <Ionicons name="time-outline" size={28} color={theme.subText} />
+                  <Text style={[styles.emptyText, { color: theme.subText }]}>No slots available</Text>
                 </View>
               ) : (
                 <View style={styles.slotsGrid}>
                   {availableSlots.map((slot, i) => {
                     const booked = isSlotBooked(slot);
                     const passed = isSlotPassed(slot);
-                    const isSelected = selectedSlot === slot;
+                    const isSelected =
+                      selectedSlot?.from === slot.from &&
+                      selectedSlot?.to === slot.to;
 
                     return (
                       <TouchableOpacity
                         key={i}
-                        disabled={booked || passed}
-                        onPress={() => setSelectedSlot(slot)}
+                        // Fix 6: Disable during slotLoading to prevent double-tap race conditions
+                        disabled={booked || passed || slotLoading}
+                        onPress={() => handleSlotSelect(slot)}
                         style={[
                           styles.slotChip,
                           {
-                            backgroundColor: isSelected
-                              ? theme.primary
-                              : theme.card,
+                            backgroundColor: isSelected ? theme.primary : theme.card,
                             borderColor: theme.border,
                             opacity: booked || passed ? 0.5 : 1,
                           },
@@ -414,38 +496,29 @@ const COLORS = BRAND.COLORS;
                           name="time-outline"
                           size={13}
                           color={
-                            isSelected
-                              ? "#fff"
-                              : booked || passed
-                                ? theme.subText
-                                : theme.primary
+                            isSelected ? "#fff" :
+                            booked || passed ? theme.subText :
+                            theme.primary
                           }
                         />
-
                         <Text
                           style={{
                             fontSize: 12,
                             fontWeight: "600",
                             marginLeft: 4,
-                            color: isSelected
-                              ? "#fff"
-                              : booked || passed
-                                ? theme.subText
-                                : theme.text,
+                            color: isSelected ? "#fff" :
+                                   booked || passed ? theme.subText :
+                                   theme.text,
                           }}
                         >
                           {slot.from} - {slot.to}
                         </Text>
-
-                        {/* 🔴 Booked label */}
                         {booked && (
                           <Text style={{ fontSize: 10, color: theme.danger, marginLeft: 4 }}>
                             Booked
                           </Text>
                         )}
-
-                        {/* ⚫ Passed label */}
-                        {passed && (
+                        {passed && !booked && (
                           <Text style={{ fontSize: 10, color: theme.danger, marginLeft: 4 }}>
                             Passed
                           </Text>
@@ -487,12 +560,6 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingBottom: 50,
-  },
-
-  amenityName: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 16,
   },
 
   calendarCard: {
@@ -557,12 +624,6 @@ const styles = StyleSheet.create({
     borderTopColor: "#E5E7EB",
   },
 
-  legendText: {
-    fontSize: 10,
-  },
-
-
-
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -575,8 +636,10 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
 
+  legendText: {
+    fontSize: 10,
+  },
 
-  /* Slots */
   sectionTitle: {
     fontSize: 15,
     fontWeight: "600",
@@ -612,7 +675,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
-  /* Book Button */
   bookBtn: {
     marginTop: 28,
     padding: 14,

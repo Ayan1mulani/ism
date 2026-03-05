@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,17 +7,16 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import CalendarSelector from "../components/Calender";
 import { visitorServices } from "../../../services/visitorServices";
 import StatusModal from "../../components/StatusModal";
 import SubmitButton from "../../components/SubmitButton";
 import BRAND from "./../../config";
 
-
 const SingleVisitorForm = () => {
   const navigation = useNavigation();
-
+  const route = useRoute();
 
   const theme = {
     cardBg: "#FFFFFF",
@@ -35,6 +34,22 @@ const SingleVisitorForm = () => {
   const [selectedParking, setSelectedParking] = useState(null);
   const [modalType, setModalType] = useState(null);
 
+  /* ===============================
+     RECEIVE PARKING SLOT
+     =============================== */
+
+  useEffect(() => {
+    if (route.params?.selectedParking) {
+      setSelectedParking(route.params.selectedParking);
+
+      // clear param so it doesn't trigger again
+      navigation.setParams({ selectedParking: undefined });
+    }
+  }, [route.params?.selectedParking]);
+
+  /* ===============================
+     FORMAT PARKING DATE
+     =============================== */
 
   const formatParkingDateRange = (from, to) => {
     if (!from || !to) return "";
@@ -43,8 +58,7 @@ const SingleVisitorForm = () => {
     const end = new Date(to);
     const today = new Date();
 
-    const isSameDay =
-      start.toDateString() === end.toDateString();
+    const isSameDay = start.toDateString() === end.toDateString();
 
     const isToday =
       start.toDateString() === today.toDateString() &&
@@ -57,11 +71,14 @@ const SingleVisitorForm = () => {
       });
 
     if (isToday) return "Today";
-
     if (isSameDay) return formatDate(start);
 
     return `${formatDate(start)} - ${formatDate(end)}`;
   };
+
+  /* ===============================
+     SUBMIT VISITOR
+     =============================== */
 
   const handleSubmit = async () => {
     if (!visitorName || !mobileNumber || !visitDate) return;
@@ -101,6 +118,7 @@ const SingleVisitorForm = () => {
       }
 
       setModalType("success");
+
       setTimeout(() => {
         setModalType(null);
         navigation.goBack();
@@ -113,6 +131,10 @@ const SingleVisitorForm = () => {
     }
   };
 
+  /* ===============================
+     UI
+     =============================== */
+
   return (
     <>
       {/* Visitor Name */}
@@ -120,12 +142,16 @@ const SingleVisitorForm = () => {
         <Text style={[styles.label, { color: theme.text }]}>
           Visitor Name *
         </Text>
+
         <TextInput
           value={visitorName}
           onChangeText={setVisitorName}
           placeholder="Enter visitor name"
           placeholderTextColor={theme.textSecondary}
-          style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.border }]}
+          style={[
+            styles.input,
+            { backgroundColor: theme.inputBg, borderColor: theme.border },
+          ]}
         />
       </View>
 
@@ -134,6 +160,7 @@ const SingleVisitorForm = () => {
         <Text style={[styles.label, { color: theme.text }]}>
           Mobile Number *
         </Text>
+
         <TextInput
           value={mobileNumber}
           onChangeText={setMobileNumber}
@@ -141,7 +168,10 @@ const SingleVisitorForm = () => {
           maxLength={10}
           placeholder="Enter 10-digit mobile"
           placeholderTextColor={theme.textSecondary}
-          style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.border }]}
+          style={[
+            styles.input,
+            { backgroundColor: theme.inputBg, borderColor: theme.border },
+          ]}
         />
       </View>
 
@@ -161,6 +191,7 @@ const SingleVisitorForm = () => {
         <Text style={[styles.label, { color: theme.text }]}>
           Vehicle Number (Last 4 Digits - Optional)
         </Text>
+
         <TextInput
           value={vehicleNo}
           onChangeText={setVehicleNo}
@@ -168,7 +199,10 @@ const SingleVisitorForm = () => {
           maxLength={4}
           placeholder="0000"
           placeholderTextColor={theme.textSecondary}
-          style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.border }]}
+          style={[
+            styles.input,
+            { backgroundColor: theme.inputBg, borderColor: theme.border },
+          ]}
         />
       </View>
 
@@ -183,31 +217,39 @@ const SingleVisitorForm = () => {
             styles.selectButton,
             { backgroundColor: theme.inputBg, borderColor: theme.border },
           ]}
-
           onPress={() => {
             if (!visitDate) {
               alert("Please select visit date first");
               return;
             }
 
-            navigation.navigate("BookParking", {
-              visitDate,
-              onSelectParking: (data) => {
-                setSelectedParking(data);
-              },
+            navigation.navigate("AmenitiesListScreen", {
+              type: "PARKING",
+              title: "Parking",
             });
           }}
         >
           <Ionicons name="car" size={20} color={BRAND.COLORS.icon} />
-          <Text style={[styles.selectButtonText, { color: theme.textSecondary }]}>
-            {selectedParking?.booking_from && selectedParking?.booking_to
-              ? formatParkingDateRange(
-                selectedParking.booking_from,
-                selectedParking.booking_to
-              )
-              : "Select Parking"}
+
+          <Text
+            style={[
+              styles.selectButtonText,
+              { color: theme.textSecondary },
+            ]}
+          >
+           {selectedParking?.booking_from
+  ? `${formatParkingDateRange(
+      selectedParking.booking_from,
+      selectedParking.booking_to
+    )} • ${selectedParking.slot}`
+  : "Select Parking"}
           </Text>
-          <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={theme.textSecondary}
+          />
         </TouchableOpacity>
       </View>
 
@@ -229,13 +271,15 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
     padding: 16,
-    marginBottom: -10
+    marginBottom: -10,
   },
+
   label: {
     fontSize: 14,
     fontWeight: "600",
     marginBottom: 8,
   },
+
   input: {
     height: 48,
     borderWidth: 1,
@@ -243,8 +287,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     fontSize: 14,
     letterSpacing: 1,
-
   },
+
   selectButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -254,11 +298,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     gap: 10,
   },
+
   selectButtonText: {
     flex: 1,
     fontSize: 14,
     fontWeight: "500",
   },
-
-
 });

@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { useRoute, useNavigation, useFocusEffect } from "@react-navigation/native";
+
 import {
   View,
   Text,
@@ -10,21 +12,25 @@ import {
   ScrollView,
   Dimensions,
 } from "react-native";
+
 import { Ionicons } from "@expo/vector-icons";
 import { usePermissions } from "../../Utils/ConetextApi";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { otherServices } from "../../services/otherServices";
-import { useNavigation } from "@react-navigation/native";
+import { visitorServices } from "../../services/visitorServices";
 import AppHeader from "../components/AppHeader";
-import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 import SubmitButton from "../components/SubmitButton";
 
 const { width } = Dimensions.get("window");
 
 const AmenitiesListScreen = () => {
+  const route = useRoute();
+  const { type, title } = route.params || {};
+
   const { nightMode } = usePermissions();
   const navigation = useNavigation();
+
   const [todayBookings, setTodayBookings] = useState({});
   const [loading, setLoading] = useState(true);
   const [amenities, setAmenities] = useState([]);
@@ -40,27 +46,37 @@ const AmenitiesListScreen = () => {
     primary: "#1996D3",
     success: "#10B981",
   };
+
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
-      fetchAmenities();
-    }, [])
+      fetchFacilities();
+    }, [type])
   );
 
-  const fetchAmenities = async () => {
+  const fetchFacilities = async () => {
     try {
-      const response = await otherServices.getAmenities();
-      const data = Array.isArray(response) ? response : [];
+      setLoading(true);
 
-      await fetchTodayBookings(data);   // 👈 await here
+      let data = [];
+
+      if (type === "PARKING") {
+        const res = await visitorServices.getParkingLocations();
+        data = res?.data || [];
+      } else {
+        data = await otherServices.getAmenities();
+      }
+
       setAmenities(data);
 
+      fetchTodayBookings(data);
+
     } catch (err) {
-      console.log("Amenity Error:", err);
+      console.log("Facility error:", err);
     } finally {
       setLoading(false);
     }
   };
+
   const fetchTodayBookings = async (amenityList) => {
     const today = new Date().toISOString().split("T")[0];
 
@@ -73,12 +89,11 @@ const AmenitiesListScreen = () => {
 
           const bookings = res?.data || [];
 
-          const todayCount = bookings.filter(b =>
+          const todayCount = bookings.filter((b) =>
             b.booking_from?.startsWith(today)
           ).length;
 
           counts[item.id] = todayCount;
-
         } catch {
           counts[item.id] = 0;
         }
@@ -91,22 +106,25 @@ const AmenitiesListScreen = () => {
   const onImageScroll = (event, itemId) => {
     const contentOffset = event.nativeEvent.contentOffset;
     const index = Math.round(contentOffset.x / (width - 32));
-    setCurrentImageIndex((prev) => ({ ...prev, [itemId]: index }));
+
+    setCurrentImageIndex((prev) => ({
+      ...prev,
+      [itemId]: index,
+    }));
   };
 
   const renderAmenity = ({ item }) => {
-    const isExpanded = expandedId === item.id;
     const imageIndex = currentImageIndex[item.id] || 0;
     const hasImages = item.image && item.image.length > 0;
     const isActive = item.is_booking === 1;
+
     let rules = {};
     try {
       rules = JSON.parse(item.rules || "{}");
     } catch {
       rules = {};
-
-
     }
+
     let parsedSlot = {};
     try {
       const temp = JSON.parse(item.slot || "{}");
@@ -114,6 +132,18 @@ const AmenitiesListScreen = () => {
     } catch {
       parsedSlot = {};
     }
+
+    let rate = null;
+    let rateMethod = "";
+
+    try {
+      const parsedData = JSON.parse(item.data || "{}");
+      rate = parsedData?.rates?.rate;
+      rateMethod = parsedData?.rates?.method;
+    } catch {
+      rate = null;
+    }
+
     const maxPerDay = rules?.max_per_day || 0;
     const todayCount = todayBookings[item.id] || 0;
     const isFull = todayCount >= maxPerDay;
@@ -127,7 +157,6 @@ const AmenitiesListScreen = () => {
           { backgroundColor: theme.card, borderColor: theme.border },
         ]}
       >
-        {/* IMAGE SECTION */}
         <View style={styles.imageWrapper}>
           {hasImages ? (
             <>
@@ -161,21 +190,36 @@ const AmenitiesListScreen = () => {
               )}
             </>
           ) : (
-            <View style={[styles.noImageContainer, { backgroundColor: theme.border }]}>
+            <View
+              style={[
+                styles.noImageContainer,
+                { backgroundColor: theme.border },
+              ]}
+            >
               <Ionicons name="image-outline" size={36} color={theme.subText} />
               <Text style={[styles.noImageText, { color: theme.subText }]}>
                 No images available
               </Text>
             </View>
           )}
-
-
         </View>
 
-        {/* CONTENT */}
         <View style={styles.content}>
-          {/* TITLE */}
           <Text style={[styles.title, { color: theme.text }]}>{item.name}</Text>
+
+          {rate && (
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "600",
+                color: '#6769e6',
+                marginTop: 2,
+              }}
+            >
+              ₹{rate} {rateMethod === "per_slot" ? "/ slot" : ""}
+            </Text>
+          )}
+
           <View style={{ marginTop: 4 }}>
             <Text
               style={{
@@ -187,7 +231,7 @@ const AmenitiesListScreen = () => {
               TODAY {todayCount} / {maxPerDay}
             </Text>
           </View>
-          {/* STATUS BADGE — top right corner over image */}
+
           <View
             style={[
               styles.badge,
@@ -199,25 +243,22 @@ const AmenitiesListScreen = () => {
             </Text>
           </View>
 
-          {/* DESCRIPTION */}
           {item.description && (
             <View style={{ marginTop: 4 }}>
               <Text
-                numberOfLines={isExpanded ? undefined : 2}
+                numberOfLines={2}
                 style={[styles.description, { color: theme.subText }]}
               >
                 {item.description}
               </Text>
-
             </View>
           )}
 
-          {/* DAYS ROW + BOOK BUTTON */}
           <View style={styles.bottomRow}>
-            {/* S M T W T F S */}
             <View style={styles.daysRow}>
               {weekDays.map((day, index) => {
                 const isAvailable = parsedSlot[index]?.avl === true;
+
                 return (
                   <Text
                     key={index}
@@ -232,13 +273,16 @@ const AmenitiesListScreen = () => {
               })}
             </View>
 
-            {/* BOOK BUTTON */}
             {isActive && (
               <SubmitButton
-                title="Book Now"
+                title={type === "PARKING" ? "Book Parking" : "Book Now"}
                 style={{ minWidth: 110 }}
                 onPress={() =>
-                  navigation.navigate("AmenityBooking", { amenity: item })
+                  navigation.navigate("AmenityBooking", {
+                    item: item,
+                    type: type,
+                    onParkingSelected: route.params?.onParkingSelected,
+                  })
                 }
               />
             )}
@@ -249,15 +293,16 @@ const AmenitiesListScreen = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <AppHeader title={"Ameneties"} />
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.background }]}
+    >
+      <AppHeader title={title || "Amenities"} />
 
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={theme.primary} />
         </View>
       ) : (
-
         <FlatList
           data={amenities}
           keyExtractor={(item) => item.id.toString()}

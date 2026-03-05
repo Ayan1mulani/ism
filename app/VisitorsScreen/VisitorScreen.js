@@ -16,11 +16,12 @@ import { visitorServices } from '../../services/visitorServices';
 import { Ionicons } from '@expo/vector-icons';
 import SlidingTabs from '../components/SlidingTabs';
 import MyParkingPage from './singleMultiVisits/MyParkingPage';
+import BRAND from '../config'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const COLORS = {
-  primary: '#1996D3',
+  primary: BRAND.COLORS.primary,
   light: {
     background: '#FFFFFF',
     surface: '#F8F9FA',

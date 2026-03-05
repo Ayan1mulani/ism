@@ -13,13 +13,14 @@ import { usePermissions } from '../../Utils/ConetextApi';
 import ComplaintListScreen from './ServiceRequestPage';
 import { complaintService } from '../../services/complaintService';
 import SlidingTabs from '../components/SlidingTabs';
+import BRAND from '../config'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const TABS = ['Open', 'Closed', 'All'];
 
 const COLORS = {
-  primary: '#1996D3',
+  primary: BRAND.COLORS.primary,
   light: {
     background: '#FFFFFF',
     surface: '#F8F9FA',
@@ -128,14 +129,6 @@ const ServiceRequestTabs = () => {
             x: index * SCREEN_WIDTH,
             animated: true,
           });
-        }}
-        primaryColor={COLORS.primary}
-        inactiveColor={theme.textSecondary}
-        containerStyle={{
-          backgroundColor: theme.surface,
-          paddingHorizontal: 16,
-          paddingTop: 12,
-          paddingBottom: 8,
         }}
         scrollX={scrollX}
       />

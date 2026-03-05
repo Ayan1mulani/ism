@@ -37,7 +37,6 @@ import AddPreApprovedVisitor from './app/VisitorsScreen/singleMultiVisits/Single
 import AddFrequentVisitor from './app/VisitorsScreen/singleMultiVisits/FrequentVisitorForm';
 import ServiceRequestDetailScreen from './app/ServiceRequestScreen/components/ServiceRequestDetail';
 import PassDetailsScreen from './app/VisitorsScreen/components/PassDetailsScreen';
-import BookParkingScreen from './app/VisitorsScreen/components/BookParkingScreen';
 import VisitDetailScreen from './app/VisitorsScreen/components/VisitRequestDetailScreen';
 import NotificationsScreen from './app/components/NotificationsScreen';
 import AddVehicleScreen from './app/VehicleScreen/AddVehicleScreen';
@@ -309,7 +308,6 @@ const NavigationPage = () => {
           <Stack.Screen name="complaintInput" component={ComplaintInputScreen} />
           <Stack.Screen name="PassDetails" component={PassDetailsScreen} />
           <Stack.Screen name="Accounts" component={AccountsScreen} />
-          <Stack.Screen name="BookParking" component={BookParkingScreen} />
           <Stack.Screen name="VisitDetailScreen" component={VisitDetailScreen} />
           <Stack.Screen name="NotificationsScreen" component={NotificationsScreen} />
           <Stack.Screen name="AddVehicleScreen" component={AddVehicleScreen} />

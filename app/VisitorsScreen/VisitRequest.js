@@ -179,20 +179,33 @@ const VisitsPage = ({ visitorData, loading, onRefresh, nightMode }) => {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={filteredVisits}
-        renderItem={renderCard}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={{ padding: 16, paddingBottom: 180 }}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={theme.primary}
-          />
-        }
-      />
+   <FlatList
+  data={filteredVisits}
+  renderItem={renderCard}
+  keyExtractor={(item) => item.id.toString()}
+  contentContainerStyle={{
+    padding: 16,
+    paddingBottom: 180,
+    flexGrow: 1
+  }}
+  showsVerticalScrollIndicator={false}
+  refreshControl={
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={handleRefresh}
+      tintColor={theme.primary}
+    />
+  }
+  ListEmptyComponent={() => (
+    <View style={styles.emptyContainer}>
+      <Ionicons name="people-outline" size={60} color={theme.textSecondary} />
+
+      <Text style={[styles.emptyTitle, { color: theme.text }]}>
+        No Visitors Yet
+      </Text>
+    </View>
+  )}
+/>
     </View>
   );
 };
@@ -249,6 +262,38 @@ const styles = StyleSheet.create({
   borderColor: 'rgba(3, 65, 109, 0.04)',
   overflow: 'hidden', // 👈 important
   },
+  emptyContainer: {
+  flex: 1,
+  justifyContent: "center",
+  alignItems: "center",
+  marginTop: 60,
+},
+
+emptyTitle: {
+  fontSize: 18,
+  fontWeight: "700",
+  marginTop: 10,
+},
+
+emptySubtitle: {
+  fontSize: 13,
+  marginTop: 4,
+},
+
+emptyButton: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 6,
+  marginTop: 16,
+  paddingHorizontal: 16,
+  paddingVertical: 10,
+  borderRadius: 8,
+},
+
+emptyButtonText: {
+  color: "#fff",
+  fontWeight: "600",
+},
 
   cardHeader: {
     flexDirection: 'row',

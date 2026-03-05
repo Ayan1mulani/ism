@@ -14,10 +14,10 @@ export default {
   COLORS: {
 
     /* Core */
-    primary: "#20de66f0",
+    primary: "#01a93ff0",
     primaryDark: "#119443",
 
-    
+
     /* Backgrounds */
     background: "#F3FFF6",
     surface: "#F7FDF9",
@@ -28,7 +28,7 @@ export default {
     text: "#1A1A1A",
     secondaryText: "#6B7280",
     subText: "#64748B",
-    iconbg:"#daf0d73f",
+    iconbg: "#daf0d73f",
     /* Buttons */
     button: "#01B242",
     buttonText: "#FFFFFF",
@@ -50,7 +50,7 @@ export default {
     grey: "#6B7280",
 
     /* Navigation */
- bottomNavBackground: "#01B242ee",
+    bottomNavBackground: "#01B242ee",
     bottomNavBorder: "#E5E7EB",
     bottomNavIndicator: "#01B242",
     bottomNavActiveIcon: "#01B242",
