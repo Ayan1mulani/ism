@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,11 +11,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { otherServices } from "../../services/otherServices";
 import { useNavigation } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import AppCard from "../components/AppCard";
 import AppSearchBar from "../components/AppSearchBar";
-import BRAND from '../config'
+import BRAND from "../config";
+import { usePermissions } from "../../Utils/ConetextApi";
 
-const myFlatNo = "CL1-T112";
 const COLORS = {
   primary: BRAND.COLORS.primary,
   light: {
@@ -34,8 +35,45 @@ const COLORS = {
   },
 };
 
+// FIX (Issue 4): handles both string JSON and already-parsed arrays
+// from the backend — previously returned [] if raw was already an array
+const parseWorkLocations = (raw) => {
+  if (!raw) return [];
+  // backend sent a real array directly
+  if (Array.isArray(raw)) return raw;
+  // backend sent a JSON string
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+// Safe normalize — always returns array regardless of API shape
+const normalizeArray = (data) => {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  console.warn(
+    "[SearchStaffScreen] Expected array but got:",
+    JSON.stringify(data)
+  );
+  return [];
+};
+
+// FIX (Issue 3): safely converts any value to lowercase string
+// — optional chaining (?.) only guards null/undefined, not numbers/booleans
+const toStr = (val) =>
+  val != null && typeof val === "string" ? val.toLowerCase() : "";
+
 const SearchStaffScreen = ({ nightMode, categories, categoriesLoading }) => {
   const navigation = useNavigation();
+
+  // flatNo from context — not hardcoded
+  const { flatNo } = usePermissions();
 
   const [staffList, setStaffList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
@@ -44,7 +82,29 @@ const SearchStaffScreen = ({ nightMode, categories, categoriesLoading }) => {
   const [staffLoading, setStaffLoading] = useState(false);
 
   const theme = nightMode ? COLORS.dark : COLORS.light;
-  const styles = createStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const fetchStaff = useCallback(async (category) => {
+    if (!category) return;
+    try {
+      setStaffLoading(true);
+      setSearch("");
+
+      const res = await otherServices.getStaffByCategory(category);
+
+      const data =
+        res?.status === "success" ? normalizeArray(res.data) : [];
+
+      setStaffList(data);
+      setFilteredList(data);
+    } catch (error) {
+      console.error("[SearchStaffScreen] fetch error:", error);
+      setStaffList([]);
+      setFilteredList([]);
+    } finally {
+      setStaffLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (categories?.length > 0 && !selectedCategory) {
@@ -52,250 +112,234 @@ const SearchStaffScreen = ({ nightMode, categories, categoriesLoading }) => {
       setSelectedCategory(first);
       fetchStaff(first);
     }
-  }, [categories]);
+  }, [categories, fetchStaff]);
 
-  const isStaffAssociated = (item) => {
-  if (!item.work_location) return false;
-
-  const workLocations = parseWorkLocations(item.work_location);
-
-  return workLocations.some(
-    (loc) =>
-      loc.display_unit_no === myFlatNo ||
-      loc.flat_no === myFlatNo
+  const isStaffAssociated = useCallback(
+    (item) => {
+      if (!item.work_location || !flatNo) return false;
+      const workLocations = parseWorkLocations(item.work_location);
+      return workLocations.some(
+        (loc) => loc.display_unit_no === flatNo || loc.flat_no === flatNo
+      );
+    },
+    [flatNo]
   );
-};
-  const fetchStaff = async (category) => {
-    try {
-      setStaffLoading(true);
-      setSearch("");
 
-      const res = await otherServices.getStaffByCategory(category);
+  const handleSearch = useCallback(
+    (text) => {
+      setSearch(text);
+      const q = text.trim().toLowerCase();
 
-      if (res?.status === "success") {
-        setStaffList(res.data);
-        setFilteredList(res.data);
-      } else {
-        setStaffList([]);
-        setFilteredList([]);
+      if (!q) {
+        setFilteredList(staffList);
+        return;
       }
-    } catch (error) {
-      console.log("Staff fetch error:", error);
-      setStaffList([]);
-      setFilteredList([]);
-    } finally {
-      setStaffLoading(false);
-    }
-  };
 
-  const handleSearch = (text) => {
-    setSearch(text);
-    const filtered = staffList.filter((item) =>
-      item.name?.toLowerCase().includes(text.toLowerCase())
-    );
-    setFilteredList(filtered);
-  };
+      // FIX (Issue 3): use toStr() so non-string values never crash .toLowerCase()
+      const filtered = staffList.filter(
+        (item) =>
+          toStr(item.name).includes(q) ||
+          toStr(item.designation).includes(q) ||
+          toStr(item.category).includes(q) ||
+          String(item.code || "").toLowerCase().includes(q)
+      );
+      setFilteredList(filtered);
+    },
+    [staffList]
+  );
 
-  const parseWorkLocations = (raw) => {
-    try {
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  };
+  const renderItem = useCallback(
+    ({ item }) => {
+      const workLocations = parseWorkLocations(item.work_location);
 
-  const renderItem = ({ item }) => {
-    const workLocations = item.work_location
-      ? parseWorkLocations(item.work_location)
-      : [];
+      // Guard against mobile being 0 or "0"
+      const validMobile =
+        item.mobile && item.mobile !== 0 && item.mobile !== "0";
 
-    return (
-      <AppCard theme={theme}>
-        <TouchableOpacity
-          activeOpacity={0.85}
-      onPress={() =>
-  navigation.navigate(
-    isStaffAssociated(item)
-      ? "MyStaffDetailScreen"
-      : "StaffDetailScreen",
-    { staff: item }
-  )
-}
-        >
-          <View style={styles.cardHeader}>
-            <View style={styles.staffInfo}>
-              <Text
-                style={[styles.staffName, { color: theme.text }]}
-                numberOfLines={1}
-              >
-                {item.name}
-              </Text>
-
-              <Text
-                style={[styles.designation, { color: theme.textSecondary }]}
-                numberOfLines={1}
-              >
-                {item.designation || "No Designation"}
-              </Text>
-
-              {item.code && (
+      return (
+        <AppCard theme={theme}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() =>
+              navigation.navigate(
+                isStaffAssociated(item)
+                  ? "MyStaffDetailScreen"
+                  : "StaffDetailScreen",
+                { staff: item }
+              )
+            }
+          >
+            <View style={styles.cardHeader}>
+              <View style={styles.staffInfo}>
                 <Text
-                  style={[styles.empId, { color: theme.textSecondary }]}
+                  style={[styles.staffName, { color: theme.text }]}
+                  numberOfLines={1}
                 >
-                  EMP ID: {item.code}
+                  {item.name || "Unknown"}
                 </Text>
-              )}
-            </View>
 
-            <View
-              style={[
-                styles.categoryBadge,
-                { backgroundColor: `${COLORS.primary}15` },
-              ]}
-            >
-              <Text
+                <Text
+                  style={[styles.designation, { color: theme.textSecondary }]}
+                  numberOfLines={1}
+                >
+                  {item.designation || "No Designation"}
+                </Text>
+
+                {item.code ? (
+                  <Text style={[styles.empId, { color: theme.textSecondary }]}>
+                    EMP ID: {item.code}
+                  </Text>
+                ) : null}
+              </View>
+
+              <View
                 style={[
-                  styles.categoryBadgeText,
-                  { color: COLORS.primary },
+                  styles.categoryBadge,
+                  { backgroundColor: `${COLORS.primary}15` },
                 ]}
               >
-                {selectedCategory}
-              </Text>
+                <Text
+                  style={[styles.categoryBadgeText, { color: COLORS.primary }]}
+                  numberOfLines={1}
+                >
+                  {selectedCategory}
+                </Text>
+              </View>
             </View>
-          </View>
 
-         {(item.mobile || workLocations.length > 0) && (
-  <View
-    style={[
-      styles.cardFooter,
-      { borderTopColor: theme.border },
-    ]}
-  >
-    {item.mobile && (
-      <View style={styles.footerRow}>
+            {(validMobile || workLocations.length > 0) && (
+              <View
+                style={[styles.cardFooter, { borderTopColor: theme.border }]}
+              >
+                {validMobile ? (
+                  <View style={styles.footerRow}>
+                    <Ionicons
+                      name="call-outline"
+                      size={14}
+                      color={theme.textSecondary}
+                    />
+                    <Text
+                      style={[
+                        styles.footerText,
+                        { color: theme.textSecondary },
+                      ]}
+                    >
+                      {item.mobile}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {workLocations.length > 0 ? (
+                  <View style={styles.footerRow}>
+                    <Ionicons
+                      name="location-outline"
+                      size={14}
+                      color={theme.textSecondary}
+                    />
+                    <Text
+                      style={[
+                        styles.footerText,
+                        { color: theme.textSecondary },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {workLocations
+                        .map((loc) => loc.display_unit_no || loc.flat_no)
+                        .filter(Boolean)
+                        .join(", ")}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            )}
+          </TouchableOpacity>
+        </AppCard>
+      );
+    },
+    [theme, styles, selectedCategory, isStaffAssociated, navigation]
+  );
+
+  const renderEmpty = useCallback(
+    () => (
+      <View style={styles.emptyState}>
         <Ionicons
-          name="call-outline"
-          size={14}
+          name="people-outline"
+          size={56}
           color={theme.textSecondary}
         />
-        <Text
-          style={[
-            styles.footerText,
-            { color: theme.textSecondary },
-          ]}
-        >
-          {item.mobile}
+        <Text style={[styles.emptyTitle, { color: theme.text }]}>
+          No Staff Found
+        </Text>
+        <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
+          Try another category or search term
         </Text>
       </View>
-    )}
-
-    {workLocations.length > 0 && (
-      <View style={styles.footerRow}>
-        <Ionicons
-          name="location-outline"
-          size={14}
-          color={theme.textSecondary}
-        />
-        <Text
-          style={[
-            styles.footerText,
-            { color: theme.textSecondary },
-          ]}
-          numberOfLines={1}
-        >
-          {workLocations
-            .map((loc) => loc.display_unit_no || loc.flat_no)
-            .join(", ")}
-        </Text>
-      </View>
-    )}
-  </View>
-)}
-        </TouchableOpacity>
-      </AppCard>
-    );
-  };
-
-  const renderEmpty = () => (
-    <View style={styles.emptyState}>
-      <Ionicons
-        name="people-outline"
-        size={56}
-        color={theme.textSecondary}
-      />
-      <Text style={[styles.emptyTitle, { color: theme.text }]}>
-        No Staff Found
-      </Text>
-      <Text
-        style={[styles.emptySubtitle, { color: theme.textSecondary }]}
-      >
-        Try another category or search term
-      </Text>
-    </View>
+    ),
+    [theme, styles]
   );
 
   return (
-    <View
+    <SafeAreaView
       style={{ flex: 1, backgroundColor: theme.background }}
       edges={["top", "left", "right"]}
     >
       {/* Category Row */}
       <View style={styles.categoryRow}>
-  {categoriesLoading ? (
-    <ActivityIndicator
-      size="small"
-      color={COLORS.primary}
-      style={{ marginLeft: 16 }}
-    />
-  ) : (
-  <ScrollView
-  horizontal
-  showsHorizontalScrollIndicator={false}
-  contentContainerStyle={styles.categoryScrollContent}
-  scrollEventThrottle={16}
-  nestedScrollEnabled={true}
->
-      {categories?.map((cat) => {
-        const isActive = selectedCategory === cat;
-        return (
-          <TouchableOpacity
-            key={cat}
-            style={[
-              styles.categoryChip,
-              {
-                backgroundColor: isActive
-                  ? COLORS.primary
-                  : theme.surface,
-                borderWidth: isActive ? 0 : 1,
-                borderColor: theme.border,
-              },
-            ]}
-            onPress={() => {
-              setSelectedCategory(cat);
-              fetchStaff(cat);
-            }}
+        {categoriesLoading ? (
+          <ActivityIndicator
+            size="small"
+            color={COLORS.primary}
+            style={{ marginLeft: 16 }}
+          />
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryScrollContent}
+            scrollEventThrottle={16}
+            nestedScrollEnabled={true}
           >
-            <Text
-              style={[
-                styles.categoryChipText,
-                { color: isActive ? "#fff" : theme.text },
-              ]}
-            >
-              {cat}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </ScrollView>
-  )}
-</View>
+            {categories?.map((cat) => {
+              const isActive = selectedCategory === cat;
+              return (
+                <TouchableOpacity
+                  key={cat}
+                  style={[
+                    styles.categoryChip,
+                    {
+                      backgroundColor: isActive
+                        ? COLORS.primary
+                        : theme.surface,
+                      borderWidth: isActive ? 0 : 1,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                  onPress={() => {
+                    setSelectedCategory(cat);
+                    fetchStaff(cat);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.categoryChipText,
+                      { color: isActive ? "#fff" : theme.text },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
+      </View>
 
-      {/* Reusable Search */}
+      {/* Search */}
       <AppSearchBar
         value={search}
         onChangeText={handleSearch}
-        placeholder="Search staff by name..."
+        placeholder="Search by name, role or ID..."
         theme={theme}
       />
 
@@ -305,6 +349,7 @@ const SearchStaffScreen = ({ nightMode, categories, categoriesLoading }) => {
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
       ) : (
+        // FIX (Issue 5): added FlatList performance props
         <FlatList
           data={filteredList}
           keyExtractor={(item, index) =>
@@ -315,29 +360,34 @@ const SearchStaffScreen = ({ nightMode, categories, categoriesLoading }) => {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={renderEmpty}
           nestedScrollEnabled={true}
+          initialNumToRender={10}       // render first 10 on mount
+          windowSize={5}                // keep 5 screens in memory
+          maxToRenderPerBatch={10}      // render 10 items per scroll batch
+          removeClippedSubviews={true}  // unmount off-screen items (Android)
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
 const createStyles = (theme) =>
   StyleSheet.create({
-categoryRow: {
-  paddingVertical: 8,
-},
+    categoryRow: {
+      paddingVertical: 8,
+    },
 
-categoryScrollContent: {
-  paddingHorizontal: 16,
-  paddingVertical: 2,
-},
+    categoryScrollContent: {
+      paddingHorizontal: 16,
+      paddingVertical: 2,
+    },
 
-categoryChip: {
-  paddingHorizontal: 14,
-  paddingVertical: 8,
-  borderRadius: 20,
-  marginRight: 8,
-},
+    categoryChip: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 20,
+      marginRight: 8,
+      maxWidth: 160,
+    },
 
     categoryChipText: {
       fontSize: 13,
@@ -365,6 +415,7 @@ categoryChip: {
 
     staffInfo: {
       flex: 1,
+      marginRight: 8,
     },
 
     staffName: {
@@ -388,6 +439,8 @@ categoryChip: {
       paddingVertical: 4,
       borderRadius: 8,
       alignSelf: "flex-start",
+      flexShrink: 0,
+      maxWidth: 120,
     },
 
     categoryBadgeText: {
@@ -415,7 +468,6 @@ categoryChip: {
     emptyState: {
       paddingTop: 80,
       alignItems: "center",
-      gap: 6,
     },
 
     emptyTitle: {
@@ -427,6 +479,7 @@ categoryChip: {
     emptySubtitle: {
       fontSize: 14,
       textAlign: "center",
+      marginTop: 4,
     },
   });
 

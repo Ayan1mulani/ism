@@ -181,6 +181,33 @@ const visitorServices = {
       throw error;
     }
   },
+  getFamilyMembers: async () => {
+    try {
+      const user = await Common.getLoggedInUser();
+
+      const userObj = {
+        user_id: user.unit_id,
+        group_id: user.role_id,
+        flat_no: user.flat_no,
+        unit_id: user.unit_id,
+        society_id: user.societyId,
+      };
+
+      const encodedUser = encodeURIComponent(JSON.stringify(userObj));
+
+      const url = `${API_URL2}/${user.societyId}/${encodedUser}/members?api-token=${user.api_token}&user-id=${encodedUser}`;
+
+      const headers = await Util.getCommonAuth();
+
+      const response = await ApiCommon.getReq(url, headers);
+
+      return response;
+
+    } catch (error) {
+      console.log("Get Family Members Error:", error);
+      throw error;
+    }
+  },
 
   getMyStaffs: async (category) => {
     const user = await Common.getLoggedInUser()
@@ -212,8 +239,50 @@ const visitorServices = {
     return ApiCommon.postReq(url, payload, headers);
   },
 
+  updateFamilyMember: async (memberData) => {
+    try {
 
+      const user = await Common.getLoggedInUser();
 
+      const url = await visitorServices.appendParamsInUrl(
+        `${API_URL2}/updatefamilymember`
+      );
+
+      const headers = await Util.getCommonAuth();
+
+      const payload = {
+        id: memberData.id,
+        name: memberData.name,
+        phone_no: memberData.phone_no,
+        email: memberData.email,
+        relation: memberData.relation,
+        vehicle_no: memberData.vehicle_no,
+        image_src: memberData.image_src || null,
+      };
+
+      return ApiCommon.putReq(url, payload, headers);
+
+    } catch (error) {
+      console.log("Update Member Error:", error);
+      throw error;
+    }
+  },
+  deleteFamilyMember: async (memberId) => {
+    try {
+
+      const url = await visitorServices.appendParamsInUrl(
+        `${API_URL2}/deleteFamilyMember/${memberId}`
+      );
+
+      const headers = await Util.getCommonAuth();
+
+      return ApiCommon.delReq(url, null, headers);
+
+    } catch (error) {
+      console.log("Delete Member Error:", error);
+      throw error;
+    }
+  },
   appendParamsInUrl: async (url, extraParams = {}) => {
     const user = await Common.getLoggedInUser()
 

@@ -37,7 +37,6 @@ const THEME = {
 export default function AccountsScreen() {
   const navigation = useNavigation();
   const { nightMode } = usePermissions();
-  
 
   const [outstanding, setOutstanding] = useState([]);
   const [accounts, setAccounts] = useState([]);
@@ -60,46 +59,54 @@ export default function AccountsScreen() {
     fetchData();
   }, []);
 
-const fetchData = async () => {
-  try {
-    setLoading(true);
+  // FIX: silent flag prevents full-screen loader during pull-to-refresh
+  const fetchData = async (silent = false) => {
+    try {
+      if (!silent) setLoading(true);
 
-    const outstandingResp = await otherServices.getOutStandings();
-    const accountsResp = await otherServices.getMyAccounts();
+ const [outstandingResp, accountsResp] = await Promise.all([
+  otherServices.getOutStandings(),
+  otherServices.getMyAccounts(),
+]);
 
-    // 🔒 Safe normalize function
     const normalizeArray = (res) => {
-      if (!res) return [];
-
-      if (Array.isArray(res)) return res;
-      if (Array.isArray(res.data)) return res.data;
-      if (Array.isArray(res.result)) return res.result;
-      if (Array.isArray(res.items)) return res.items;
-
-      return [];
-    };
-
-    setOutstanding(normalizeArray(outstandingResp));
-    setAccounts(normalizeArray(accountsResp));
-
-  } catch (error) {
-    Alert.alert('Error', 'Failed to load accounts');
-  } finally {
-    setLoading(false);
-  }
+  if (!res) return [];
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res.data)) return res.data;
+  if (Array.isArray(res.result)) return res.result;
+  if (Array.isArray(res.items)) return res.items;
+  return [];
 };
+
+      setOutstanding(normalizeArray(outstandingResp));
+      setAccounts(normalizeArray(accountsResp));
+
+    } catch (error) {
+      Alert.alert('Error', 'Failed to load accounts');
+    } finally {
+      // FIX: only clear loader if it was set
+      if (!silent) setLoading(false);
+    }
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchData();
+    await fetchData(true); // FIX: skip full-screen loader
     setRefreshing(false);
   };
 
-  const formatCurrency = (amount) =>
-    `₹${parseFloat(amount || 0).toLocaleString('en-IN')}`;
+  // FIX: guard against NaN for non-numeric strings
+  const formatCurrency = (amount) => {
+    const num = parseFloat(amount);
+    return `₹${(isNaN(num) ? 0 : num).toLocaleString('en-IN')}`;
+  };
 
+  // FIX: guard against invalid date strings
   const formatDate = (date) => {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('en-IN', {
+    const parsed = new Date(date);
+    if (isNaN(parsed.getTime())) return '-';
+    return parsed.toLocaleDateString('en-IN', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
@@ -111,9 +118,14 @@ const fetchData = async () => {
     setMenuVisible(true);
   };
 
-  const downloadBill = () => {
+  const downloadBill = async () => {
     if (selectedBill?.url) {
-      Linking.openURL(selectedBill.url);
+     const supported = await Linking.canOpenURL(selectedBill.url);
+if (supported) {
+  Linking.openURL(selectedBill.url);
+} else {
+  Alert.alert("Error", "Invalid download link");
+}
     } else {
       Alert.alert('Info', 'Download not available');
     }
@@ -131,11 +143,13 @@ const fetchData = async () => {
     );
   }
 
-  // Total outstanding balance
-  const totalOutstanding = outstanding.reduce(
-    (sum, item) => sum + parseFloat(item.data?.balance || 0),
-    0
-  );
+  // FIX: guard against non-array + optional chaining on nested balance
+  const totalOutstanding = Array.isArray(outstanding)
+    ? outstanding.reduce(
+        (sum, item) => sum + parseFloat(item?.data?.balance || 0),
+        0
+      )
+    : 0;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }}>
@@ -194,9 +208,10 @@ const fetchData = async () => {
             <Text style={[styles.emptyText, { color: theme.sub }]}>No outstanding dues</Text>
           </View>
         ) : (
+          // FIX: use item.id as key instead of index
           outstanding.map((item, index) => (
             <View
-              key={index}
+              key={item.id ?? index}
               style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
             >
               {/* Left accent bar */}
@@ -208,8 +223,9 @@ const fetchData = async () => {
                     <Ionicons name="receipt-outline" size={18} color={THEME.primary} />
                   </View>
                   <View style={{ flex: 1, marginLeft: 12 }}>
+                    {/* FIX: fallback for null item.name */}
                     <Text style={[styles.cardTitle, { color: theme.text }]}>
-                      {item.name}
+                      {item.name || 'Unknown'}
                     </Text>
                     {item.message ? (
                       <Text style={[styles.cardSub, { color: theme.sub }]} numberOfLines={1}>
@@ -248,9 +264,10 @@ const fetchData = async () => {
             <Text style={[styles.emptyText, { color: theme.sub }]}>No bill history</Text>
           </View>
         ) : (
+          // FIX: use item.id or statement_no as key
           accounts.map((item, index) => (
             <View
-              key={index}
+              key={item.id ?? item.statement_no ?? index}
               style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
             >
               {/* Header row */}
@@ -322,7 +339,12 @@ const fetchData = async () => {
           activeOpacity={1}
           onPress={() => setMenuVisible(false)}
         >
-          <View style={[styles.bottomSheet, { backgroundColor: theme.card }]}>
+          {/* FIX: stopPropagation prevents overlay closing when tapping inside sheet */}
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+            style={[styles.bottomSheet, { backgroundColor: theme.card }]}
+          >
             {/* Handle */}
             <View style={[styles.sheetHandle, { backgroundColor: theme.border }]} />
 
@@ -354,12 +376,13 @@ const fetchData = async () => {
             >
               <Text style={[styles.cancelText, { color: theme.sub }]}>Cancel</Text>
             </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   center: {
     flex: 1,
@@ -494,9 +517,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
+  // FIX: alignSelf stretch so vertical divider has height
   amountDivider: {
     width: 1,
     marginHorizontal: 4,
+    alignSelf: 'stretch',
   },
 
   /* ───── SHARED ───── */

@@ -12,6 +12,7 @@ import {
   FlatList,
   Keyboard,
   TouchableWithoutFeedback,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,59 +20,109 @@ import AppHeader from "../components/AppHeader";
 import { visitorServices } from "../../services/visitorServices";
 
 const RELATION_OPTIONS = [
-  "Mother","Father","Son","Daughter","Husband","Wife","other","",
+  "Mother",
+  "Father",
+  "Son",
+  "Daughter",
+  "Husband",
+  "Wife",
+  "Other",
 ];
 
-const AddMemberScreen = () => {
-  const [name, setName] = useState("");
-  const [contact, setContact] = useState("");
-  const [email, setEmail] = useState("");
-  const [relation, setRelation] = useState("");
-  const [vehicleNumber, setVehicleNumber] = useState("");
+const AddMemberScreen = ({ route, navigation }) => {
+
+  const member = route?.params?.member;
+
+  const isEdit = !!member;
+const [name, setName] = useState(member?.name || "");
+const [contact, setContact] = useState(member?.phone_no || "");
+const [email, setEmail] = useState(member?.email || "");
+const [relation, setRelation] = useState(member?.relation || "");
+const [vehicleNumber, setVehicleNumber] = useState(member?.vehicle_no || "");
+
   const [focusedInput, setFocusedInput] = useState(null);
   const [showRelationModal, setShowRelationModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleRelationSelect = (selectedRelation) => {
-    setRelation(selectedRelation);
+  const handleRelationSelect = (value) => {
+    setRelation(value);
     setShowRelationModal(false);
   };
 
  const handleSubmit = async () => {
+
   if (!name.trim()) {
-    alert("Please enter name");
+    Alert.alert("Validation", "Please enter name");
+    return;
+  }
+
+  if (!relation) {
+    Alert.alert("Validation", "Please select relation");
     return;
   }
 
   try {
+
     setIsSubmitting(true);
 
-    const res = await visitorServices.addFamilyMember({
-      name: name.trim(),
-      phone_no: contact,
-      email: email,
-      relation: relation,
-      vehicle_no: vehicleNumber,
-      image_src: null,
-    });
+    let res;
 
-    console.log("Add Member Response:", res);
+    if (isEdit) {
 
-    alert("✅ Member added successfully!");
+      res = await visitorServices.updateFamilyMember({
+        id: member.id,
+        name: name,
+        phone_no: contact,
+        email: email,
+        relation: relation,
+        vehicle_no: vehicleNumber,
+        image_src: null
+      });
+
+    } else {
+
+      res = await visitorServices.addFamilyMember({
+        name: name,
+        phone_no: contact,
+        email: email,
+        relation: relation,
+        vehicle_no: vehicleNumber,
+        image_src: null
+      });
+
+    }
+
+    if (res?.status === "success") {
+
+      Alert.alert(
+        "Success",
+        isEdit ? "Member updated successfully" : "Member added successfully"
+      );
+
+      navigation.goBack();
+
+    } else {
+      Alert.alert("Error", res?.message || "Operation failed");
+    }
 
   } catch (error) {
-    alert("❌ Failed to add member");
+
+    console.log(error);
+    Alert.alert("Error", "Something went wrong");
+
   } finally {
     setIsSubmitting(false);
   }
+
 };
 
-  const renderRelationOption = ({ item }) => (
+  const renderRelationOption = ({ item, index }) => (
     <TouchableOpacity
       style={styles.relationOption}
       onPress={() => handleRelationSelect(item)}
     >
       <Text style={styles.relationOptionText}>{item}</Text>
+
       {relation === item && (
         <Ionicons name="checkmark" size={20} color="#1565A9" />
       )}
@@ -80,7 +131,7 @@ const AddMemberScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <AppHeader title="Add Member" />
+      <AppHeader title={isEdit ? "Edit Member" : "Add Member"} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -98,6 +149,7 @@ const AddMemberScreen = () => {
               <View style={styles.profileCircle}>
                 <Ionicons name="person" size={42} color="#9CA3AF" />
               </View>
+
               <TouchableOpacity style={styles.changeButton}>
                 <Ionicons name="camera" size={14} color="#fff" />
                 <Text style={styles.changeText}>Add Photo</Text>
@@ -112,14 +164,17 @@ const AddMemberScreen = () => {
                 <Text style={styles.label}>
                   Name <Text style={styles.required}>*</Text>
                 </Text>
-                <View style={[
-                  styles.inputContainer,
-                  focusedInput === "name" && styles.inputContainerFocused,
-                ]}>
+
+                <View
+                  style={[
+                    styles.inputContainer,
+                    focusedInput === "name" && styles.inputContainerFocused,
+                  ]}
+                >
                   <Ionicons name="person" size={16} color="#1565A9" />
+
                   <TextInput
                     placeholder="Enter full name"
-                    placeholderTextColor="#9CA3AF"
                     value={name}
                     onChangeText={setName}
                     onFocus={() => setFocusedInput("name")}
@@ -132,17 +187,20 @@ const AddMemberScreen = () => {
               {/* Contact */}
               <View style={styles.inputWrapper}>
                 <Text style={styles.label}>Contact Number</Text>
-                <View style={[
-                  styles.inputContainer,
-                  focusedInput === "contact" && styles.inputContainerFocused,
-                ]}>
+
+                <View
+                  style={[
+                    styles.inputContainer,
+                    focusedInput === "contact" && styles.inputContainerFocused,
+                  ]}
+                >
                   <Ionicons name="call" size={16} color="#1565A9" />
+
                   <TextInput
                     placeholder="Enter mobile number"
-                    placeholderTextColor="#9CA3AF"
                     value={contact}
-                    onChangeText={setContact}
                     keyboardType="phone-pad"
+                    onChangeText={setContact}
                     onFocus={() => setFocusedInput("contact")}
                     onBlur={() => setFocusedInput(null)}
                     style={styles.input}
@@ -153,17 +211,20 @@ const AddMemberScreen = () => {
               {/* Email */}
               <View style={styles.inputWrapper}>
                 <Text style={styles.label}>Email</Text>
-                <View style={[
-                  styles.inputContainer,
-                  focusedInput === "email" && styles.inputContainerFocused,
-                ]}>
+
+                <View
+                  style={[
+                    styles.inputContainer,
+                    focusedInput === "email" && styles.inputContainerFocused,
+                  ]}
+                >
                   <Ionicons name="mail" size={16} color="#1565A9" />
+
                   <TextInput
-                    placeholder="Enter email address"
-                    placeholderTextColor="#9CA3AF"
+                    placeholder="Enter email"
                     value={email}
-                    onChangeText={setEmail}
                     keyboardType="email-address"
+                    onChangeText={setEmail}
                     onFocus={() => setFocusedInput("email")}
                     onBlur={() => setFocusedInput(null)}
                     style={styles.input}
@@ -176,19 +237,24 @@ const AddMemberScreen = () => {
                 <Text style={styles.label}>
                   Relation <Text style={styles.required}>*</Text>
                 </Text>
+
                 <TouchableOpacity
                   style={styles.dropdownContainer}
                   onPress={() => setShowRelationModal(true)}
                 >
                   <View style={styles.dropdownContent}>
                     <Ionicons name="people" size={16} color="#1565A9" />
-                    <Text style={[
-                      styles.dropdownText,
-                      !relation && styles.dropdownPlaceholder,
-                    ]}>
+
+                    <Text
+                      style={[
+                        styles.dropdownText,
+                        !relation && styles.dropdownPlaceholder,
+                      ]}
+                    >
                       {relation || "Select relation"}
                     </Text>
                   </View>
+
                   <Ionicons name="chevron-down" size={18} color="#1565A9" />
                 </TouchableOpacity>
               </View>
@@ -196,11 +262,12 @@ const AddMemberScreen = () => {
               {/* Vehicle */}
               <View style={styles.inputWrapper}>
                 <Text style={styles.label}>Vehicle Number</Text>
+
                 <View style={styles.inputContainer}>
                   <Ionicons name="car" size={16} color="#1565A9" />
+
                   <TextInput
                     placeholder="Enter vehicle number"
-                    placeholderTextColor="#9CA3AF"
                     value={vehicleNumber}
                     onChangeText={setVehicleNumber}
                     style={styles.input}
@@ -215,14 +282,13 @@ const AddMemberScreen = () => {
               style={[styles.button, isSubmitting && styles.buttonDisabled]}
               onPress={handleSubmit}
               disabled={isSubmitting}
-              activeOpacity={0.85}
             >
               {isSubmitting ? (
                 <Text style={styles.buttonText}>Adding...</Text>
               ) : (
                 <>
                   <Ionicons name="add-circle" size={18} color="#fff" />
-                  <Text style={styles.buttonText}>ADD NEW MEMBER</Text>
+                  <Text style={styles.buttonText}>{isEdit ? "UPDATE MEMBER" : "ADD NEW MEMBER"}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -231,7 +297,7 @@ const AddMemberScreen = () => {
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
 
-      {/* Modal */}
+      {/* Relation Modal */}
       <Modal
         visible={showRelationModal}
         transparent
@@ -241,20 +307,27 @@ const AddMemberScreen = () => {
         <TouchableWithoutFeedback onPress={() => setShowRelationModal(false)}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
+
               <View style={styles.modalContent}>
+
                 <View style={styles.modalHeader}>
                   <Text style={styles.modalTitle}>Select Relation</Text>
-                  <TouchableOpacity onPress={() => setShowRelationModal(false)}>
-                    <Ionicons name="close" size={22} color="#111827" />
+
+                  <TouchableOpacity
+                    onPress={() => setShowRelationModal(false)}
+                  >
+                    <Ionicons name="close" size={22} />
                   </TouchableOpacity>
                 </View>
 
                 <FlatList
                   data={RELATION_OPTIONS}
                   renderItem={renderRelationOption}
-                  keyExtractor={(item) => item}
+                  keyExtractor={(item, index) => `${item}-${index}`}
                 />
+
               </View>
+
             </TouchableWithoutFeedback>
           </View>
         </TouchableWithoutFeedback>
@@ -265,147 +338,166 @@ const AddMemberScreen = () => {
 };
 
 export default AddMemberScreen;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  content: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 20,
+    backgroundColor: "#F5F7FA",
   },
 
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 30,
+  },
+
+  /* Profile */
   imageSection: {
     alignItems: "center",
-    marginBottom: 16,
-    paddingVertical: 6,
+    marginBottom: 14,
   },
+
   profileCircle: {
-    width: 95,
-    height: 95,
-    borderRadius: 47.5,
-    backgroundColor: "#F3F4F6",
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: "#EEF2F6",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 10,
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
+    borderWidth: 1,
+    borderColor: "#E4E7EB",
   },
+
   changeButton: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#1565A9",
     paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 18,
-    gap: 6,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginTop: 10,
   },
+
   changeText: {
-    color: "#FFFFFF",
+    color: "#fff",
     fontSize: 13,
+    marginLeft: 6,
     fontWeight: "600",
   },
 
+  /* Card */
   formCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 16,
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 4,
   },
 
   inputWrapper: {
-    marginBottom: 14,
+    marginBottom: 16,
   },
+
   label: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
     color: "#111827",
     marginBottom: 6,
   },
+
   required: {
     color: "#EF4444",
   },
 
+  /* Inputs */
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
+    height: 44,
     backgroundColor: "#F9FAFB",
-    borderRadius: 10,
+    borderRadius: 8,
     paddingHorizontal: 10,
-    paddingVertical: 9,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    gap: 8,
+    borderColor: "#E6E8EB",
   },
+
   inputContainerFocused: {
     borderColor: "#1565A9",
     backgroundColor: "#FFFFFF",
   },
+
   input: {
     flex: 1,
     fontSize: 14,
+    marginLeft: 8,
     color: "#111827",
   },
 
+  /* Dropdown */
   dropdownContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    height: 44,
     backgroundColor: "#F9FAFB",
-    borderRadius: 10,
+    borderRadius: 8,
     paddingHorizontal: 10,
-    paddingVertical: 10,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "#E6E8EB",
   },
+
   dropdownContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
     flex: 1,
   },
+
   dropdownText: {
     fontSize: 14,
+    marginLeft: 8,
     color: "#111827",
-    fontWeight: "500",
-  },
-  dropdownPlaceholder: {
-    color: "#9CA3AF",
-    fontWeight: "400",
   },
 
+  dropdownPlaceholder: {
+    color: "#9CA3AF",
+  },
+
+  /* Button */
   button: {
+    marginTop: 18,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#1565A9",
-    paddingVertical: 13,
+    paddingVertical: 14,
     borderRadius: 10,
-    gap: 6,
   },
+
   buttonDisabled: {
     opacity: 0.6,
   },
+
   buttonText: {
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "700",
+    marginLeft: 6,
   },
 
+  /* Modal */
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.35)",
     justifyContent: "flex-end",
   },
+
   modalContent: {
     backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
     paddingTop: 12,
-    maxHeight: "75%",
+    paddingBottom: 10,
+    maxHeight: "70%",
   },
+
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -413,25 +505,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: "#F0F2F4",
   },
+
   modalTitle: {
     fontSize: 16,
     fontWeight: "700",
     color: "#111827",
   },
+
   relationOption: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    borderBottomColor: "#F4F5F7",
   },
+
   relationOptionText: {
     fontSize: 14,
-    fontWeight: "500",
     color: "#111827",
+    fontWeight: "500",
   },
 });

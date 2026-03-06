@@ -61,6 +61,7 @@ import MyBookingsScreen from './app/AllServicesScreen/MyBookingsScreen';
 import OtpLoginScreen from './app/Login/OtpLoginScreen';
 import MyComplexScreen from './app/MyComplex/MyComplexScreen';
 import myNoticeDetailScreen from './app/MyComplex/MyNoticeDetailScreen';
+import MembersScreen from './app/AllServicesScreen/MembersScreen';
 
 
 const Tab = createBottomTabNavigator();
@@ -333,6 +334,8 @@ const NavigationPage = () => {
           <Stack.Screen name="OtpLoginScreen" component={OtpLoginScreen} />
           <Stack.Screen name="Notices" component={MyComplexScreen} />
           <Stack.Screen name="NoticeDetail" component={myNoticeDetailScreen} />
+           <Stack.Screen name="FamilyMember" component={MembersScreen} />
+
 
 
         </Stack.Navigator>

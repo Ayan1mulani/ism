@@ -1,6 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL2, APP_VERSION_CODE,APP_ID_ONE_SIGNAL } from '@env'; // Assuming these are set in your .env file
+import { API_URL2, APP_VERSION_CODE, APP_ID_ONE_SIGNAL } from '@env'; // Assuming these are set in your .env file
 import { OneSignal } from 'react-native-onesignal';
 export const RegisterAppOneSignal = async () => {
   try {

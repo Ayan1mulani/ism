@@ -16,21 +16,21 @@ import BRAND from "../config";
 
 
 const ResidentProfile = () => {
-  const { nightMode } = usePermissions();
+  const { nightMode, setFlatNo } = usePermissions();
   const COLORS = BRAND.COLORS;
 
   const [userDetails, setUserDetails] = useState({});
   const [outstanding, setOutstanding] = useState([]);
   const [loading, setLoading] = useState(true);
-const colors = {
-  card: COLORS.card,
-  text: COLORS.text,
-  subText: COLORS.secondaryText,
-  primary: COLORS.primary,
-  primaryDark: COLORS.primaryDark,
-  online: COLORS.success,
-  border: COLORS.border,
-};
+  const colors = {
+    card: COLORS.card,
+    text: COLORS.text,
+    subText: COLORS.secondaryText,
+    primary: COLORS.primary,
+    primaryDark: COLORS.primaryDark,
+    online: COLORS.success,
+    border: COLORS.border,
+  };
   const loadData = async () => {
     try {
       const storedUser = await AsyncStorage.getItem("userInfo");
@@ -38,6 +38,11 @@ const colors = {
 
       const detailsRes = await ismServices.getUserDetails();
       setUserDetails(detailsRes || {});
+
+      // ✅ store flatNo globally
+      if (detailsRes?.flat_no) {
+        setFlatNo(detailsRes.flat_no);
+      }
 
       const billRes = await otherServices.getOutStandings();
       setOutstanding(billRes?.data || []);
@@ -173,8 +178,8 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     gap: 12,
-    marginBottom:50
-    
+    marginBottom: 50
+
   },
 
   profileCard: {

@@ -46,7 +46,7 @@ const AllServicesScreen = () => {
     { title: "Settings", icon: "settings-outline", route:'Settings'},
     { title: "My vehicles", icon: "car-outline", route: "MyVehiclesScreen" },
     { title: "Visitors", icon: "walk-outline", route: "Visitors" },
-    { title: "Add new member", icon: "person-add-outline", route: "AddMember" },
+    { title: "Family members", icon: "person-add-outline", route: "FamilyMember" },
     { title: "Add vehicle", icon: "car-outline", route: "AddVehicleScreen" },
     { title: "Bills", icon: "receipt-outline", route: "bills" },
     { title: "My Bookings", icon: "bookmark-outline", route: "MyBookings" },
