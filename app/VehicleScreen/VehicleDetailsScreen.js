@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useEffect } from "react";
 import { otherServices } from "../../services/otherServices";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AppHeader from "../components/AppHeader";
 
 const VehicleDetailScreen = ({ route, navigation }) => {
   const { vehicle } = route.params;
@@ -82,15 +83,7 @@ const VehicleDetailScreen = ({ route, navigation }) => {
   return (
 
     <SafeAreaView style={styles.container}>
-
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Vehicle Detail</Text>
-      </View>
-
+      <AppHeader title={"Vehicle Details"}/>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.statusContainer}>
 

@@ -3,6 +3,7 @@ import { StyleSheet, FlatList, Text, View, ActivityIndicator } from 'react-nativ
 import ComplaintCard from './complaintCard';
 import { usePermissions } from '../../Utils/ConetextApi';
 import { useNavigation } from '@react-navigation/native';
+import BRAND from '../config'
 
 const THEME_COLORS = {
   primaryAccent:   '#1996D3',
@@ -38,7 +39,7 @@ const ComplaintListScreen = ({
   if (isLoading) {
     return (
       <View style={[styles.centered, { backgroundColor: currentTheme.backgroundColor }]}>
-        <ActivityIndicator size="large" color={THEME_COLORS.primaryAccent} />
+        <ActivityIndicator size="large" color={BRAND.COLORS.primary} />
         <Text style={[styles.loadingText, { color: currentTheme.textColor }]}>
           Loading {status} complaints...
         </Text>

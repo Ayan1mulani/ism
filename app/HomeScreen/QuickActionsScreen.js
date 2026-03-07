@@ -10,10 +10,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 const ACTIONS = [
-  { id: "1", title: "Pass", icon: "create-outline", screen: "VisitorScreen" },
-  { id: "2", title: "Amenities", icon: "bookmark-outline", screen: "AmenitiesScreen" },
+  { id: "1", title: "Pass", icon: "create-outline", screen: "Visitors" },
+  { id: "2", title: "Amenities", icon: "bookmark-outline", screen: "AmenitiesListScreen" },
   { id: "3", title: "Raise", icon: "alert-circle-outline", screen: "RaiseComplaintScreen" },
-  { id: "4", title: "Book", icon: "calendar-outline", screen: "AddVehicleScreen" },
+  { id: "4", title: "Bookings", icon: "calendar-outline", screen: "MyBookings" },
   { id: "5", title: "My Vehicles", icon: "car-outline", screen: "MyVehiclesScreen" },
 ];
 

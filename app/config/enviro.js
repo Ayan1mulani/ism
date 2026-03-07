@@ -14,8 +14,8 @@ export default {
   COLORS: {
 
     /* Core */
-    primary: "#01a93ff0",
-    primaryDark: "#119443",
+    primary: "#22C55E",
+    primaryDark: "#16A34A",
 
 
     /* Backgrounds */
@@ -34,7 +34,7 @@ export default {
     buttonText: "#FFFFFF",
 
     /* Borders */
-    border: "#78d0b0be",
+    border: "#78cdaebe",
 
     /* Icons */
     icon: "#01B242",

@@ -11,7 +11,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { otherServices } from "../../services/otherServices";
 import { useNavigation } from "@react-navigation/native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import AppCard from "../components/AppCard";
 import AppSearchBar from "../components/AppSearchBar";
 import BRAND from "../config";
@@ -279,7 +278,7 @@ const SearchStaffScreen = ({ nightMode, categories, categoriesLoading }) => {
   );
 
   return (
-    <SafeAreaView
+    <View
       style={{ flex: 1, backgroundColor: theme.background }}
       edges={["top", "left", "right"]}
     >
@@ -366,7 +365,7 @@ const SearchStaffScreen = ({ nightMode, categories, categoriesLoading }) => {
           removeClippedSubviews={true}  // unmount off-screen items (Android)
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 

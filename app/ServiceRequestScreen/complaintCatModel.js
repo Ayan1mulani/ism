@@ -1,4 +1,3 @@
-// CategorySelectionScreen.js
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -8,12 +7,15 @@ import {
   ScrollView,
   ActivityIndicator,
   Dimensions,
+  TextInput
 } from 'react-native';
+
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { usePermissions } from '../../Utils/ConetextApi';
 import { complaintService } from '../../services/complaintService';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import BRAND from '../config'
 
 const { width } = Dimensions.get('window');
 
@@ -22,6 +24,7 @@ const GAP = 10;
 const CARD_WIDTH = (width - H_PADDING * 2 - GAP * 2) / 3;
 
 const CategorySelectionScreen = () => {
+
   const { nightMode } = usePermissions();
   const navigation = useNavigation();
 
@@ -43,7 +46,7 @@ const CategorySelectionScreen = () => {
         surface: '#FFFFFF',
         border: '#E5E7EB',
         text: '#111827',
-        secondary: '#6B7280',
+        secondary: '#030916',
         searchBg: '#F3F4F6',
       };
 
@@ -53,7 +56,9 @@ const CategorySelectionScreen = () => {
 
   const fetchCategories = async () => {
     try {
+
       setLoading(true);
+
       const res = await complaintService.getCategories();
 
       const list = Object.values(res.data).map((c) => ({
@@ -63,6 +68,7 @@ const CategorySelectionScreen = () => {
       }));
 
       setCategories(list);
+
     } catch (e) {
       setCategories([]);
     } finally {
@@ -79,8 +85,8 @@ const CategorySelectionScreen = () => {
     rows.push(filtered.slice(i, i + 3));
   }
 
-  // 🔥 Better Material icon mapping
   const getIcon = (name) => {
+
     const n = name.toLowerCase();
 
     if (n.includes('electric')) return 'electrical-services';
@@ -110,13 +116,15 @@ const CategorySelectionScreen = () => {
   }
 
   return (
+
     <SafeAreaView
       style={{ flex: 1, backgroundColor: theme.background }}
       edges={['top']}
     >
- 
+
       {/* HEADER */}
-      <View style={styles.header}>
+      <View style={styles.header}>       
+
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={[styles.backButton, { borderColor: theme.border }]}
@@ -128,29 +136,67 @@ const CategorySelectionScreen = () => {
           <Text style={[styles.title, { color: theme.text }]}>
             Select Category
           </Text>
+
           <Text style={[styles.subtitle, { color: theme.secondary }]}>
             {filtered.length} available
           </Text>
         </View>
+
+      </View>
+
+
+      {/* SEARCH BAR */}
+
+      <View
+        style={[
+          styles.searchBar,
+          { backgroundColor: theme.searchBg, borderColor: theme.border }
+        ]}
+      >
+
+        <Ionicons name="search" size={18} color={theme.secondary} />
+
+        <TextInput
+          placeholder="Search category..."
+          placeholderTextColor={theme.secondary}
+          value={search}
+          onChangeText={setSearch}
+          style={[styles.searchInput, { color: theme.text }]}
+        />
+
+        {search !== "" && (
+          <TouchableOpacity onPress={() => setSearch("")}>
+            <Ionicons name="close-circle" size={18} color={theme.secondary} />
+          </TouchableOpacity>
+        )}
+
       </View>
 
 
       {/* GRID */}
+
       <ScrollView
         contentContainerStyle={{ paddingBottom: 20 }}
         showsVerticalScrollIndicator={false}
       >
+
         {filtered.length === 0 ? (
+
           <View style={styles.emptyContainer}>
             <MaterialIcons name="search-off" size={36} color={theme.secondary} />
             <Text style={{ marginTop: 6, color: theme.secondary }}>
               No categories found
             </Text>
           </View>
+
         ) : (
+
           rows.map((row, index) => (
+
             <View key={index} style={styles.row}>
+
               {row.map((item) => (
+
                 <TouchableOpacity
                   key={item.id}
                   style={[
@@ -167,12 +213,7 @@ const CategorySelectionScreen = () => {
                     })
                   }
                 >
-                  <MaterialIcons
-                    name={getIcon(item.name)}
-                    size={26}
-                    color="#1996D3"
-                    style={{ marginBottom: 6 }}
-                  />
+
 
                   <Text
                     style={[styles.cardText, { color: theme.text }]}
@@ -180,24 +221,33 @@ const CategorySelectionScreen = () => {
                   >
                     {item.name}
                   </Text>
+
                 </TouchableOpacity>
+
               ))}
 
               {row.length < 3 &&
                 Array.from({ length: 3 - row.length }).map((_, i) => (
                   <View key={i} style={{ width: CARD_WIDTH }} />
                 ))}
+
             </View>
+
           ))
+
         )}
+
       </ScrollView>
+
     </SafeAreaView>
   );
 };
 
 export default CategorySelectionScreen;
 
+
 const styles = StyleSheet.create({
+
   loader: {
     flex: 1,
     justifyContent: 'center',
@@ -211,7 +261,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: H_PADDING,
     paddingTop: 6,
     paddingBottom: 12,
-    marginBottom:20
+    marginBottom: 10,
   },
 
   backButton: {
@@ -220,6 +270,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
 
   title: {
@@ -237,10 +288,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: H_PADDING,
     marginBottom: 14,
-    borderRadius: 6,
+    borderRadius: 8,
     paddingHorizontal: 10,
     height: 40,
     gap: 6,
+    borderWidth: 1,
   },
 
   searchInput: {
@@ -276,4 +328,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingTop: 60,
   },
+
 });

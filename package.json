@@ -7,12 +7,10 @@
     "start:isociety": "cross-env APP_BRAND=isociety expo start",
     "start:enviro": "cross-env APP_BRAND=enviro expo start",
     "start:max-estates": "cross-env APP_BRAND=max estates expo start",
-
     "build:jaypee": "cross-env APP_BRAND=jaypee eas build -p android --profile production",
     "build:isociety": "cross-env APP_BRAND=isociety eas build -p android --profile production",
     "build:enviro": "cross-env APP_BRAND=enviro eas build -p android --profile production",
     "build:max estates": "cross-env APP_BRAND=max estates expo start"
-
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -39,6 +37,7 @@
     "react-native-calendars": "^1.1314.0",
     "react-native-dotenv": "^3.4.11",
     "react-native-gesture-handler": "~2.28.0",
+    "react-native-onesignal": "^5.3.1",
     "react-native-reanimated": "~4.1.1",
     "react-native-render-html": "^6.3.4",
     "react-native-safe-area-context": "^5.6.2",

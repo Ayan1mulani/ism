@@ -14,8 +14,8 @@ export default {
   COLORS: {
 
     /* Core */
-    primary: "#0169B2",
-    primaryDark: "#0284C7",
+    primary: "#2A8FD6",
+    primaryDark: "#0175C2",
 
     /* Backgrounds */
     background: "#E3F2FD",
@@ -23,7 +23,7 @@ export default {
     card: "#FFFFFF",
     safeArea: "#FFFFFF",
 
-    border: "#78add0be",
+    border: "#aac3d39e",
 
     /* Text */
     text: "#1A1A1A",
@@ -35,7 +35,6 @@ export default {
     buttonText: "#FFFFFF",
 
     /* Borders */
-    border: "#a2b8e3",
 
     /* Icons */
     icon: "#0169B2",
@@ -56,10 +55,10 @@ export default {
     white: "#FFFFFF",
     black: "#000000",
 
-bottomNavBackground: "#1996D3ee",
-bottomNavBorder: "#E5E7EB",
-bottomNavIndicator: "#0169B2",
-bottomNavActiveIcon: "#0169B2",
-bottomNavInactiveIcon: "#6B7280",
+    bottomNavBackground: "#1996D3ee",
+    bottomNavBorder: "#E5E7EB",
+    bottomNavIndicator: "#0169B2",
+    bottomNavActiveIcon: "#0169B2",
+    bottomNavInactiveIcon: "#6B7280",
   }
 };

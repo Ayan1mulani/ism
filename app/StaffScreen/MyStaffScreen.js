@@ -13,9 +13,10 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 
 import AppCard from "../components/AppCard";
 import AppSearchBar from "../components/AppSearchBar";
+import BRAND from '../config'
 
 const COLORS = {
-  primary: "#1996D3",
+  primary: BRAND.COLORS.primary,
   light: {
     background: "#FFFFFF",
     surface: "#ffffff",

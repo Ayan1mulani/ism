@@ -1,5 +1,3 @@
-// AddVehicleScreen.js
-
 import React, { useState } from "react";
 import {
   View,
@@ -18,9 +16,12 @@ import { Common } from "../../services/Common";
 import { Util } from "../../services/Util";
 import { ApiCommon } from "../../services/ApiCommon";
 import { API_URL2 } from "@env";
+import SubmitButton from "../components/SubmitButton";
+
 const AddVehicleScreen = ({ navigation, route }) => {
   const vehicle = route?.params?.vehicle;
   const isEdit = !!vehicle;
+
   const [loading, setLoading] = useState(false);
 
   const [vehicleNo, setVehicleNo] = useState(vehicle?.vehicle_no || "");
@@ -70,15 +71,15 @@ const AddVehicleScreen = ({ navigation, route }) => {
       let response;
 
       if (isEdit) {
-        // UPDATE MODE
-        const url = `${API_URL2}/my/vehicle/${vehicle.id}?api-token=${user.api_token
-          }&user-id=${encodeURIComponent(JSON.stringify(userObj))}`;
+        const url = `${API_URL2}/my/vehicle/${vehicle.id}?api-token=${user.api_token}&user-id=${encodeURIComponent(
+          JSON.stringify(userObj)
+        )}`;
 
         response = await ApiCommon.postReq(url, payload, headers);
       } else {
-        // ADD MODE
-        const url = `${API_URL2}/my/vehicle?api-token=${user.api_token
-          }&user-id=${encodeURIComponent(JSON.stringify(userObj))}`;
+        const url = `${API_URL2}/my/vehicle?api-token=${user.api_token}&user-id=${encodeURIComponent(
+          JSON.stringify(userObj)
+        )}`;
 
         response = await ApiCommon.putReq(url, payload, headers);
       }
@@ -93,109 +94,117 @@ const AddVehicleScreen = ({ navigation, route }) => {
         Alert.alert("Error", response.message || "Something went wrong");
       }
     } catch (error) {
-      console.log("Vehicle Error:", error);
+      console.log(error);
       Alert.alert("Error", "Operation failed");
     } finally {
       setLoading(false);
     }
   };
+
+  const Input = ({ label, value, onChangeText, placeholder }) => (
+    <View style={styles.inputBlock}>
+      <Text style={styles.label}>{label}</Text>
+      <TextInput
+        style={styles.input}
+        value={value}
+        placeholder={placeholder}
+        onChangeText={onChangeText}
+        placeholderTextColor="#9CA3AF"
+      />
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="chevron-back" size={26} color="#111" />
         </TouchableOpacity>
+
         <Text style={styles.headerTitle}>
           {isEdit ? "Update Vehicle" : "Add Vehicle"}
         </Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.label}>Number</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ex - MH12BA0223"
-          value={vehicleNo}
-          onChangeText={setVehicleNo}
-        />
 
-        <Text style={styles.label}>Owner</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Vehicle Owner Name"
-          value={owner}
-          onChangeText={setOwner}
-        />
+        <View style={styles.card}>
 
-        {/* Type Selector */}
-        <Text style={styles.label}>Type</Text>
-        <TouchableOpacity
-          style={styles.input}
-          onPress={() => setShowTypeModal(true)}
-        >
-          <Text style={{ color: type ? "#000" : "#999" }}>
-            {type || "Select Vehicle Type"}
-          </Text>
-        </TouchableOpacity>
+          <Input
+            label="Vehicle Number"
+            value={vehicleNo}
+            onChangeText={setVehicleNo}
+            placeholder="MH12BA0223"
+          />
 
-        <Text style={styles.label}>Model</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Vehicle Model"
-          value={model}
-          onChangeText={setModel}
-        />
+          <Input
+            label="Owner"
+            value={owner}
+            onChangeText={setOwner}
+            placeholder="Owner Name"
+          />
 
-        <Text style={styles.label}>Sticker Number</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Vehicle Sticker Number"
-          value={stkNo}
-          onChangeText={setStkNo}
-        />
+          <Text style={styles.label}>Vehicle Type</Text>
 
-        <Text style={styles.label}>Insurance Number (Optional)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Vehicle Insurance Number"
-          value={insNo}
-          onChangeText={setInsNo}
-        />
-
-        <Text style={styles.label}>Insurance Expire Date (Optional)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="YYYY-MM-DD"
-          value={insExpDate}
-          onChangeText={setInsExpDate}
-        />
-
-        <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>
-              {isEdit ? "UPDATE VEHICLE" : "ADD VEHICLE"}
+          <TouchableOpacity
+            style={styles.dropdown}
+            onPress={() => setShowTypeModal(true)}
+          >
+            <Text style={{ color: type ? "#111" : "#9CA3AF" }}>
+              {type || "Select Vehicle Type"}
             </Text>
-          )}
-        </TouchableOpacity>
+
+            <Ionicons name="chevron-down" size={18} color="#6B7280" />
+          </TouchableOpacity>
+
+          <Input
+            label="Model"
+            value={model}
+            onChangeText={setModel}
+            placeholder="Vehicle Model"
+          />
+
+          <Input
+            label="Sticker Number"
+            value={stkNo}
+            onChangeText={setStkNo}
+            placeholder="Sticker Number"
+          />
+
+          <Input
+            label="Insurance Number"
+            value={insNo}
+            onChangeText={setInsNo}
+            placeholder="Insurance Number"
+          />
+
+          <Input
+            label="Insurance Expiry"
+            value={insExpDate}
+            onChangeText={setInsExpDate}
+            placeholder="YYYY-MM-DD"
+          />
+
+        </View>
+
+       <SubmitButton
+  title={isEdit ? "Update Vehicle" : "Add Vehicle"}
+  onPress={handleSubmit}
+  loading={loading}
+/>
       </ScrollView>
 
-      {/* Bottom Modal */}
-      <Modal
-        transparent
-        visible={showTypeModal}
-        animationType="none"
-        onRequestClose={() => setShowTypeModal(false)}
-      >
+      {/* Vehicle Type Modal */}
+      <Modal transparent visible={showTypeModal} animationType="fade">
         <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
           onPress={() => setShowTypeModal(false)}
         >
-          <View style={styles.bottomSheet}>
+          <View style={styles.sheet}>
+
             <Text style={styles.sheetTitle}>Select Vehicle Type</Text>
 
             {["Car", "Bike", "2 Wheeler", "Other"].map((item) => (
@@ -210,9 +219,11 @@ const AddVehicleScreen = ({ navigation, route }) => {
                 <Text style={styles.sheetText}>{item}</Text>
               </TouchableOpacity>
             ))}
+
           </View>
         </TouchableOpacity>
       </Modal>
+
     </SafeAreaView>
   );
 };
@@ -220,71 +231,108 @@ const AddVehicleScreen = ({ navigation, route }) => {
 export default AddVehicleScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F2F2F2",
-  },
-  header: {
-    height: 60,
-    backgroundColor: "#1668A5",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-  },
-  headerTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
-    marginLeft: 20,
-  },
-  content: {
-    padding: 20,
-  },
-  label: {
-    fontSize: 16,
-    color: "#1668A5",
-    marginTop: 16,
-  },
-  input: {
-    borderBottomWidth: 1,
-    borderColor: "#ccc",
-    paddingVertical: 10,
-    fontSize: 15,
-  },
-  button: {
-    marginTop: 30,
-    backgroundColor: "#1668A5",
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "flex-end",
-  },
-  bottomSheet: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 70
-  },
-  sheetTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 15,
-  },
-  sheetItem: {
-    paddingVertical: 12,
-  },
-  sheetText: {
-    fontSize: 15,
-    fontWeight: "500",
-  },
+
+container:{
+flex:1,
+backgroundColor:"#ffffff"
+},
+
+header:{
+flexDirection:"row",
+alignItems:"center",
+padding:16
+},
+
+headerTitle:{
+fontSize:20,
+fontWeight:"700",
+marginLeft:10,
+color:"#111827"
+},
+
+content:{
+padding:16
+},
+
+card:{
+backgroundColor:"#fff",
+borderRadius:14,
+padding:16,
+borderWidth:1,
+borderColor:"#E5E7EB"
+},
+
+inputBlock:{
+marginBottom:14
+},
+
+label:{
+fontSize:13,
+fontWeight:"600",
+marginBottom:6,
+color:"#374151"
+},
+
+input:{
+backgroundColor:"#F9FAFB",
+borderWidth:1,
+borderColor:"#E5E7EB",
+borderRadius:10,
+padding:12,
+fontSize:14
+},
+
+dropdown:{
+flexDirection:"row",
+justifyContent:"space-between",
+alignItems:"center",
+backgroundColor:"#F9FAFB",
+borderWidth:1,
+borderColor:"#E5E7EB",
+borderRadius:10,
+padding:12,
+marginBottom:14
+},
+
+button:{
+marginTop:24,
+backgroundColor:"#1565A9",
+padding:16,
+borderRadius:12,
+alignItems:"center"
+},
+
+buttonText:{
+color:"#fff",
+fontWeight:"700",
+fontSize:15
+},
+
+modalOverlay:{
+flex:1,
+backgroundColor:"rgba(0,0,0,0.4)",
+justifyContent:"flex-end"
+},
+
+sheet:{
+backgroundColor:"#fff",
+padding:20,
+borderTopLeftRadius:20,
+borderTopRightRadius:20
+},
+
+sheetTitle:{
+fontSize:16,
+fontWeight:"700",
+marginBottom:10
+},
+
+sheetItem:{
+paddingVertical:14
+},
+
+sheetText:{
+fontSize:15
+}
+
 });

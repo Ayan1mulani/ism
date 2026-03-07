@@ -97,7 +97,7 @@ const AttendanceCalendar = ({
               <View
                 style={[
                   styles.dayCircle,
-                  isSelected && { backgroundColor: COLORS.primary },
+                  isSelected && { backgroundColor: '#70b0cb' },
                 ]}
               >
                 <Text
@@ -131,7 +131,7 @@ const AttendanceCalendar = ({
           <Text style={styles.legendText}>Absent</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: COLORS.primary }]} />
+          <View style={[styles.legendDot, { backgroundColor: "#70b0cb" }]} />
           <Text style={styles.legendText}>Selected</Text>
         </View>
       </View>
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
   dayCircle: {
     width: 32,
     height: 32,
-    borderRadius: 6,
+    borderRadius: 50,
     justifyContent: "center",
     alignItems: "center",
   },

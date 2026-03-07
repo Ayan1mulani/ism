@@ -18,6 +18,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AppHeader from "../components/AppHeader";
 import { visitorServices } from "../../services/visitorServices";
+import BRAND from '../config'
+import SubmitButton from "../components/SubmitButton";
 
 const RELATION_OPTIONS = [
   "Mother",
@@ -34,11 +36,11 @@ const AddMemberScreen = ({ route, navigation }) => {
   const member = route?.params?.member;
 
   const isEdit = !!member;
-const [name, setName] = useState(member?.name || "");
-const [contact, setContact] = useState(member?.phone_no || "");
-const [email, setEmail] = useState(member?.email || "");
-const [relation, setRelation] = useState(member?.relation || "");
-const [vehicleNumber, setVehicleNumber] = useState(member?.vehicle_no || "");
+  const [name, setName] = useState(member?.name || "");
+  const [contact, setContact] = useState(member?.phone_no || "");
+  const [email, setEmail] = useState(member?.email || "");
+  const [relation, setRelation] = useState(member?.relation || "");
+  const [vehicleNumber, setVehicleNumber] = useState(member?.vehicle_no || "");
 
   const [focusedInput, setFocusedInput] = useState(null);
   const [showRelationModal, setShowRelationModal] = useState(false);
@@ -49,72 +51,72 @@ const [vehicleNumber, setVehicleNumber] = useState(member?.vehicle_no || "");
     setShowRelationModal(false);
   };
 
- const handleSubmit = async () => {
+  const handleSubmit = async () => {
 
-  if (!name.trim()) {
-    Alert.alert("Validation", "Please enter name");
-    return;
-  }
-
-  if (!relation) {
-    Alert.alert("Validation", "Please select relation");
-    return;
-  }
-
-  try {
-
-    setIsSubmitting(true);
-
-    let res;
-
-    if (isEdit) {
-
-      res = await visitorServices.updateFamilyMember({
-        id: member.id,
-        name: name,
-        phone_no: contact,
-        email: email,
-        relation: relation,
-        vehicle_no: vehicleNumber,
-        image_src: null
-      });
-
-    } else {
-
-      res = await visitorServices.addFamilyMember({
-        name: name,
-        phone_no: contact,
-        email: email,
-        relation: relation,
-        vehicle_no: vehicleNumber,
-        image_src: null
-      });
-
+    if (!name.trim()) {
+      Alert.alert("Validation", "Please enter name");
+      return;
     }
 
-    if (res?.status === "success") {
-
-      Alert.alert(
-        "Success",
-        isEdit ? "Member updated successfully" : "Member added successfully"
-      );
-
-      navigation.goBack();
-
-    } else {
-      Alert.alert("Error", res?.message || "Operation failed");
+    if (!relation) {
+      Alert.alert("Validation", "Please select relation");
+      return;
     }
 
-  } catch (error) {
+    try {
 
-    console.log(error);
-    Alert.alert("Error", "Something went wrong");
+      setIsSubmitting(true);
 
-  } finally {
-    setIsSubmitting(false);
-  }
+      let res;
 
-};
+      if (isEdit) {
+
+        res = await visitorServices.updateFamilyMember({
+          id: member.id,
+          name: name,
+          phone_no: contact,
+          email: email,
+          relation: relation,
+          vehicle_no: vehicleNumber,
+          image_src: null
+        });
+
+      } else {
+
+        res = await visitorServices.addFamilyMember({
+          name: name,
+          phone_no: contact,
+          email: email,
+          relation: relation,
+          vehicle_no: vehicleNumber,
+          image_src: null
+        });
+
+      }
+
+      if (res?.status === "success") {
+
+        Alert.alert(
+          "Success",
+          isEdit ? "Member updated successfully" : "Member added successfully"
+        );
+
+        navigation.goBack();
+
+      } else {
+        Alert.alert("Error", res?.message || "Operation failed");
+      }
+
+    } catch (error) {
+
+      console.log(error);
+      Alert.alert("Error", "Something went wrong");
+
+    } finally {
+      setIsSubmitting(false);
+    }
+
+  };
 
   const renderRelationOption = ({ item, index }) => (
     <TouchableOpacity
@@ -171,7 +173,6 @@ const [vehicleNumber, setVehicleNumber] = useState(member?.vehicle_no || "");
                     focusedInput === "name" && styles.inputContainerFocused,
                   ]}
                 >
-                  <Ionicons name="person" size={16} color="#1565A9" />
 
                   <TextInput
                     placeholder="Enter full name"
@@ -194,7 +195,6 @@ const [vehicleNumber, setVehicleNumber] = useState(member?.vehicle_no || "");
                     focusedInput === "contact" && styles.inputContainerFocused,
                   ]}
                 >
-                  <Ionicons name="call" size={16} color="#1565A9" />
 
                   <TextInput
                     placeholder="Enter mobile number"
@@ -218,7 +218,6 @@ const [vehicleNumber, setVehicleNumber] = useState(member?.vehicle_no || "");
                     focusedInput === "email" && styles.inputContainerFocused,
                   ]}
                 >
-                  <Ionicons name="mail" size={16} color="#1565A9" />
 
                   <TextInput
                     placeholder="Enter email"
@@ -243,7 +242,6 @@ const [vehicleNumber, setVehicleNumber] = useState(member?.vehicle_no || "");
                   onPress={() => setShowRelationModal(true)}
                 >
                   <View style={styles.dropdownContent}>
-                    <Ionicons name="people" size={16} color="#1565A9" />
 
                     <Text
                       style={[
@@ -255,7 +253,7 @@ const [vehicleNumber, setVehicleNumber] = useState(member?.vehicle_no || "");
                     </Text>
                   </View>
 
-                  <Ionicons name="chevron-down" size={18} color="#1565A9" />
+                  <Ionicons name="chevron-down" size={18}  color={BRAND.COLORS.primary} />
                 </TouchableOpacity>
               </View>
 
@@ -264,7 +262,6 @@ const [vehicleNumber, setVehicleNumber] = useState(member?.vehicle_no || "");
                 <Text style={styles.label}>Vehicle Number</Text>
 
                 <View style={styles.inputContainer}>
-                  <Ionicons name="car" size={16} color="#1565A9" />
 
                   <TextInput
                     placeholder="Enter vehicle number"
@@ -278,20 +275,12 @@ const [vehicleNumber, setVehicleNumber] = useState(member?.vehicle_no || "");
             </View>
 
             {/* Submit */}
-            <TouchableOpacity
-              style={[styles.button, isSubmitting && styles.buttonDisabled]}
-              onPress={handleSubmit}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <Text style={styles.buttonText}>Adding...</Text>
-              ) : (
-                <>
-                  <Ionicons name="add-circle" size={18} color="#fff" />
-                  <Text style={styles.buttonText}>{isEdit ? "UPDATE MEMBER" : "ADD NEW MEMBER"}</Text>
-                </>
-              )}
-            </TouchableOpacity>
+         <SubmitButton
+  title={isEdit ? "UPDATE MEMBER" : "ADD NEW MEMBER"}
+  onPress={handleSubmit}
+  loading={isSubmitting}
+  icon={<Ionicons name="add-circle" size={18} color="#fff" />}
+/>
 
           </ScrollView>
         </TouchableWithoutFeedback>
@@ -370,7 +359,7 @@ const styles = StyleSheet.create({
   changeButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1565A9",
+    backgroundColor: BRAND.COLORS.primary,
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,

@@ -44,18 +44,26 @@ const StaffScreen = () => {
     }
   }, [route?.params?.tabIndex]);
 
-  const loadCategories = async () => {
-    try {
-      const res = await otherServices.getStaffCategories();
-      if (res?.status === "success") {
-        setCategories(res.data.map(item => item.name));
-      }
-    } catch (error) {
-      console.log("Category Load Error:", error);
-    } finally {
-      setCategoriesLoading(false);
+const loadCategories = async () => {
+  try {
+
+    const res = await otherServices.getStaffCategories();
+
+    if (res?.status === "success") {
+
+      const uniqueCategories = [
+        ...new Set(res.data.map(item => item.name))
+      ];
+
+      setCategories(uniqueCategories);
     }
-  };
+
+  } catch (error) {
+    console.log("Category Load Error:", error);
+  } finally {
+    setCategoriesLoading(false);
+  }
+};
 
   const handleTabPress = (index) => {
     setActiveIndex(index);

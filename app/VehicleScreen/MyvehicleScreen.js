@@ -6,12 +6,13 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  SafeAreaView,
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { otherServices } from "../../services/otherServices";
+import AppHeader from "../components/AppHeader";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const PRIMARY = "#1668A5";
 
@@ -157,16 +158,7 @@ const MyVehiclesScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       {/* HEADER */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Vehicles</Text>
-        <View style={styles.headerCount}>
-          <Text style={styles.headerCountText}>{vehicles.length}</Text>
-        </View>
-      </View>
-
+    <AppHeader title={"My Vehicles"}/>
       <FlatList
         data={vehicles}
         keyExtractor={(item) => item.id.toString()}
@@ -215,36 +207,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgb(255, 255, 255)",
   },
 
-  // Header
-  header: {
-    height: 60,
-    backgroundColor: PRIMARY,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  backBtn: {
-    padding: 2,
-  },
-  headerTitle: {
-    flex: 1,
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  headerCount: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  headerCountText: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-
+ 
   // Summary
   summaryRow: {
     flexDirection: "row",

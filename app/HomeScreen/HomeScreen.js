@@ -14,6 +14,7 @@ import { usePermissions } from '../../Utils/ConetextApi';
 import Action from './Action';
 import QuickActionsScreen from './QuickActionsScreen';
 import BRAND from '../../app/config';
+import NoticeTickerScreen from './NoticeTickerScreen';
 
 const theme = BRAND.COLORS;
 
@@ -87,6 +88,7 @@ const HomeScreen = () => {
             <ServicesSection refreshTrigger={refreshTrigger} />
             <Action />
             <QuickActionsScreen />
+            <NoticeTickerScreen/>
             <ImportantContacts refreshTrigger={refreshTrigger} />
           </View>
         }
